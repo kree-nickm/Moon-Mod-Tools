@@ -15,9 +15,18 @@ Bot.loadOptions({
   try {
     await Bot.loadConfigFile(Bot.options['--config'] ?? 'config.json');
     await Bot.start();
+    if (Bot.config.intents.includes('GuildMessages')) {
+      Bot.registerEventHandlerFile('events/logger.mjs', {
+        messageUpdate: 'messageUpdate',
+        messageDelete: 'messageDelete',
+        raw: 'raw',
+      });
+    }
+    else
+      Bot.logWarn(`Bot does not have the GuildMessages intents, which are required for message logging.`);
   }
   catch(err) {
-    Bot.logError(err);
+    Bot.logError(`A fatal error occurred:`, err);
     Bot.client?.destroy();
   }
 })();

@@ -1,20 +1,20 @@
 {
-	"name": "Moon-Mod-Tools",
-	"version": "0.0.1",
-	"description": "Bot for moderator tools in MOONMOON's Discord server.",
-	"main": "index.mjs",
-	"author": {
+  "name": "Moon-Mod-Tools",
+  "version": "0.0.2",
+  "description": "Bot for moderator tools in MOONMOON's Discord server.",
+  "main": "index.mjs",
+  "author": {
     "name": "kree-nickm",
     "url": "https://github.com/kree-nickm"
   },
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/Shy-16/Moon-Mod-Tools.git"
-	},
-	"dependencies": {
-		"discord.js": "^14.13"
-	},
-	"engines": {
-		"node": "^20.16.0"
-	}
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Shy-16/Moon-Mod-Tools.git"
+  },
+  "dependencies": {
+    "discord.js": "^14.13"
+  },
+  "engines": {
+    "node": "^20.16.0"
+  }
 }

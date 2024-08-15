@@ -1,4 +1,5 @@
 import * as fs from 'node:fs/promises';
+import * as path from 'node:path';
 
 /**
  * Contains methods that pertain to any Node.js application, regardless of what the application's purpose is.
@@ -63,6 +64,15 @@ export default class Application {
         closer = "\x1b[0m";
       }
     }
+    else if (type === 'debug') {
+      func = console.debug;
+      if (process.title === "Windows PowerShell") {
+        opener = "\x1b[30m\x1b[100m";
+        closer = "\x1b[0m";
+      }
+      else
+        return;
+    }
     else
       func = console.log;
     if (func)
@@ -70,66 +80,74 @@ export default class Application {
   }
   
   /**
-   * Shortcut function for reporting an error. Errors should be reported when something erroneous happens, that will prevent the application from operating normally from that point forward.
+   * Shortcut function for reporting an error. Errors should be reported when the current operation cannot be completed.
    */
   static logError(...args) {
     this.log('error', ...args);
   }
   
   /**
-   * Shortcut function for reporting a warning. Warnings should be reported when something erroneous happens, but the application can ignore the error and still operate normally afterward.
+   * Shortcut function for reporting a warning. Warnings should be reported when the current operation can still be completed, but might not work exactly as the user intended.
    */
   static logWarn(...args) {
     this.log('warn', ...args);
   }
   
   /**
-   * Shortcut function for logging a message. Such messages should be logged occasionally to give the application host feedback to verify that the bot is working.
+   * Shortcut function for logging a message. Messages should be logged occasionally to give the owner feedback to verify that the bot is working.
    */
   static logInfo(...args) {
     this.log('info', ...args);
   }
   
   /**
+   * Shortcut function for logging a debug message. Will only output the message in a development environment.
+   */
+  static logDebug(...args) {
+    this.log('debug', ...args);
+  }
+  
+  /**
    * Import JSON data. Note that for some utterly baffling reason, EMCAScript *still* has no official method for importing a JSON file, so this "experimental" method will result in a warning in the application console.
    */
   static async importJSON(filename) {
-    return (await import(await this.toModulePath(filename), {with: {type: 'json'}}))?.default;
+    return (await this.safeImport(filename, {with: {type: 'json'}}))?.default;
   }
   
   /**
    * A wrapper for the native import operation that catches errors to prevent the application from crashing when trying to import non-essential modules.
    */
-  static async safeImport(filename, options) {
+  static async safeImport(filename, options={}) {
     try {
       await fs.access(filename);
     }
     catch(err) {
-      this.logWarn(`File '${filename}' is not accessible for import.`, err);
-      return undefined;
+      this.logError(`File '${filename}' is not accessible for import.`, err);
+      return;
     }
     
-    let filepath = await this.toModulePath(filename);
+    let append = '';
+    if ('reload' in options) {
+      if (options.reload)
+        append = '?t='+Date.now();
+      delete options.reload;
+    }
     
     try {
-      let module = await import(filepath, options);
-      if (!module)
-        this.logWarn(`File '${filepath}' is not a Node.js module.`);
-      return module;
+      let filepath = this.toModulePath(filename, append);
+      this.logDebug(`Importing module '${filepath}'.`);
+      return await import(filepath, options);
     }
     catch(err) {
-      this.logWarn(`File '${filepath}' cannot be imported by Node.js.`, err);
-      return undefined;
+      this.logError(`File '${filename}${append}' cannot be imported by Node.js.`, err);
+      return;
     }
   }
   
   /**
-   * Converts a file path relative to the application directory into an absolute file path for use in the native import operation.
+   * Converts any file path into a path that the native import operation will accept.
    */
-  static async toModulePath(filename) {
-    let filepath = await fs.realpath(filename);
-    if (process.platform === 'win32')
-      filepath = 'file://' + filepath;
-    return filepath;
+  static toModulePath(filename, append='') {
+    return "file:" + path.resolve(filename) + append;
   }
 }
