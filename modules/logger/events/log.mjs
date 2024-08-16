@@ -4,8 +4,6 @@
  * Requires the Message partial in order to receive any events on messages that existed before the bot logged in.
  */
 
-const logChannelId = '1272732359665647688'; // check if in guild
-
 function attachmentToEmbed(attachment, overwrites={}) {
   let embed = {
     description: `<${attachment.url}> (${attachment.id})`,
@@ -58,6 +56,10 @@ export async function messageUpdate(oldMessage, newMessage) {
   if (newMessage.partial)
     newMessage = await newMessage.fetch();
   
+  let logChannel = await this.channels.fetch(this.master.modules.logger.options.logChannelId);
+  if (logChannel.guildId !== newMessage.guildId)
+    return;
+  
   let embeds = [];
   let mainFields = [];
   
@@ -81,7 +83,7 @@ export async function messageUpdate(oldMessage, newMessage) {
   newAttachList = newAttachList.map(attachment => `[${attachment.name}](${attachment.url}) (${attachment.contentType})`).join(', ');
   
   // Show the old (if possible) and new messages and a brief list of attachments, if any.
-  if ('content' in oldMessage)
+  if (oldMessage && 'content' in oldMessage)
   {
     mainFields.push({
       name: 'Old Message',
@@ -130,7 +132,6 @@ export async function messageUpdate(oldMessage, newMessage) {
     },*/
   });
   
-  let logChannel = await this.channels.fetch(logChannelId);
   await logChannel.send({
     embeds,
   });
@@ -139,6 +140,10 @@ export async function messageUpdate(oldMessage, newMessage) {
 export async function messageDelete(message) {
   if (message.partial)
     message = await message.fetch();
+  
+  let logChannel = await this.channels.fetch(this.master.modules.logger.options.logChannelId);
+  if (logChannel.guildId !== message.guildId)
+    return;
   
   let embeds = [];
   let mainFields = [];
@@ -183,7 +188,6 @@ export async function messageDelete(message) {
     },*/
   });
   
-  let logChannel = await this.channels.fetch(logChannelId);
   await logChannel.send({
     embeds,
   });
@@ -202,7 +206,7 @@ export async function raw(packet) {
   /*else if(packet.t === 'MESSAGE_DELETE') {
     let channel = await this.channels.fetch(packet.d.channel_id);
     if (!channel.messages.cache.get(packet.d.id)) { // TODO: doesn't work. how check if cached? otherwise event will fire twice
-      this.emit('messageDelete', {channel});
+      this.emit('messageDelete', {channel, channelId:packet.d.channel_id, guildId:packet.d.guild_id});
     }
   }*/
   /*else {

@@ -135,7 +135,7 @@ export default class Application {
     
     try {
       let filepath = this.toModulePath(filename, append);
-      this.logDebug(`Importing module '${filepath}'.`);
+      this.logDebug(`Importing file '${filepath}'.`);
       return await import(filepath, options);
     }
     catch(err) {

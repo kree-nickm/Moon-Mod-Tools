@@ -41,6 +41,8 @@ export default class Bot extends Application {
    */
   static slashCommands = {};
   
+  static modules = {};
+  
   static eventFiles = {};
 
   static interactionRegistry = {};
@@ -93,6 +95,9 @@ export default class Bot extends Application {
     });
     this.client.master = this;
     
+    for(let module of this.config.modules??[])
+      await this.loadModule(module);
+    
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
     
@@ -103,6 +108,20 @@ export default class Bot extends Application {
     await this._loadSlashCommands();
     await this._sendInteractions();
     
+    return true;
+  }
+  
+  static async loadModule({name, options}={}) {
+    this.modules[name] = {
+      imports: await this.safeImport(`modules/${name}/index.mjs`),
+      options: options,
+    };
+    this.logInfo(`Loaded module '${name}'.`);
+    if (typeof(this.modules[name].imports.initialize) === 'function') {
+      let initialize = this.modules[name].imports.initialize(this, options);
+      if(initialize instanceof Promise)
+        await initialize;
+    }
     return true;
   }
   
