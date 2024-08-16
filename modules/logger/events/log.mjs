@@ -4,9 +4,13 @@
  * Requires the Message partial in order to receive any events on messages that existed before the bot logged in.
  */
 
+/**
+ * Because Discord.js only fires messageDelete for messages that are cached, we need to use this to determine which messages those are. Because when we use the raw event to log non-cached message deletion, there is no other way the raw event can know if messageDelete has also fired.
+ */
+let messageDeleteTimer;
+
 function attachmentToEmbed(attachment, overwrites={}) {
   let embed = {
-    description: `<${attachment.url}> (${attachment.id})`,
     fields: [
       {
         name: 'Name',
@@ -23,29 +27,17 @@ function attachmentToEmbed(attachment, overwrites={}) {
     ],
   };
   
-  if (attachment.contentType.startsWith('image/') || attachment.contentType.startsWith('video/')) {
+  if(attachment.width && attachment.height)
     embed.fields.push({
       name: 'Size (Pixels)',
       value: `${attachment.width}x${attachment.height}`,
     });
-    if (attachment.contentType.startsWith('image/'))
-      embed.image = {
-        url: attachment.url,
-        proxy_url: attachment.proxyURL,
-      };
-    if (attachment.contentType.startsWith('video/'))
-      embed.video = {
-        url: attachment.url,
-        proxy_url: attachment.proxyURL,
-      };
-  }
   
-  if (attachment.contentType.startsWith('audio/')) {
+  if (attachment.contentType.startsWith('audio/'))
     embed.fields.push({
       name: 'Duration',
       value: `${attachment.duration}s`,
     });
-  }
   
   return Object.assign(embed, overwrites);
 }
@@ -62,6 +54,7 @@ export async function messageUpdate(oldMessage, newMessage) {
   
   let embeds = [];
   let mainFields = [];
+  let files = [];
   
   let oldAttachList = [];
   let newAttachList = [];
@@ -70,12 +63,14 @@ export async function messageUpdate(oldMessage, newMessage) {
       oldAttachList.push(attachment);
       if (!newMessage.attachments.has(attachmentId)) {
         embeds.push(attachmentToEmbed(attachment, {title:'Attachment Removed'}));
+        files.push(attachment);
       }
     }
     for(let [attachmentId, attachment] of newMessage.attachments??[]) {
       newAttachList.push(attachment);
       if (!oldMessage?.attachments.has(attachmentId)) {
         embeds.push(attachmentToEmbed(attachment, {title:'Attachment Added'}));
+        files.push(attachment);
       }
     }
   }
@@ -134,10 +129,18 @@ export async function messageUpdate(oldMessage, newMessage) {
   
   await logChannel.send({
     embeds,
+    files,
   });
 };
 
 export async function messageDelete(message) {
+  if(messageDeleteTimer) {
+    clearTimeout(messageDeleteTimer);
+    messageDeleteTimer = null;
+  }
+  else
+    messageDeleteTimer = true;
+  
   if (message.partial)
     message = await message.fetch();
   
@@ -147,10 +150,14 @@ export async function messageDelete(message) {
   
   let embeds = [];
   let mainFields = [];
+  let files = [];
   
-  if (message.attachments?.size)
-    for(let [attachmentId, attachment] of message.attachments)
+  if (message.attachments?.size) {
+    for(let [attachmentId, attachment] of message.attachments) {
       embeds.push(attachmentToEmbed(attachment, {title:'Attachment Removed'}));
+      files.push(attachment);
+    }
+  }
   
   // Show the old message if possible.
   if ('content' in message)
@@ -190,12 +197,13 @@ export async function messageDelete(message) {
   
   await logChannel.send({
     embeds,
+    files,
   });
 };
 
 export async function raw(packet) {
-  //console.log(packet);
   if(packet.t === 'MESSAGE_UPDATE') {
+    this.master.logDebug(`Raw Event:`, packet);
     let timestamp = Date.parse(packet.d.timestamp);
     if(timestamp < this.readyTimestamp) {
       let channel = await this.channels.fetch(packet.d.channel_id);
@@ -203,13 +211,16 @@ export async function raw(packet) {
       this.emit('messageUpdate', null, message);
     }
   }
-  /*else if(packet.t === 'MESSAGE_DELETE') {
+  else if(packet.t === 'MESSAGE_DELETE') {
     let channel = await this.channels.fetch(packet.d.channel_id);
-    if (!channel.messages.cache.get(packet.d.id)) { // TODO: doesn't work. how check if cached? otherwise event will fire twice
-      this.emit('messageDelete', {channel, channelId:packet.d.channel_id, guildId:packet.d.guild_id});
-    }
-  }*/
-  /*else {
-    this.master.logDebug(`Raw Event:`, packet);
-  }*/
+    if(!messageDeleteTimer)
+      messageDeleteTimer = setTimeout(()=>{
+        this.emit('messageDelete', {id:packet.d.id, channel, channelId:packet.d.channel_id, guildId:packet.d.guild_id});
+      }, 500);
+    else
+      messageDeleteTimer = null;
+  }
+  //else {
+  //  this.master.logDebug(`Raw Event:`, packet);
+  //}
 };
