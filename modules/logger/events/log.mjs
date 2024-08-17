@@ -1,14 +1,14 @@
 /**
- * Requires the GuildMessages intent in order to receive this event.
- * Requires the MessageContent intent in order to see any content of messages. MESSAGE CONTENT must also be enabled in the bot's Discord developer portal.
- * Requires the Message partial in order to receive any events on messages that existed before the bot logged in.
- */
-
-/**
  * Because Discord.js only fires messageDelete for messages that are cached, we need to use this to determine which messages those are. Because when we use the raw event to log non-cached message deletion, there is no other way the raw event can know if messageDelete has also fired.
  */
 let messageDeleteTimer;
 
+/**
+ * Convert an Attachment into an embed object.
+ * @param Attachment attachment - The Attachment object reported by Discord.js
+ * @param Object overwrites - Properties to include in the embed object after it has been populated with Attachment data.
+ * @returns Object - An object to be included in the embeds array of a message's options before sending it.
+ */
 function attachmentToEmbed(attachment, overwrites={}) {
   let embed = {
     fields: [
@@ -48,14 +48,16 @@ export async function messageUpdate(oldMessage, newMessage) {
   if (newMessage.partial)
     newMessage = await newMessage.fetch();
   
+  // Assume each guild only has one log channel, and each log channel only reports messages from its guild.
   let logChannel = await this.channels.fetch(this.master.modules.logger.options.logChannelId);
   if (logChannel.guildId !== newMessage.guildId)
     return;
   
   let embeds = [];
   let mainFields = [];
-  let files = [];
   
+  // Collect the messages' attachments so they can be reported in the logger.
+  let files = [];
   let oldAttachList = [];
   let newAttachList = [];
   if (oldMessage?.attachments?.size || newMessage?.attachments?.size) {
@@ -117,14 +119,12 @@ export async function messageUpdate(oldMessage, newMessage) {
     value: `<t:${Math.round(newMessage.editedTimestamp/1000)}:R>`,
   });
   
+  // Construct the primary embed object and add it onto the front of the embeds.
   embeds.unshift({
     title: 'Message Updated',
     description: `\`${newMessage.author.username}\` ${newMessage.author} (${newMessage.author.id})`,
     color: 0x6666ff,
     fields: mainFields,
-    /*footer: {
-      text: ``,
-    },*/
   });
   
   await logChannel.send({
@@ -134,6 +134,7 @@ export async function messageUpdate(oldMessage, newMessage) {
 };
 
 export async function messageDelete(message) {
+  // Prevent this function from running twice, since it will also always be called by the raw event handler.
   if(messageDeleteTimer) {
     clearTimeout(messageDeleteTimer);
     messageDeleteTimer = null;
@@ -144,14 +145,16 @@ export async function messageDelete(message) {
   if (message.partial)
     message = await message.fetch();
   
+  // Assume each guild only has one log channel, and each log channel only reports messages from its guild.
   let logChannel = await this.channels.fetch(this.master.modules.logger.options.logChannelId);
   if (logChannel.guildId !== message.guildId)
     return;
   
   let embeds = [];
   let mainFields = [];
-  let files = [];
   
+  // Collect the message's attachments so they can be reported in the logger.
+  let files = [];
   if (message.attachments?.size) {
     for(let [attachmentId, attachment] of message.attachments) {
       embeds.push(attachmentToEmbed(attachment, {title:'Attachment Removed'}));
@@ -185,14 +188,12 @@ export async function messageDelete(message) {
     value: `<t:${Math.round(Date.now()/1000)}:R>`,
   });
   
+  // Construct the primary embed object and add it onto the front of the embeds.
   embeds.unshift({
     title: 'Message Deleted',
     description: message.author ? `\`${message.author.username}\` ${message.author} (${message.author.id})` : `in channel ${message.channel}`,
     color: 0xff0000,
     fields: mainFields,
-    /*footer: {
-      text: ``,
-    },*/
   });
   
   await logChannel.send({
@@ -203,20 +204,20 @@ export async function messageDelete(message) {
 
 export async function raw(packet) {
   if(packet.t === 'MESSAGE_UPDATE') {
-    this.master.logDebug(`Raw Event:`, packet);
     let timestamp = Date.parse(packet.d.timestamp);
-    if(timestamp < this.readyTimestamp) {
+    if(timestamp && timestamp < this.readyTimestamp) {
       let channel = await this.channels.fetch(packet.d.channel_id);
       let message = await channel.messages.fetch(packet.d.id);
       this.emit('messageUpdate', null, message);
     }
   }
   else if(packet.t === 'MESSAGE_DELETE') {
-    let channel = await this.channels.fetch(packet.d.channel_id);
-    if(!messageDeleteTimer)
+    if(!messageDeleteTimer) {
+      let channel = await this.channels.fetch(packet.d.channel_id);
       messageDeleteTimer = setTimeout(()=>{
         this.emit('messageDelete', {id:packet.d.id, channel, channelId:packet.d.channel_id, guildId:packet.d.guild_id});
       }, 500);
+    }
     else
       messageDeleteTimer = null;
   }
