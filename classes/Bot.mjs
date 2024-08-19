@@ -28,24 +28,39 @@ export default class Bot extends Application {
   static rest;
   
   /**
-   * @typedef SlashCommand
+   * @typedef ApplicationCommandDef
    * @type {Object}
-   * @property {Object} definition - Slash command definition as required by the Discord API.
-   * @property {Function} handler - The function to run when the slash command is used.
-   * @property {Object.<string, Object>} api - Collection of responses from the API when each command was registered, with the key being the guild ID where it was registered, or '*' for global commands.
-   * @property {Object.<string, *>} options - A copy of the relevant properties in the slash command definition in the configuration file.
+   * @property {Object} definition - Application command definition as required by the Discord API.
+   * @property {Function} handler - The function to run when the application command is used.
+   * @property {Object.<string, Object>} api - Dictionary of responses from the API when each command was registered, with the key being the guild ID where it was registered, or '*' for global commands.
+   * @property {Object.<string, *>} options - A copy of the relevant properties in the application command definition in the configuration file.
    */
+   
   /**
    * The currently registered slash commands.
-   * @type {Object.<string, SlashCommand>}
+   * @type {Object.<string, ApplicationCommandDef>}
    */
   static slashCommands = {};
+  
+  /**
+   * The currently registered User context menu commands.
+   * @type {Object.<string, ApplicationCommandDef>}
+   */
+  static userCommands = {};
+  
+  /**
+   * The currently registered Message context menu commands.
+   * @type {Object.<string, ApplicationCommandDef>}
+   */
+  static messageCommands = {};
   
   static modules = {};
   
   static eventFiles = {};
 
   static interactionRegistry = {};
+  
+  static interactionsSent = false;
   
   /**
    * If this application already had interactions registered in the Discord API before this bot was started, they will be collected here.
@@ -74,8 +89,8 @@ export default class Bot extends Application {
       this.config.intents = [];
     if (!this.config.partials)
       this.config.partials = [];
-    if (!this.config.slashCommands)
-      this.config.slashCommands = [];
+    if (!this.config.applicationCommands)
+      this.config.applicationCommands = [];
     if (!this.config.ownerId)
       this.logWarn(`No ownerId set in the configuration file. You may want to specify your Discord user ID in that property to ensure you have full bot access.`);
   }
@@ -89,24 +104,39 @@ export default class Bot extends Application {
       return false;
     }
     
+    for(let module of this.config.modules??[])
+      await this.loadModule(module);
+    
+    // Note: Is it better to just add them, or error out if they are missing?
+    // The former is obviously easier, but the latter gives the host more
+    // control and transparency over which intents the include.
+    let intents = this.config.intents;
+    let partials = this.config.partials;
+    for(let name in this.modules) {
+      if (Array.isArray(this.modules[name].imports.intents))
+        intents = intents.concat(this.modules[name].imports.intents);
+      if (Array.isArray(this.modules[name].imports.partials))
+        partials = partials.concat(this.modules[name].imports.partials);
+    }
+    intents = [...new Set(intents)];
+    partials = [...new Set(partials)];
+    
+    this.logDebug(`Creating Discord.js client.`, {intents, partials});
     this.client = new Client({
-      intents: this.config.intents.map(intent => GatewayIntentBits[intent]),
-      partials: this.config.partials.map(partial => Partials[partial]),
+      intents: intents.map(intent => GatewayIntentBits[intent]),
+      partials: partials.map(partial => Partials[partial]),
     });
     this.client.master = this;
     
-    for(let module of this.config.modules??[])
-      await this.loadModule(module);
+    for(let name in this.modules)
+      if (typeof(this.modules[name].imports.onStart) === 'function')
+        this.modules[name].imports.onStart(this, this.modules[name].options);
     
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
     
     this.rest = new REST().setToken(this.config.token);
     await this.client.login(this.config.token);
-    
-    await this._fetchInteractions();
-    await this._loadSlashCommands();
-    await this._sendInteractions();
     
     return true;
   }
@@ -117,11 +147,6 @@ export default class Bot extends Application {
       options: options,
     };
     this.logInfo(`Loaded module '${name}'.`);
-    if (typeof(this.modules[name].imports.initialize) === 'function') {
-      let initialize = this.modules[name].imports.initialize(this, options);
-      if(initialize instanceof Promise)
-        await initialize;
-    }
     return true;
   }
   
@@ -194,41 +219,50 @@ export default class Bot extends Application {
     return true;
   }
   
-  static async _loadSlashCommands() {
-    for(let {filename, owner, guildIds} of this.config.slashCommands) {
-      let {definition, handler} = await this.safeImport(filename);
-      if (!definition?.name) {
-        this.logError(`Invalid slash command definition:`, definition);
-        return false;
-      }
-      
-      if (typeof(handler) !== 'function') {
-        this.logError(`Tried to register a non-function to the slash command '${definition.name}'.`);
-        return false;
-      }
-      
-      this.slashCommands[definition.name] = {
-        definition,
-        handler,
-        api: {},
-        options: {
-          filename,
-          owner,
-        },
-      };
-      
-      if (!Array.isArray(guildIds))
-        guildIds = ['*'];
-      for(let guildId of guildIds) {
-        if (!this.interactionRegistry[guildId])
-          this.interactionRegistry[guildId] = [];
-        this.interactionRegistry[guildId].push(definition);
-      }
+  static async registerApplicationCommand({filename, owner, guildIds}) {
+    let {definition, handler} = await this.safeImport(filename);
+    if (!definition?.name) {
+      this.logError(`Invalid application command definition:`, definition);
+      return false;
+    }
+    
+    if (typeof(handler) !== 'function') {
+      this.logError(`Tried to register a non-function to the application command '${definition.name}'.`);
+      return false;
+    }
+    
+    let commandData = {
+      definition,
+      handler,
+      api: {},
+      options: {
+        filename,
+        owner,
+      },
+    };
+    
+    if (definition?.type === 2)
+      this.userCommands[definition.name] = commandData;
+    else if (definition?.type === 3)
+      this.messageCommands[definition.name] = commandData;
+    else
+      this.slashCommands[definition.name] = commandData;
+    
+    if (!Array.isArray(guildIds))
+      guildIds = ['*'];
+    for(let guildId of guildIds) {
+      if (!this.interactionRegistry[guildId])
+        this.interactionRegistry[guildId] = [];
+      this.interactionRegistry[guildId].push(definition);
+    }
+    
+    if (this.interactionsSent) {
+      this.logError(`New interaction registered after interactions have already been sent to the Discord API. This is not yet supported.`);
     }
   }
   
   static async _sendInteractions() {
-    this.logInfo(`Registering slash commands...`);
+    this.logInfo(`Registering application commands...`);
     for (let guildId in this.interactionRegistry) {
       let url = guildId === '*'
         ? Routes.applicationCommands(this.config.id)
@@ -236,129 +270,25 @@ export default class Bot extends Application {
       let response = await this.rest.put(url, {body: this.interactionRegistry[guildId]});
       // Finally, store the responses.
       for (let definition of response) {
-        this.slashCommands[definition.name].api[definition.guild_id??'*'] = definition;
-        this.logInfo(`  /${definition.name} (${definition.guild_id??'*'})`);
+        if(definition.type === 1) {
+          this.slashCommands[definition.name].api[definition.guild_id??'*'] = definition;
+          this.logInfo(`  /${definition.name} (${definition.guild_id??'*'})`);
+        }
+        else if(definition.type === 2) {
+          this.userCommands[definition.name].api[definition.guild_id??'*'] = definition;
+          this.logInfo(`  User->${definition.name} (${definition.guild_id??'*'})`);
+        }
+        else if(definition.type === 3) {
+          this.messageCommands[definition.name].api[definition.guild_id??'*'] = definition;
+          this.logInfo(`  Message->${definition.name} (${definition.guild_id??'*'})`);
+        }
+        else {
+          this.logWarn(`Invalid application command response received from Discord API.`, {definition});
+        }
       }
     }
+    this.interactionsSent = true;
     this.logInfo(`Done.`);
-  }
-  
-  /**
-   * Adds a slash command to the bot's command list and sends the Discord API a request to create it.
-   */
-  static async registerSlashCommand({definition,handler}={}, {filename,guildIds,owner,overwrite=true}={}) {
-    if (!definition?.name) {
-      this.logError(`Invalid slash command definition:`, definition);
-      return false;
-    }
-    
-    if (typeof(handler) !== 'function') {
-      this.logError(`Tried to register a non-function to the slash command '${definition.name}'.`);
-      return false;
-    }
-    
-    let api = {};
-    if (Array.isArray(guildIds)) {
-      for(let guildId of guildIds) {
-        let guild = await this.client.guilds.fetch(guildId);
-        if (!overwrite && this.existingInteractions[guildId][definition.name]) {
-          if (this.compareInteractionDefinitions(this.existingInteractions[guildId][definition.name], definition)) {
-            this.logWarn(`Slash command '${definition.name}' was already registered to guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}) before this bot was started, but it seems to be the same as the one on this bot, so we'll just use it.`);
-            api[guildId] = this.existingInteractions[guildId][definition.name];
-          }
-          else {
-            this.logError(`Slash command '${definition.name}' was already registered to guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}) before this bot was started. We will not overwrite it.`);
-          }
-        }
-        else {
-          let response = await this.rest.post(
-            Routes.applicationGuildCommands(this.config.id, guildId),
-            {body: definition});
-          this.logInfo(`Registered slash command '${response.name}' for guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}).`);
-          api[guildId] = response;
-        }
-      }
-    }
-    else {
-      if (!overwrite && this.existingInteractions['*'][definition.name]) {
-        if (this.compareInteractionDefinitions(this.existingInteractions['*'][definition.name], definition)) {
-          this.logWarn(`Slash command '${definition.name}' was already registered globally before this bot was started, but it seems to be the same as the one on this bot, so we'll just use it.`);
-          api['*'] = this.existingInteractions['*'][definition.name];
-        }
-        else {
-          this.logError(`Slash command '${definition.name}' was already registered globally before this bot was started. We will not overwrite it.`);
-        }
-      }
-      else {
-        let response = await this.rest.post(
-          Routes.applicationCommands(this.config.id),
-          {body: definition});
-        this.logInfo(`Registered slash command '${response.name}' globally.`);
-        api['*'] = response;
-      }
-    }
-    
-    if (!Object.entries(api).length) {
-      this.logWarn(`No slash commands were registered in attempt to register '${definition.name}'.`);
-      return false;
-    }
-    
-    this.slashCommands[definition.name] = {
-      definition,
-      handler,
-      api,
-      options: {
-        filename,
-        owner,
-      },
-    };
-    return true;
-  }
-  
-  /**
-   * Removes a slash command from the bot's command list and sends the Discord API a request to delete it.
-   */
-  static async unregisterSlashCommand(name, {guildId,guildIds}={}) {
-    if (!name) {
-      this.logError(`Cannot unregister slash command with no name provided.`);
-      return false;
-    }
-    
-    if (!this.slashCommands[name]?.api) {
-      this.logWarn(`Cannot unregister unknown slash command '${name}'.`);
-      return false;
-    }
-    
-    // Collect the API endpoints needed to unregister each command, and remove the commands from the bot's memory.
-    let urls = [];
-    if (!guildIds?.length && guildId)
-      guildIds = [guildId];
-    for(let gid in this.slashCommands[name].api) {
-      if (!guildIds?.length || guildIds.includes(gid)) {
-        if (gid === '*')
-          urls.push(Routes.applicationCommand(this.config.id, this.slashCommands[name].api[gid].id));
-        else
-          urls.push(Routes.applicationGuildCommand(this.config.id, gid, this.slashCommands[name].api[gid].id));
-        delete this.slashCommands[name].api[gid];
-      }
-    }
-    if (!Object.entries(this.slashCommands[name].api).length)
-      delete this.slashCommands[name];
-    
-    if (!urls.length) {
-      this.logWarn(`No slash commands to remove that fit the parameters.`, {name,guildId,guildIds});
-      return false;
-    }
-    
-    for(let url of urls) {
-      let response = await this.rest.delete(url);
-      let guilds = guildIds?.length ? await Promise.all(guildIds.map(guildId => this.client.guilds.fetch(guildId))) : [];
-      let guildsStr = guilds.length
-        ? 'Guilds: '+guilds.map(guild => `${guild?.name??"<guild name unavailable without Guilds intent>"} (${guild.id})`).join(', ')
-        : '';
-      this.logInfo(`Unregistered slash command '${name}'.`, guildsStr);
-    }
-    return true;
   }
   
   static compareInteractionDefinitions(api, file) {
@@ -420,47 +350,70 @@ export default class Bot extends Application {
     }
   }
 
-  static _onReady(client) {
+  static async _onReady(client) {
+    await this._fetchInteractions();
+    
+    for(let name in this.modules) {
+      if (typeof(this.modules[name].imports.onReady) === 'function') {
+        let ready = this.modules[name].imports.onReady(this, this.modules[name].options);
+        if (ready instanceof Promise)
+          await ready;
+      }
+    }
+    
+    for(let appCommand of this.config.applicationCommands) {
+      await this.registerApplicationCommand(appCommand);
+    }
+    
+    await this._sendInteractions();
+    
     this.logInfo(`Discord bot is ready.`);
   }
 
   static async _onInteractionCreate(interaction) {
-    // Handle slash commands.
-    if (interaction.isChatInputCommand()) {
-      if (!this.slashCommands[interaction.commandName]) {
-        this.logError(`Bot received an unknown slash command '${interaction.commandName}'.`, {knownSlashCommands:this.slashCommands});
-        return;
-      }
-      
-      if (this.slashCommands[interaction.commandName].options.owner && interaction.user.id !== this.config.ownerId) {
-        this.logInfo(`User ${interaction.user?.username} (${interaction.user?.id}) attempted to use an owner-only slash command '${interaction.commandName}'.`);
-        await interaction.reply({content:`You can't do that.`, ephemeral:true});
-        return;
-      }
-      
-      // Log the interaction to the console.
-      let channel = await this.client.channels.fetch(interaction.channelId);
-      if (channel.isDMBased()) {
-        this.logInfo(`Slash command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in a DM.`);
-      }
-      else if (interaction.guildId) {
-        let guild = await this.client.guilds.fetch(interaction.guildId);
-        if(channel.isThread()) {
-          let parentChannel = await this.client.channels.fetch(channel.parentId);
-          this.logInfo(`Slash command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${interaction.guildId}) channel #${parentChannel?.name} (${parentChannel.id}) thread "${channel?.name}" (${channel.id}).`);
-        }
-        else {
-          this.logInfo(`Slash command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${interaction.guildId}) channel #${channel?.name} (${channel.id}).`);
-        }
+    let commandList;
+    if (interaction.isChatInputCommand())
+      commandList = this.slashCommands;
+    else if (interaction.isUserContextMenuCommand())
+      commandList = this.userCommands;
+    else if (interaction.isMessageContextMenuCommand())
+      commandList = this.messageCommands;
+    else {
+      this.logError(`Bot received an unknown interaction.`, {interaction});
+      return;
+    }
+    
+    if (!commandList[interaction.commandName]) {
+      this.logError(`Bot received an unknown command '${interaction.commandName}'.`, {knownCommands:commandList});
+      return;
+    }
+    
+    if (commandList[interaction.commandName].options.owner && interaction.user.id !== this.config.ownerId) {
+      this.logInfo(`User ${interaction.user?.username} (${interaction.user?.id}) attempted to use an owner-only application command '${interaction.commandName}'.`);
+      interaction.reply({content:`You can't do that.`, ephemeral:true});
+      return;
+    }
+    
+    // Handle the interaction.
+    commandList[interaction.commandName].handler.call(this.client, interaction);
+    
+    // Log the interaction to the console.
+    let channel = await this.client.channels.fetch(interaction.channelId);
+    if (channel.isDMBased()) {
+      this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in a DM.`);
+    }
+    else if (interaction.guildId) {
+      let guild = await this.client.guilds.fetch(interaction.guildId);
+      if(channel.isThread()) {
+        let parentChannel = await this.client.channels.fetch(channel.parentId);
+        this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${interaction.guildId}) channel #${parentChannel?.name} (${parentChannel.id}) thread "${channel?.name}" (${channel.id}).`);
       }
       else {
-        this.logInfo(`Slash command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in an unknown location; see channel object:`, channel);
+        this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${interaction.guildId}) channel #${channel?.name} (${channel.id}).`);
       }
-      
-      // Handle the interaction.
-      this.slashCommands[interaction.commandName].handler.call(this.client, interaction);
     }
-    else
-      this.logError(`Bot received an unknown interaction:`, interaction);
+    else {
+      this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in an unknown location; see channel object:`, channel);
+    }
   }
 }

@@ -15,7 +15,7 @@ Example configuration file:
   "token": "abc123-abc123-abc123-abc123",
   "intents": ["Guilds"],
   "partials": ["Channel"],
-  "slashCommands": [
+  "applicationCommands": [
     {
       "filename": "events/shutdown.mjs",
       "guildIds": [],
@@ -36,8 +36,8 @@ Example configuration file:
 * **id / token** - *(Both required)* These come from the [Discord developer portal](https://discord.com/developers/applications) for your bot. **id** is the Application ID from the General Information page. **token** comes from the Bot page (but can only be viewed once, so don't miss it).
 * **intents** - Array of strings, each being a member of [GatewayIntentBits](https://discord-api-types.dev/api/discord-api-types-v10/enum/GatewayIntentBits).
 * **partials** - Array of strings, each being a member of [Partials](https://discordjs.guide/popular-topics/partials.html#enabling-partials).
-* **slashCommands** - Array of objects, each a definition of a slash command. Slash command definitions have the following properties:
-  * **filename** - File that contains the [properties of the slash command](#slash-command-file).
+* **applicationCommands** - Array of objects, each a definition of an application command. Application command definitions have the following properties:
+  * **filename** - File that contains the [properties of the application command](#application-command-file).
   * **guildIds** - Array of guild IDs where this command will be available. Do not include this property for global commands.
   * **owner** - True or false, whether this command can only be used by the bot owner.
 * **modules** - Array of module definitions to specify which installed modules should be loaded for this bot. Module definitions have the following properties:
@@ -45,19 +45,19 @@ Example configuration file:
   * **options** - An object with module-specific configuration options. Different modules will want different properties here.
 * **ownerId** - Discord ID of the user who owns the bot. This user will have access to all bot features, and that access cannot be removed.
 
-## Slash Command File
-Example slash command file:
+## Application Command File
+Example application command file:
 ```javascript
 /**
- * The function to run when the associated slash command is used.
- * @param ChatInputCommandInteraction interaction - The interaction object created by Discord.js for this slash command.
+ * The function to run when the associated application command is used.
+ * @param CommandInteraction interaction - The interaction object created by Discord.js for this application command.
  */
 export function handler(interaction) {
   interaction.reply({content:`I see you.`, ephemeral:true});
 };
 
 /**
- * The definition for the slash command, which will be sent to the Discord API.
+ * The definition for the application command, which will be sent to the Discord API.
  * @type Object.<string, *>
  */
 export const definition = {
@@ -65,24 +65,52 @@ export const definition = {
   "description": "Doesn't do much.",
 };
 ```
-Slash command files must export two values:
-* A Function as `handler`, which is the function to run when [the command is used](https://discord.js.org/docs/packages/discord.js/main/Client:Class#interactionCreate). See [here](https://discord.js.org/docs/packages/discord.js/main/ChatInputCommandInteraction:Class) for the documentation of the interaction object.
-* An Object as `definition`, which is the slash command definition as described here: [global commands](https://discord.com/developers/docs/interactions/application-commands#create-global-application-command-json-params), [guild-specific commands](https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command-json-params).
+Application command files must export two values:
+* A Function as `handler`, which is the function to run when [the command is used](https://discord.js.org/docs/packages/discord.js/main/Client:Class#interactionCreate). The interaction object documentation can be found at one of the following, depending on the type of interaction:
+  * [Slash command](https://discord.js.org/docs/packages/discord.js/main/ChatInputCommandInteraction:Class)
+  * [Message context menu](https://discord.js.org/docs/packages/discord.js/main/MessageContextMenuCommandInteraction:Class)
+  * [User context menu](https://discord.js.org/docs/packages/discord.js/main/UserContextMenuCommandInteraction:Class)
+* An Object as `definition`, which is the application command definition as described here: [global commands](https://discord.com/developers/docs/interactions/application-commands#create-global-application-command-json-params), [guild-specific commands](https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command-json-params).
 
 ## Modules
 A module is a set of features with a common purpose. Each module should be contained within its own directory inside of the `modules/` directory. Inside of the module's directory, a file named `index.mjs` must be present, which will be imported when the module is loaded. An example module index file:
 ```javascript
 /**
+ * Array of strings, specifying the intents that this module requires. See the intents description in the configuration file section for more info.
+ */
+export const intents = [];
+
+/**
+ * Array of strings, specifying the partials that this module requires. See the partials description in the configuration file section for more info.
+ */
+export const partials = [];
+
+/**
  * Function that is called during bot startup, before the bot has logged in. Use it to assign event listeners or other definitions that do not require an active connection to Discord. This function can be async, in which case the bot startup will await it.
  * @param Bot bot - Reference to the Bot.
  * @param Object.<string, *> options - The options defined in the configuration file for this module.
  */
-export function initialize(bot, options) {
+export function onStart(bot, options) {
+  // Code.
+};
+
+/**
+ * Function that is called after the bot is logged in and ready. This function can be async, in which case the bot startup will await it.
+ * @param Bot bot - Reference to the Bot.
+ * @param Object.<string, *> options - The options defined in the configuration file for this module.
+ */
+export function onReady(bot, options) {
   // Code.
 };
 ```
 Modules included with this bot are below:
+
 ### logger
 Logs the updating or deleting of messages on a server. Retains any attachments that are deleted with the message as well.
 Options:
 * **logChannelId** - The snowflake ID of the channel where messages are to be logged.
+
+### modmail
+***WORK IN PROGRESS*** Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and anonymously interact with the user.
+Options:
+* **mailChannelId** - The snowflake ID of the channel where modmail report threads will be created for mods to discuss the report. Must be a forum channel.

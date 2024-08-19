@@ -49,34 +49,46 @@ export default class Application {
   static log(type, ...args) {
     let func;
     let opener = "";
+    let midway = "";
     let closer = "";
     if (type === 'error') {
       func = console.error;
       if (process.title === "Windows PowerShell") {
-        opener = "\x1b[30m\x1b[101m";
+        opener = "\x1b[40m\x1b[91m";
+        midway = "\x1b[0m\x1b[91m";
         closer = "\x1b[0m";
       }
     }
     else if (type === 'warn') {
       func = console.warn;
       if (process.title === "Windows PowerShell") {
-        opener = "\x1b[30m\x1b[103m";
+        opener = "\x1b[40m\x1b[93m";
+        midway = "\x1b[0m\x1b[93m";
         closer = "\x1b[0m";
       }
     }
     else if (type === 'debug') {
       func = console.debug;
       if (process.title === "Windows PowerShell") {
-        opener = "\x1b[30m\x1b[100m";
+        opener = "\x1b[40m\x1b[90m";
+        midway = "\x1b[0m\x1b[90m";
         closer = "\x1b[0m";
       }
       else
         return;
     }
+    else if (type === 'log') {
+      func = console.log;
+      if (process.title === "Windows PowerShell") {
+        opener = "\x1b[40m";
+        midway = "\x1b[0m";
+        closer = "";
+      }
+    }
     else
       func = console.log;
     if (func)
-      func(`${opener}[${(new Date()).toUTCString()}]${closer}`, ...args);
+      func(`${opener}[${(new Date()).toUTCString()}]${midway}`, ...args, closer);
   }
   
   /**
