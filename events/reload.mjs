@@ -11,6 +11,10 @@ export async function handler(interaction) {
     let command = interaction.options.getString('command');
     await interaction.reply({content:`Doesn't work yet.`, ephemeral:true});
   }
+  else if (type === 'module') {
+    let moduleName = interaction.options.getString('module');
+    await interaction.reply({content:`Doesn't work yet.`, ephemeral:true});
+  }
 };
 
 export const definition = {
@@ -38,6 +42,19 @@ export const definition = {
         {
           name: "command",
           description: "Name of the slash command.",
+          type: 3,
+          required: true,
+        },
+      ],
+    },
+    {
+      type: 1,
+      name: 'module',
+      description: 'Reload a module.',
+      options: [
+        {
+          name: "module",
+          description: "Name of the module.",
           type: 3,
           required: true,
         },

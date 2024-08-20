@@ -1,6 +1,6 @@
 {
   "name": "Moon-Mod-Tools",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "Bot for moderator tools in MOONMOON's Discord server.",
   "main": "index.mjs",
   "author": {
@@ -12,7 +12,8 @@
     "url": "https://github.com/Shy-16/Moon-Mod-Tools.git"
   },
   "dependencies": {
-    "discord.js": "^14.13"
+    "discord.js": "^14.13",
+    "sqlite3": "^5.1.7"
   },
   "engines": {
     "node": "^20.16.0"

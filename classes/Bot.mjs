@@ -5,8 +5,11 @@ import Application from './Application.mjs';
  * Contains methods that pertain to a Discord.js bot.
  */
 export default class Bot extends Application {
+  /**
+   * Not yet implemented, but will be a lookup object for which intents are required by which events, to be used to warn you if you accidentally try to listen to events that you do not have the intents for.
+   * @type {Object.<string, string[]>}
+   */
   static RequiredIntents = {
-    
   };
   
   /**
@@ -28,8 +31,7 @@ export default class Bot extends Application {
   static rest;
   
   /**
-   * @typedef ApplicationCommandDef
-   * @type {Object}
+   * @typedef {Object} ApplicationCommandDef
    * @property {Object} definition - Application command definition as required by the Discord API.
    * @property {Function} handler - The function to run when the application command is used.
    * @property {Object.<string, Object>} api - Dictionary of responses from the API when each command was registered, with the key being the guild ID where it was registered, or '*' for global commands.
@@ -37,33 +39,61 @@ export default class Bot extends Application {
    */
    
   /**
-   * The currently registered slash commands.
+   * The currently registered slash commands. The keys are the command names.
    * @type {Object.<string, ApplicationCommandDef>}
    */
   static slashCommands = {};
   
   /**
-   * The currently registered User context menu commands.
+   * The currently registered User context menu commands. The keys are the command names.
    * @type {Object.<string, ApplicationCommandDef>}
    */
   static userCommands = {};
   
   /**
-   * The currently registered Message context menu commands.
+   * The currently registered Message context menu commands. The keys are the command names.
    * @type {Object.<string, ApplicationCommandDef>}
    */
   static messageCommands = {};
   
+  /**
+   * @typedef {Object} BotModule
+   * @property {Object} imports - All of the properties exported by the module's index.mjs file.
+   * @property {Object} options - Module options defined in the configuration file.
+   * @property {Database} [database] - If needed, stores a reference to the database used by the module.
+   */
+  /**
+   * The modules loaded by {@link Bot#loadModule}. These are bot modules from the modules/ directory, not Node.js modules. Perhaps another name should be used, but oh well. The keys are the module names.
+   * @type {Object.<string, BotModule>}
+   */
   static modules = {};
   
+  /**
+   * @typedef {Object} StoredEvent
+   * @property {string} property - The exported property name of the file that contains the event handler.
+   * @property {Function} handler - A references to the function that was assigned to be an event handler.
+   */
+  /**
+   * Stores any files that were used in {@link Bot#registerEventHandlerFile}, so that they can be unregistered or reloaded if necessary. The primary keys are file names; the secondary keys are event names with listeners present in that file.
+   * @type {Object.<string, Object.<string, StoredEvent>>}
+   */
   static eventFiles = {};
-
+  
+  /**
+   * A buffer for all interactions being registered by this bot, before sending them to the Discord API with {@link Bot#_sendInteractions}. The keys are guild IDs, or '*' for global interactions.  The values are interaction definitions.
+   * @type {Object.<string, Object>}
+   */
   static interactionRegistry = {};
   
+  /**
+   * Whether this bot's interactions have already been send to the Discord API with {@link Bot#_sendInteractions}.
+   * @type {boolean}
+   */
   static interactionsSent = false;
   
   /**
-   * If this application already had interactions registered in the Discord API before this bot was started, they will be collected here.
+   * If this application already had interactions registered in the Discord API before this bot was started, they will be collected here by {@link Bot#_fetchInteractions}. The primary keys are either a guild ID or '*' for global; the secondary keys are interaction names. The ultimate values are responses from the Discord API with the defined interaction data.
+   * @type {Object.<string, Object.<string, Object>>}
    */
   static existingInteractions = {};
   
@@ -71,7 +101,8 @@ export default class Bot extends Application {
   
   /**
    * Load a JSON file containing the information that the bot needs to operate.
-   * @param {string} filename - 
+   * @param {string} filename - Path to the configuration file for this bot.
+   * @throws Will throw an error if the file is not a valid configuration file or is missing required information.
    */
   static async loadConfigFile(filename) {
     this.config = await this.importJSON(filename);
@@ -129,12 +160,22 @@ export default class Bot extends Application {
     this.client.master = this;
     
     for(let name in this.modules)
-      if (typeof(this.modules[name].imports.onStart) === 'function')
-        this.modules[name].imports.onStart(this, this.modules[name].options);
+      if (typeof(this.modules[name].imports.onStart) === 'function') {
+        try {
+          let start = this.modules[name].imports.onStart.call(this, this.modules[name]);
+          if (start && start instanceof Promise)
+            start = await start;
+        }
+        catch(err) {
+          this.logError(`Module '${name}' failed to start.`, err);
+          //delete this.modules[name];
+        }
+      }
     
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
     
+    this.logInfo(`Bot logging in to Discord.`);
     this.rest = new REST().setToken(this.config.token);
     await this.client.login(this.config.token);
     
@@ -261,7 +302,77 @@ export default class Bot extends Application {
     }
   }
   
+  static compareInteractionDefinitions(api, file) {
+    file = Object.assign({
+      default_member_permissions: null,
+      type: 1,
+      description: "",
+      dm_permission: true,
+      contexts: null,
+      integration_types: [],
+      nsfw: false,
+    }, file);
+    if (!api.guild_id)
+      file = Object.assign({
+        dm_permission: true,
+        contexts: null,
+        integration_types: [0],
+      }, file);
+    for(let prop in file) {
+      if(typeof(file[prop]) !== 'object') {
+        if (file[prop] !== api[prop])
+          return false;
+      }
+    }
+    return true;
+  }
+  
+  //---------------------------------------------------------------------------
+  
+  static async _onShutdown() {
+    this.logInfo(`Shutting down.`);
+    
+    await this.client?.destroy();
+    
+    for(let name in this.modules) {
+      if (this.modules[name].database)
+        await this.modules[name].database.close();
+    }
+  }
+  
+  static async _fetchInteractions() {
+    if (Object.entries(this.existingInteractions).length) {
+      this.logError(`Existing interactions have already been fetched from the Discord API and saved:`, {interactions:this.existingInteractions});
+      return;
+    }
+    
+    let interactions = await this.rest.get(Routes.applicationCommands(this.config.id));
+    if (interactions.length) {
+      this.logWarn(`This application already has global application commands registered:`, interactions.map(inter => inter.name).join(', '));
+      this.existingInteractions['*'] = {};
+      for(let interaction of interactions) {
+        this.existingInteractions['*'][interaction.name] = interaction;
+      }
+    }
+    for (let [guildId, guild] of this.client.guilds.cache) {
+      this.logInfo(`Bot is in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}).`);
+      let guildInteractions = await this.rest.get(Routes.applicationGuildCommands(this.config.id, guildId));
+      if (guildInteractions.length) {
+        this.logWarn(`This application already has guild application commands registered in ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}):`, guildInteractions.map(inter => inter.name).join(', '));
+        this.existingInteractions[guildId] = {};
+        for(let interaction of guildInteractions) {
+          this.existingInteractions[guildId][interaction.name] = interaction;
+        }
+      }
+    }
+  }
+
   static async _sendInteractions() {
+    if (this.interactionsSent) {
+      this.logError(`Interactions have already been sent to the Discord API. Further interactions must be sent on an individual basis.`);
+      return;
+    }
+    
     this.logInfo(`Registering application commands...`);
     for (let guildId in this.interactionRegistry) {
       let url = guildId === '*'
@@ -291,73 +402,20 @@ export default class Bot extends Application {
     this.logInfo(`Done.`);
   }
   
-  static compareInteractionDefinitions(api, file) {
-    file = Object.assign({
-      default_member_permissions: null,
-      type: 1,
-      description: "",
-      dm_permission: true,
-      contexts: null,
-      integration_types: [],
-      nsfw: false,
-    }, file);
-    if (!api.guild_id)
-      file = Object.assign({
-        dm_permission: true,
-        contexts: null,
-        integration_types: [0],
-      }, file);
-    for(let prop in file) {
-      if(typeof(file[prop]) !== 'object') {
-        if (file[prop] !== api[prop])
-          return false;
-      }
-    }
-    return true;
-  }
-  
-  //---------------------------------------------------------------------------
-  
-  static async _onShutdown() {
-    
-  }
-  
-  static async _fetchInteractions() {
-    if (Object.entries(this.existingInteractions).length) {
-      this.logWarn(`Existing interactions have already been fetched from the Discord API and saved:`, {interactions:this.existingInteractions});
-      return;
-    }
-    
-    let interactions = await this.rest.get(Routes.applicationCommands(this.config.id));
-    if (interactions.length) {
-      this.logWarn(`This application already has global application commands registered:`, interactions.map(inter => inter.name).join(', '));
-      this.existingInteractions['*'] = {};
-      for(let interaction of interactions) {
-        this.existingInteractions['*'][interaction.name] = interaction;
-      }
-    }
-    for (let g of this.client.guilds.cache) {
-      let guild = await this.client.guilds.fetch(g[0]);
-      this.logInfo(`Bot is in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${g[0]}).`);
-      let guildInteractions = await this.rest.get(Routes.applicationGuildCommands(this.config.id, g[0]));
-      if (guildInteractions.length) {
-        this.logWarn(`This application already has guild application commands registered in ${guild?.name??"<guild name unavailable without Guilds intent>"} (${g[0]}):`, guildInteractions.map(inter => inter.name).join(', '));
-        this.existingInteractions[g[0]] = {};
-        for(let interaction of guildInteractions) {
-          this.existingInteractions[g[0]][interaction.name] = interaction;
-        }
-      }
-    }
-  }
-
   static async _onReady(client) {
     await this._fetchInteractions();
     
     for(let name in this.modules) {
       if (typeof(this.modules[name].imports.onReady) === 'function') {
-        let ready = this.modules[name].imports.onReady(this, this.modules[name].options);
-        if (ready instanceof Promise)
-          await ready;
+        try {
+          let ready = this.modules[name].imports.onReady.call(this, this.modules[name]);
+          if (ready && ready instanceof Promise)
+            ready = await ready;
+        }
+        catch(err) {
+          this.logError(`Module '${name}' failed to ready.`, err);
+          //delete this.modules[name];
+        }
       }
     }
     

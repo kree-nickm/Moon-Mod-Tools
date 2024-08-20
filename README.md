@@ -19,7 +19,7 @@ Example configuration file:
     {
       "filename": "events/shutdown.mjs",
       "guildIds": [],
-      "owner": true,
+      "owner": true
     }
   ],
   "modules": [
@@ -50,15 +50,17 @@ Example application command file:
 ```javascript
 /**
  * The function to run when the associated application command is used.
- * @param CommandInteraction interaction - The interaction object created by Discord.js for this application command.
+ * @param {CommandInteraction} interaction - The interaction object created by
+ * Discord.js for this application command.
  */
 export function handler(interaction) {
   interaction.reply({content:`I see you.`, ephemeral:true});
 };
 
 /**
- * The definition for the application command, which will be sent to the Discord API.
- * @type Object.<string, *>
+ * The definition for the application command, which will be sent to the Discord
+ * API.
+ * @type {Object.<string, *>}
  */
 export const definition = {
   "name": "test",
@@ -70,36 +72,44 @@ Application command files must export two values:
   * [Slash command](https://discord.js.org/docs/packages/discord.js/main/ChatInputCommandInteraction:Class)
   * [Message context menu](https://discord.js.org/docs/packages/discord.js/main/MessageContextMenuCommandInteraction:Class)
   * [User context menu](https://discord.js.org/docs/packages/discord.js/main/UserContextMenuCommandInteraction:Class)
-* An Object as `definition`, which is the application command definition as described here: [global commands](https://discord.com/developers/docs/interactions/application-commands#create-global-application-command-json-params), [guild-specific commands](https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command-json-params).
+* An Object as `definition`, which is the application command definition. Documentation for this definition can be found at the following links:
+  * [Global commands](https://discord.com/developers/docs/interactions/application-commands#create-global-application-command-json-params)
+  * [Guild-specific commands](https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command-json-params).
 
 ## Modules
 A module is a set of features with a common purpose. Each module should be contained within its own directory inside of the `modules/` directory. Inside of the module's directory, a file named `index.mjs` must be present, which will be imported when the module is loaded. An example module index file:
 ```javascript
 /**
- * Array of strings, specifying the intents that this module requires. See the intents description in the configuration file section for more info.
+ * Array of strings, specifying the intents that this module requires. See the
+ * intents description in the configuration file section for more info.
  */
 export const intents = [];
 
 /**
- * Array of strings, specifying the partials that this module requires. See the partials description in the configuration file section for more info.
+ * Array of strings, specifying the partials that this module requires. See the
+ * partials description in the configuration file section for more info.
  */
 export const partials = [];
 
 /**
- * Function that is called during bot startup, before the bot has logged in. Use it to assign event listeners or other definitions that do not require an active connection to Discord. This function can be async, in which case the bot startup will await it.
- * @param Bot bot - Reference to the Bot.
- * @param Object.<string, *> options - The options defined in the configuration file for this module.
+ * Function that is called during bot startup, before the bot has logged in.
+ * Use it to assign event listeners or other definitions that do not require an
+ * active connection to Discord. This function can be async, in which case the
+ * bot startup will await it.
+ * @this Bot
+ * @param {Object} module - The stored data of the loaded module.
  */
-export function onStart(bot, options) {
+export function onStart(module) {
   // Code.
 };
 
 /**
- * Function that is called after the bot is logged in and ready. This function can be async, in which case the bot startup will await it.
- * @param Bot bot - Reference to the Bot.
- * @param Object.<string, *> options - The options defined in the configuration file for this module.
+ * Function that is called after the bot is logged in and ready. This function
+ * can be async, in which case the bot startup will await it.
+ * @this Bot
+ * @param {Object} module - The stored data of the loaded module.
  */
-export function onReady(bot, options) {
+export function onReady(module) {
   // Code.
 };
 ```
@@ -111,6 +121,7 @@ Options:
 * **logChannelId** - The snowflake ID of the channel where messages are to be logged.
 
 ### modmail
-***WORK IN PROGRESS*** Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and anonymously interact with the user.
+Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and anonymously interact with the user.
 Options:
 * **mailChannelId** - The snowflake ID of the channel where modmail report threads will be created for mods to discuss the report. Must be a forum channel.
+* **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores users and their modmail tickets, to make looking them up easier. Default: `modmail.sqlite`

@@ -4,11 +4,11 @@
  */
 export const intents = ["GuildMessages","MessageContent"];
 
-export async function onStart(bot, options) {
-  await bot.registerEventHandlerFile('modules/logger/events/log.mjs', {
+export async function onStart(module) {
+  await this.registerEventHandlerFile('modules/logger/events/log.mjs', {
     messageUpdate: 'messageUpdate',
     messageDelete: 'messageDelete',
     raw: 'raw',
   });
-  bot.logInfo(`Module 'logger' initialized.`);
+  this.logInfo(`Module 'logger' initialized.`);
 };

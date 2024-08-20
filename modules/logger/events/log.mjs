@@ -5,9 +5,9 @@ let messageDeleteTimer;
 
 /**
  * Convert an Attachment into an embed object.
- * @param Attachment attachment - The Attachment object reported by Discord.js
- * @param Object overwrites - Properties to include in the embed object after it has been populated with Attachment data.
- * @returns Object - An object to be included in the embeds array of a message's options before sending it.
+ * @param {Attachment} attachment - The Attachment object reported by Discord.js
+ * @param {Object} overwrites - Properties to include in the embed object after it has been populated with Attachment data.
+ * @returns {Object} - An object to be included in the embeds array of a message's options before sending it.
  */
 function attachmentToEmbed(attachment, overwrites={}) {
   let embed = {
