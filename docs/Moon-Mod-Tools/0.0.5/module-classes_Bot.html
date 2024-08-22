@@ -1,0 +1,3516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>module:classes/Bot - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="module-classes_Application.html">classes/Application</a><ul class='methods'><li data-type='method'><a href="module-classes_Application.html#.importJSON">importJSON</a></li><li data-type='method'><a href="module-classes_Application.html#.loadOptions">loadOptions</a></li><li data-type='method'><a href="module-classes_Application.html#.log">log</a></li><li data-type='method'><a href="module-classes_Application.html#.logDebug">logDebug</a></li><li data-type='method'><a href="module-classes_Application.html#.logError">logError</a></li><li data-type='method'><a href="module-classes_Application.html#.logInfo">logInfo</a></li><li data-type='method'><a href="module-classes_Application.html#.logWarn">logWarn</a></li><li data-type='method'><a href="module-classes_Application.html#.safeImport">safeImport</a></li><li data-type='method'><a href="module-classes_Application.html#.toModulePath">toModulePath</a></li></ul></li><li><a href="module-classes_Bot.html">classes/Bot</a><ul class='methods'><li data-type='method'><a href="module-classes_Bot.html#._fetchInteractions">_fetchInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#._onInteractionCreate">_onInteractionCreate</a></li><li data-type='method'><a href="module-classes_Bot.html#._onReady">_onReady</a></li><li data-type='method'><a href="module-classes_Bot.html#._onShutdown">_onShutdown</a></li><li data-type='method'><a href="module-classes_Bot.html#._sendInteractions">_sendInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#.compareInteractionDefinitions">compareInteractionDefinitions</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadConfigFile">loadConfigFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadModule">loadModule</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerApplicationCommand">registerApplicationCommand</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandler">registerEventHandler</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandlerFile">registerEventHandlerFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.start">start</a></li></ul></li><li><a href="module-classes_Database.html">classes/Database</a></li></ul><h3>Modules</h3><ul><li><a href="module-classes_Application.html">classes/Application</a><ul class='methods'><li data-type='method'><a href="module-classes_Application.html#.importJSON">importJSON</a></li><li data-type='method'><a href="module-classes_Application.html#.loadOptions">loadOptions</a></li><li data-type='method'><a href="module-classes_Application.html#.log">log</a></li><li data-type='method'><a href="module-classes_Application.html#.logDebug">logDebug</a></li><li data-type='method'><a href="module-classes_Application.html#.logError">logError</a></li><li data-type='method'><a href="module-classes_Application.html#.logInfo">logInfo</a></li><li data-type='method'><a href="module-classes_Application.html#.logWarn">logWarn</a></li><li data-type='method'><a href="module-classes_Application.html#.safeImport">safeImport</a></li><li data-type='method'><a href="module-classes_Application.html#.toModulePath">toModulePath</a></li></ul></li><li><a href="module-classes_Bot.html">classes/Bot</a><ul class='methods'><li data-type='method'><a href="module-classes_Bot.html#._fetchInteractions">_fetchInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#._onInteractionCreate">_onInteractionCreate</a></li><li data-type='method'><a href="module-classes_Bot.html#._onReady">_onReady</a></li><li data-type='method'><a href="module-classes_Bot.html#._onShutdown">_onShutdown</a></li><li data-type='method'><a href="module-classes_Bot.html#._sendInteractions">_sendInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#.compareInteractionDefinitions">compareInteractionDefinitions</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadConfigFile">loadConfigFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadModule">loadModule</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerApplicationCommand">registerApplicationCommand</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandler">registerEventHandler</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandlerFile">registerEventHandlerFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.start">start</a></li></ul></li><li><a href="module-classes_Database.html">classes/Database</a></li><li><a href="module-events_reload.html">events/reload</a></li><li><a href="module-events_shutdown.html">events/shutdown</a></li><li><a href="module-modules_logger.html">modules/logger</a><ul class='methods'><li data-type='method'><a href="module-modules_logger.html#.onStart">onStart</a></li></ul></li><li><a href="module-modules_logger_log.html">modules/logger/log</a><ul class='methods'><li data-type='method'><a href="module-modules_logger_log.html#.messageDelete">messageDelete</a></li><li data-type='method'><a href="module-modules_logger_log.html#.messageUpdate">messageUpdate</a></li><li data-type='method'><a href="module-modules_logger_log.html#.raw">raw</a></li><li data-type='method'><a href="module-modules_logger_log.html#~attachmentToEmbed">attachmentToEmbed</a></li></ul></li><li><a href="module-modules_modmail.html">modules/modmail</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail.html#.onReady">onReady</a></li><li data-type='method'><a href="module-modules_modmail.html#.onStart">onStart</a></li></ul></li><li><a href="module-modules_modmail_event.html">modules/modmail/event</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_event.html#.messageCreate">messageCreate</a></li><li data-type='method'><a href="module-modules_modmail_event.html#~modMailMessage">modMailMessage</a></li></ul></li><li><a href="module-modules_modmail_messageTemplates.html">modules/modmail/messageTemplates</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.messageReceived">messageReceived</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.newResponse">newResponse</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.newTicket">newTicket</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.ticketConfirmation">ticketConfirmation</a></li></ul></li><li><a href="module-modules_modmail_reportMessage.html">modules/modmail/reportMessage</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_reportMessage.html#.handler">handler</a></li></ul></li><li><a href="module-modules_modmail_ticket.html">modules/modmail/ticket</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_ticket.html#.closeThread">closeThread</a></li><li data-type='method'><a href="module-modules_modmail_ticket.html#.getOrCreateThread">getOrCreateThread</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">module:classes/Bot</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        
+            module:classes/Bot
+        
+        </h2>
+        
+            <div class="class-description usertext"><p>Contains methods that pertain to a Discord.js bot.</p></div>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+    
+    <h2>Constructor</h2>
+    
+
+    <h4 class="name" id="module:classes/Bot"><span class="type-signature"></span>new (require("classes/Bot"))<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="RequiredIntents"><span class="type-signature"></span>RequiredIntents<span class="type-signature"> :Object.&lt;string, Array.&lt;string>></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Not yet implemented, but will be a lookup object for which intents are required by which events, to be used to warn you if you accidentally try to listen to events that you do not have the intents for.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Not yet implemented, but will be a lookup object for which intents are required by which events, to be used to warn you if you accidentally try to listen to events that you do not have the intents for.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, Array.&lt;string>></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="client"><span class="type-signature"></span>client<span class="type-signature"> :Client</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>The reference to the Discord client.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>The reference to the Discord client.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Client</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="config"><span class="type-signature"></span>config<span class="type-signature"> :Object.&lt;string, *></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Values loaded from the configuration file, including defaults for any values missing from the file.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Values loaded from the configuration file, including defaults for any values missing from the file.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, *></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="eventFiles"><span class="type-signature"></span>eventFiles<span class="type-signature"> :Object.&lt;string, Object.&lt;string, StoredEvent>></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Stores any files that were used in Bot#registerEventHandlerFile, so that they can be unregistered or reloaded if necessary. The primary keys are file names; the secondary keys are event names with listeners present in that file.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Stores any files that were used in Bot#registerEventHandlerFile, so that they can be unregistered or reloaded if necessary. The primary keys are file names; the secondary keys are event names with listeners present in that file.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, Object.&lt;string, StoredEvent>></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="existingInteractions"><span class="type-signature"></span>existingInteractions<span class="type-signature"> :Object.&lt;string, Object.&lt;string, Object>></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>If this application already had interactions registered in the Discord API before this bot was started, they will be collected here by Bot#_fetchInteractions. The primary keys are either a guild ID or '*' for global; the secondary keys are interaction names. The ultimate values are responses from the Discord API with the defined interaction data.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>If this application already had interactions registered in the Discord API before this bot was started, they will be collected here by Bot#_fetchInteractions. The primary keys are either a guild ID or '*' for global; the secondary keys are interaction names. The ultimate values are responses from the Discord API with the defined interaction data.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, Object.&lt;string, Object>></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="interactionRegistry"><span class="type-signature"></span>interactionRegistry<span class="type-signature"> :Object.&lt;string, Object></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>A buffer for all interactions being registered by this bot, before sending them to the Discord API with Bot#_sendInteractions. The keys are guild IDs, or '*' for global interactions.  The values are interaction definitions.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>A buffer for all interactions being registered by this bot, before sending them to the Discord API with Bot#_sendInteractions. The keys are guild IDs, or '*' for global interactions.  The values are interaction definitions.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, Object></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="interactionsSent"><span class="type-signature"></span>interactionsSent<span class="type-signature"> :boolean</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Whether this bot's interactions have already been send to the Discord API with Bot#_sendInteractions.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Whether this bot's interactions have already been send to the Discord API with Bot#_sendInteractions.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">boolean</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="messageCommands"><span class="type-signature"></span>messageCommands<span class="type-signature"> :Object.&lt;string, ApplicationCommandDef></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>The currently registered Message context menu commands. The keys are the command names.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>The currently registered Message context menu commands. The keys are the command names.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, ApplicationCommandDef></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="modules"><span class="type-signature"></span>modules<span class="type-signature"> :Object.&lt;string, BotModule></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>The modules loaded by Bot#loadModule. These are bot modules from the modules/ directory, not Node.js modules. Perhaps another name should be used, but oh well. The keys are the module names.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>The modules loaded by Bot#loadModule. These are bot modules from the modules/ directory, not Node.js modules. Perhaps another name should be used, but oh well. The keys are the module names.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, BotModule></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="rest"><span class="type-signature"></span>rest<span class="type-signature"> :REST</span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>The reference to the Discord REST API.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>The reference to the Discord REST API.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">REST</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="slashCommands"><span class="type-signature"></span>slashCommands<span class="type-signature"> :Object.&lt;string, ApplicationCommandDef></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>The currently registered slash commands. The keys are the command names.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>The currently registered slash commands. The keys are the command names.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, ApplicationCommandDef></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+            
+<h4 class="name" id="userCommands"><span class="type-signature"></span>userCommands<span class="type-signature"> :Object.&lt;string, ApplicationCommandDef></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>The currently registered User context menu commands. The keys are the command names.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>The currently registered User context menu commands. The keys are the command names.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, ApplicationCommandDef></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id="._fetchInteractions"><span class="type-signature type-signature-async, static">(async, static) </span>_fetchInteractions<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Query the Discord API for any interactions that were already registered before this bot started up. They will all be replaced when Bot#_sendInteractions is called.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="._onInteractionCreate"><span class="type-signature type-signature-async, static">(async, static) </span>_onInteractionCreate<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Method that is called when the bot receives an interaction via the Discord API. Determines which function to pass the interaction to.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="._onReady"><span class="type-signature type-signature-async, static">(async, static) </span>_onReady<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Method that is called when the bot is logged in and ready. Calls the onReady method of every loaded module, and calls Bot#_sendInteractions.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="._onShutdown"><span class="type-signature type-signature-async, static">(async, static) </span>_onShutdown<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Method that should be called when the bot is going to shut down. Logs out from the Discord API and closes the connection to any databases, etc.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id="._sendInteractions"><span class="type-signature type-signature-async, static">(async, static) </span>_sendInteractions<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Send all of the registered interactions to the Discord API.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li>Bot#registerApplicationCommand</li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".compareInteractionDefinitions"><span class="type-signature type-signature-static">(static) </span>compareInteractionDefinitions<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Compare two interaction definitions to see if they are identical. This will be needed when reloading application commands to see if the definition has changed. If it has, then the Discord API will need to be sent the updates. Otherwise, that would be a waste of an API call, so don't bother.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-todo">To Do:</dt>
+    <dd class="tag-todo">
+        <ul>
+            <li>Method is not usable yet, so it's just a placeholder for now.</li>
+        </ul>
+    </dd>
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".loadConfigFile"><span class="type-signature type-signature-async, static">(async, static) </span>loadConfigFile<span class="signature">(filename)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Load a JSON file containing the information that the bot needs to operate.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filename</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Path to the configuration file for this bot.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-throws">Throws:</h5>
+
+        
+
+    <div class="param-desc usertext">
+    
+        <p>Will throw an error if the file is not a valid configuration file or is missing required information.</p>
+    
+    </div>
+
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".loadModule"><span class="type-signature type-signature-async, static">(async, static) </span>loadModule<span class="signature">(moduleData)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Load a bot module from the modules directory. Can be used to reload a module's code. If used after bot is started/ready, will attempt to call the appropriate module setup methods.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>moduleData</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>name</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>Name of the directory containing the module's code.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object.&lt;string, *></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>{}</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>Module-specific configuration options that the module requires in order to run.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>reload</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>false</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to reload the module's code from the directory after it has already been loaded.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>True if the module was loaded (or reloaded) and all applicable setup methods succeeded; false otherwise.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".registerApplicationCommand"><span class="type-signature type-signature-async, static">(async, static) </span>registerApplicationCommand<span class="signature">(options)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Register an application command based on specific definitions imported from a file. The command definition will be stored in memory, but it will not be sent to the Discord API until Bot#_sendInteractions is called.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object.&lt;string, *></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Import and definition options. The format of this parameter matches the format of the <code>modules</code> array in the application's configuration file, so that elements of that array can be passed directly to this method.</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>definition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>The command definition as specified by the Discord API. If this parameter is not given, then <code>filename</code> must be given and export <code>definition</code> instead.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>handler</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>The function to run when the command is used. If this parameter is not given, then <code>filename</code> must be given and export <code>handler</code> instead.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>filename</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>The file that exports the <code>definition</code> of the command, the <code>handler</code> for the command, or both.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>owner</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>false</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether this command is only usable by the bot owner.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>guildIds</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;string></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>For guild-specific commands, the list of guilds to register the command in. Leave undefined or null if this is a global command.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>True if the command definition was added to the bot's interaction registry.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".registerEventHandler"><span class="type-signature type-signature-async, static">(async, static) </span>registerEventHandler<span class="signature">(eventName, handler, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Wrapper for adding an event listener to this Discord.js client, ensuring that the handler is a function.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>eventName</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Name of the Client event to listen for from <a href="https://discord.js.org/docs/packages/discord.js/main/Client:Class">those available in Discord.js</a>.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>handler</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Function to run when the event is emitted.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object.&lt;string, *></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last">
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>once</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>false</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to call the event handler only once and then remove it.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>suppressError</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>false</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>Whether to suppress any error message generated directly by this method.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>True if the event handler was added to the Client; false otherwise.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".registerEventHandlerFile"><span class="type-signature type-signature-async, static">(async, static) </span>registerEventHandlerFile<span class="signature">(file, handlers)</span><span class="type-signature"> &rarr; {boolean}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Wrapper for adding a group of event listeners to the Client that are all exported by a module file.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>file</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The file to import the event handlers from.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>handlers</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object.&lt;string, string></span>
+|
+
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>An object of key/value pairs, where the key is the event name to listen for, and the value is the name of the associate event handler function exported by the module file. Alternatively, this can be the string <code>reload</code> to re-import a file that has already been imported using this method, keeping the same key/value pairs as before.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>True if the event handler(s) were added or reloaded successfully; false otherwise.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">boolean</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".start"><span class="type-signature type-signature-async, static">(async, static) </span>start<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Initialize the Discord.js bot client and log it in.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>boolean True if the startup was successful and the bot is logged in. Note that specific errors with modules or event handlers could have occurred, but as long as the bot ultimately logged in as a result of this method call, this will return true.</p>
+</div>
+
+
+
+    
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Type Definitions</h3>
+
+        
+                
+<h4 class="name" id="~ApplicationCommandDef">ApplicationCommandDef</h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>definition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Application command definition as required by the Discord API.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>handler</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The function to run when the application command is used.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>api</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object.&lt;string, Object></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Dictionary of responses from the API when each command was registered, with the key being the guild ID where it was registered, or '*' for global commands.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object.&lt;string, *></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A copy of the relevant properties in the application command definition in the configuration file.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+            
+                
+<h4 class="name" id="~BotModule">BotModule</h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>imports</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>All of the properties exported by the module's index.mjs file.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Module options defined in the configuration file.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>database</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Database</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>If needed, stores a reference to the database used by the module.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+            
+                
+<h4 class="name" id="~StoredEvent">StoredEvent</h4>
+
+
+
+
+
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>property</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The exported property name of the file that contains the event handler.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>handler</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">function</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A references to the function that was assigned to be an event handler.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object</span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+            
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Thu Aug 22 2024 01:35:32 GMT-0500 (Central Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

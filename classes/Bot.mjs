@@ -1,3 +1,4 @@
+/** @module classes/Bot */
 import { Client, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
 import Application from './Application.mjs';
 
@@ -122,12 +123,15 @@ export default class Bot extends Application {
       this.config.partials = [];
     if (!this.config.applicationCommands)
       this.config.applicationCommands = [];
+    if (!this.config.modules)
+      this.config.modules = [];
     if (!this.config.ownerId)
       this.logWarn(`No ownerId set in the configuration file. You may want to specify your Discord user ID in that property to ensure you have full bot access.`);
   }
   
   /**
    * Initialize the Discord.js bot client and log it in.
+   * @returns boolean True if the startup was successful and the bot is logged in. Note that specific errors with modules or event handlers could have occurred, but as long as the bot ultimately logged in as a result of this method call, this will return true.
    */
   static async start() {
     if (this.client) {
@@ -135,12 +139,12 @@ export default class Bot extends Application {
       return false;
     }
     
-    for(let module of this.config.modules??[])
+    for(let module of this.config.modules)
       await this.loadModule(module);
     
     // Note: Is it better to just add them, or error out if they are missing?
     // The former is obviously easier, but the latter gives the host more
-    // control and transparency over which intents the include.
+    // transparency and control over which partials/intents to include.
     let intents = this.config.intents;
     let partials = this.config.partials;
     for(let name in this.modules) {
@@ -159,8 +163,8 @@ export default class Bot extends Application {
     });
     this.client.master = this;
     
-    for(let name in this.modules)
-      if (typeof(this.modules[name].imports.onStart) === 'function') {
+    for(let name in this.modules) {
+      if (typeof(this.modules[name]?.imports.onStart) === 'function') {
         try {
           let start = this.modules[name].imports.onStart.call(this, this.modules[name]);
           if (start && start instanceof Promise)
@@ -168,12 +172,14 @@ export default class Bot extends Application {
         }
         catch(err) {
           this.logError(`Module '${name}' failed to start.`, err);
-          //delete this.modules[name];
+          this.modules[name] = null;
         }
       }
+    }
     
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
+    await this.registerEventHandler('messageCreate', message => this.logDebug(`Seen: ${message.content}`));
     
     this.logInfo(`Bot logging in to Discord.`);
     this.rest = new REST().setToken(this.config.token);
@@ -182,21 +188,81 @@ export default class Bot extends Application {
     return true;
   }
   
-  static async loadModule({name, options}={}) {
-    this.modules[name] = {
-      imports: await this.safeImport(`modules/${name}/index.mjs`),
-      options: options,
-    };
-    this.logInfo(`Loaded module '${name}'.`);
+  /**
+   * Load a bot module from the modules directory. Can be used to reload a module's code. If used after bot is started/ready, will attempt to call the appropriate module setup methods.
+   * @param {Object} moduleData
+   * @param {string} moduleData.name - Name of the directory containing the module's code.
+   * @param {Object.<string, *>} [moduleData.options={}] - Module-specific configuration options that the module requires in order to run.
+   * @param {boolean} [moduleData.reload=false] - Whether to reload the module's code from the directory after it has already been loaded.
+   * @returns {boolean} True if the module was loaded (or reloaded) and all applicable setup methods succeeded; false otherwise.
+   */
+  static async loadModule({name, options={}, reload=false}) {
+    if (!name) {
+      this.logError(`No module name given.`);
+      return false;
+    }
+    
+    try {
+      this.modules[name] = {
+        imports: await this.safeImport(`modules/${name}/index.mjs`, {reload}),
+        options: options,
+      };
+      this.logInfo(`Loaded module '${name}'.`);
+    }
+    catch(err) {
+      this.logError(`Failed to load module '${name}'.`, err);
+      return false;
+    }
+    
+    // If module is being loaded after bot startup, we need to call the onStart method now and (TODO) double-check the intents/partials.
+    if (this.client) {
+      if (typeof(this.modules[name]?.imports.onStart) === 'function') {
+        try {
+          let start = this.modules[name].imports.onStart.call(this, this.modules[name]);
+          if (start && start instanceof Promise)
+            start = await start;
+        }
+        catch(err) {
+          this.logError(`Module '${name}' failed to start.`, err);
+          this.modules[name] = null;
+          return false;
+        }
+      }
+    }
+    
+    // If module is being loaded after bot is ready, we need to call the onReady method now.
+    if (this.client?.isReady()) {
+      if (typeof(this.modules[name]?.imports.onReady) === 'function') {
+        try {
+          let ready = this.modules[name].imports.onReady.call(this, this.modules[name]);
+          if (ready && ready instanceof Promise)
+            ready = await ready;
+        }
+        catch(err) {
+          this.logError(`Module '${name}' failed to ready.`, err);
+          this.modules[name] = null;
+          return false;
+        }
+      }
+    }
     return true;
   }
   
   /**
    * Wrapper for adding an event listener to this Discord.js client, ensuring that the handler is a function.
+   * @param {string} eventName - Name of the Client event to listen for from [those available in Discord.js]{@link https://discord.js.org/docs/packages/discord.js/main/Client:Class}.
+   * @param {Function} handler - Function to run when the event is emitted.
+   * @param {Object.<string, *>} [options]
+   * @param {boolean} [options.once=false] - Whether to call the event handler only once and then remove it.
+   * @param {boolean} [options.suppressError=false] - Whether to suppress any error message generated directly by this method.
+   * @return {boolean} True if the event handler was added to the Client; false otherwise.
    */
-  static async registerEventHandler(eventName, handler, {suppressError}={}) {
+  static async registerEventHandler(eventName, handler, {once=false, suppressError=false}={}) {
     if (typeof(handler) === 'function') {
-      this.client.on(eventName, handler);
+      if (once)
+        this.client.once(eventName, handler);
+      else
+        this.client.on(eventName, handler);
       return true;
     }
     else {
@@ -207,7 +273,10 @@ export default class Bot extends Application {
   }
   
   /**
-   * Wrapper for adding a group of event listeners to this Discord.js client that are all defined in a module file.
+   * Wrapper for adding a group of event listeners to the Client that are all exported by a module file.
+   * @param {string} file - The file to import the event handlers from.
+   * @param {Object.<string, string>|string} handlers - An object of key/value pairs, where the key is the event name to listen for, and the value is the name of the associate event handler function exported by the module file. Alternatively, this can be the string `reload` to re-import a file that has already been imported using this method, keeping the same key/value pairs as before.
+   * @returns {boolean} True if the event handler(s) were added or reloaded successfully; false otherwise.
    */
   static async registerEventHandlerFile(file, handlers) {
     let module;
@@ -260,8 +329,23 @@ export default class Bot extends Application {
     return true;
   }
   
-  static async registerApplicationCommand({filename, owner, guildIds}) {
-    let {definition, handler} = await this.safeImport(filename);
+  /**
+   * Register an application command based on specific definitions imported from a file. The command definition will be stored in memory, but it will not be sent to the Discord API until {@link Bot#_sendInteractions} is called.
+   * @param {Object.<string, *>} options - Import and definition options. The format of this parameter matches the format of the `modules` array in the application's configuration file, so that elements of that array can be passed directly to this method.
+   * @param {Object} options.definition - The command definition as specified by the Discord API. If this parameter is not given, then `filename` must be given and export `definition` instead.
+   * @param {Function} options.handler - The function to run when the command is used. If this parameter is not given, then `filename` must be given and export `handler` instead.
+   * @param {string} options.filename - The file that exports the `definition` of the command, the `handler` for the command, or both.
+   * @param {boolean} [options.owner=false] - Whether this command is only usable by the bot owner.
+   * @param {?string[]} [options.guildIds] - For guild-specific commands, the list of guilds to register the command in. Leave undefined or null if this is a global command.
+   * @returns {boolean} True if the command definition was added to the bot's interaction registry.
+   */
+  static async registerApplicationCommand({definition, handler, filename, owner=false, guildIds}) {
+    let imported = filename ? await this.safeImport(filename) : null;
+    if (!definition)
+      definition = imported?.definition;
+    if (!handler)
+      handler = imported?.handler;
+    
     if (!definition?.name) {
       this.logError(`Invalid application command definition:`, definition);
       return false;
@@ -282,9 +366,9 @@ export default class Bot extends Application {
       },
     };
     
-    if (definition?.type === 2)
+    if (definition.type === 2)
       this.userCommands[definition.name] = commandData;
-    else if (definition?.type === 3)
+    else if (definition.type === 3)
       this.messageCommands[definition.name] = commandData;
     else
       this.slashCommands[definition.name] = commandData;
@@ -298,10 +382,15 @@ export default class Bot extends Application {
     }
     
     if (this.interactionsSent) {
-      this.logError(`New interaction registered after interactions have already been sent to the Discord API. This is not yet supported.`);
+      this.logError(`New interaction registered after interactions have already been sent to the Discord API. This is not yet supported. Make sure all interactions are registered during the bot startup process so they can be sent in time.`);
     }
+    return true;
   }
   
+  /**
+   * Compare two interaction definitions to see if they are identical. This will be needed when reloading application commands to see if the definition has changed. If it has, then the Discord API will need to be sent the updates. Otherwise, that would be a waste of an API call, so don't bother.
+   * @todo Method is not usable yet, so it's just a placeholder for now.
+   */
   static compareInteractionDefinitions(api, file) {
     file = Object.assign({
       default_member_permissions: null,
@@ -329,6 +418,9 @@ export default class Bot extends Application {
   
   //---------------------------------------------------------------------------
   
+  /**
+   * Method that should be called when the bot is going to shut down. Logs out from the Discord API and closes the connection to any databases, etc.
+   */
   static async _onShutdown() {
     this.logInfo(`Shutting down.`);
     
@@ -340,6 +432,9 @@ export default class Bot extends Application {
     }
   }
   
+  /**
+   * Query the Discord API for any interactions that were already registered before this bot started up. They will all be replaced when {@link Bot#_sendInteractions} is called.
+   */
   static async _fetchInteractions() {
     if (Object.entries(this.existingInteractions).length) {
       this.logError(`Existing interactions have already been fetched from the Discord API and saved:`, {interactions:this.existingInteractions});
@@ -348,7 +443,7 @@ export default class Bot extends Application {
     
     let interactions = await this.rest.get(Routes.applicationCommands(this.config.id));
     if (interactions.length) {
-      this.logWarn(`This application already has global application commands registered:`, interactions.map(inter => inter.name).join(', '));
+      this.logWarn(`This application already has global application commands registered:`, interactions.map(inter => inter.name).join(', '), `; They will be removed and replaced by this bot's interactions.`);
       this.existingInteractions['*'] = {};
       for(let interaction of interactions) {
         this.existingInteractions['*'][interaction.name] = interaction;
@@ -358,7 +453,7 @@ export default class Bot extends Application {
       this.logInfo(`Bot is in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}).`);
       let guildInteractions = await this.rest.get(Routes.applicationGuildCommands(this.config.id, guildId));
       if (guildInteractions.length) {
-        this.logWarn(`This application already has guild application commands registered in ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}):`, guildInteractions.map(inter => inter.name).join(', '));
+        this.logWarn(`This application already has guild application commands registered in ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}):`, guildInteractions.map(inter => inter.name).join(', '), `; They will be removed and replaced by this bot's interactions.`);
         this.existingInteractions[guildId] = {};
         for(let interaction of guildInteractions) {
           this.existingInteractions[guildId][interaction.name] = interaction;
@@ -367,6 +462,10 @@ export default class Bot extends Application {
     }
   }
 
+  /**
+   * Send all of the registered interactions to the Discord API.
+   * @see {@link Bot#registerApplicationCommand}
+   */
   static async _sendInteractions() {
     if (this.interactionsSent) {
       this.logError(`Interactions have already been sent to the Discord API. Further interactions must be sent on an individual basis.`);
@@ -402,11 +501,14 @@ export default class Bot extends Application {
     this.logInfo(`Done.`);
   }
   
+  /**
+   * Method that is called when the bot is logged in and ready. Calls the onReady method of every loaded module, and calls {@link Bot#_sendInteractions}.
+   */
   static async _onReady(client) {
     await this._fetchInteractions();
     
     for(let name in this.modules) {
-      if (typeof(this.modules[name].imports.onReady) === 'function') {
+      if (typeof(this.modules[name]?.imports.onReady) === 'function') {
         try {
           let ready = this.modules[name].imports.onReady.call(this, this.modules[name]);
           if (ready && ready instanceof Promise)
@@ -414,7 +516,7 @@ export default class Bot extends Application {
         }
         catch(err) {
           this.logError(`Module '${name}' failed to ready.`, err);
-          //delete this.modules[name];
+          this.modules[name] = null;
         }
       }
     }
@@ -428,6 +530,9 @@ export default class Bot extends Application {
     this.logInfo(`Discord bot is ready.`);
   }
 
+  /**
+   * Method that is called when the bot receives an interaction via the Discord API. Determines which function to pass the interaction to.
+   */
   static async _onInteractionCreate(interaction) {
     let commandList;
     if (interaction.isChatInputCommand())

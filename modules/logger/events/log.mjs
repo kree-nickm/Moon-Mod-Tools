@@ -1,13 +1,18 @@
 /**
+ * Contains the event handlers for the logger module.
+ * @module modules/logger/log
+ */
+
+/**
  * Because Discord.js only fires messageDelete for messages that are cached, we need to use this to determine which messages those are. Because when we use the raw event to log non-cached message deletion, there is no other way the raw event can know if messageDelete has also fired.
  */
 let messageDeleteTimer;
 
 /**
  * Convert an Attachment into an embed object.
- * @param {Attachment} attachment - The Attachment object reported by Discord.js
+ * @param {discord.js/Attachment} attachment - The Attachment object reported by Discord.js
  * @param {Object} overwrites - Properties to include in the embed object after it has been populated with Attachment data.
- * @returns {Object} - An object to be included in the embeds array of a message's options before sending it.
+ * @returns {Object} An object to be included in the embeds array of a message's options before sending it.
  */
 function attachmentToEmbed(attachment, overwrites={}) {
   let embed = {
@@ -42,6 +47,11 @@ function attachmentToEmbed(attachment, overwrites={}) {
   return Object.assign(embed, overwrites);
 }
 
+/**
+ * Log the changes to the updated message.
+ * @param {?discord.js/Message} oldMessage - The message before it was edited, or null if the message was not cached.
+ * @param {discord.js/Message} newMessage - The newly edited message.
+ */
 export async function messageUpdate(oldMessage, newMessage) {
   if (oldMessage?.partial)
     oldMessage = await oldMessage.fetch();
@@ -133,6 +143,10 @@ export async function messageUpdate(oldMessage, newMessage) {
   });
 };
 
+/**
+ * Log the message that was deleted.
+ * @param {?discord.js/Message} message - The message before it was deleted, or null if the message was not cached.
+ */
 export async function messageDelete(message) {
   // Prevent this function from running twice, since it will also always be called by the raw event handler.
   if(messageDeleteTimer) {
@@ -202,6 +216,14 @@ export async function messageDelete(message) {
   });
 };
 
+/**
+ * Runs when any event that we have the intents for is received from the Discord API. Necessary because Discord.js will not emit messageUpdate or messageDelete if the message is not cached.
+ * @param {Object} packet
+ * @param {?string} packet.t - Event name
+ * @param {?*} packet.d - Event data
+ * @param {?integer} packet.s - Sequence number of event used for [resuming sessions]{@link https://discord.com/developers/docs/topics/gateway#resuming} and [heartbeating]{@link https://discord.com/developers/docs/topics/gateway#sending-heartbeats}
+ * @param {integer} packet.op - [Gateway opcode]{@link https://discord.com/developers/docs/topics/opcodes-and-status-codes#gateway-gateway-opcodes}, which indicates the payload type
+ */
 export async function raw(packet) {
   if(packet.t === 'MESSAGE_UPDATE') {
     let timestamp = Date.parse(packet.d.timestamp);

@@ -1,6 +1,13 @@
+/**
+ * Message context menu command to report a message.
+ * @module modules/modmail/reportMessage
+ */
 import { getOrCreateThread } from './ticket.mjs';
 import * as Messages from './messageTemplates.mjs';
 
+/**
+ * Creates or updates a ticket with the reported message.
+ */
 export async function handler(interaction) {
   // Verify that the user is a member of the guild we are handling mod mail for.
   let mailChannel = await this.channels.fetch(this.master.modules.modmail.options.mailChannelId);
@@ -13,7 +20,7 @@ export async function handler(interaction) {
   
   // Add the user's message to the thread.
   await myThread.send(await Messages.messageReceived.call(this, {interaction}));
-  await interaction.reply({content:`Your report has been sent to the mods for review. If you'd like to add to it, feel free to send any further information to this bot in a DM. If the mods need to contact you, this bot will DM you their messages.`});
+  await interaction.reply(await Messages.ticketConfirmation.call(this, {interaction}));
 }
 
 export const definition = {

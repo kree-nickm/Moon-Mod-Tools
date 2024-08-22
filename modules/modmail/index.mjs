@@ -1,19 +1,31 @@
+/**
+ * Allows users to report messages or send messages to the moderation team as a whole in the form of a ticket. Also allows to moderators to discuss the report, anonymously respond to the user, and close the ticket.
+ * @module modules/modmail
+ */
 import Database from '../../classes/Database.mjs';
 
 /**
- * Requires the DirectMessages intent in order to receive any events for messages.
- * Requires the MessageContent intent in order to see any content of messages. MESSAGE CONTENT must also be enabled in the bot's Discord developer portal.
- * Requires the Channel partial to recognize when DM channels are created.
+ * Requires the DirectMessages intent in order to receive any events for messages, and the MessageContent intent in order to see any content of messages.
  */ 
 export const intents = ["DirectMessages","MessageContent"];
+
+/**
+ * Requires the Channel partial to recognize when DM channels are created.
+ */ 
 export const partials = ["Channel"];
 
+/**
+ * Loads the database of tickets, creating and initializing it if necessary.
+ */
 export async function onStart(module) {
   module.database = new Database();
   await module.database.connect(`storage/${module.options.databaseFile??'modmail.sqlite'}`);
   await module.database.run('CREATE TABLE IF NOT EXISTS tickets (userId TEXT, threadId TEXT UNIQUE ON CONFLICT REPLACE, number INTEGER);');
 }
 
+/**
+ * Registers the event handlers for opening a ticket. Fetches all tickets to build the ticket database.
+ */
 export async function onReady(module) {
   let mailChannel = await this.client.channels.fetch(module.options.mailChannelId);
   if (!mailChannel?.isThreadOnly()) {
@@ -26,6 +38,7 @@ export async function onReady(module) {
   });
   await this.registerApplicationCommand({filename:'modules/modmail/reportMessage.mjs', guildIds:[mailChannel.guildId]});
   
+  // Fetch all tickets.
   let activeTickets = await mailChannel.threads.fetchActive();
   let tickets = activeTickets.threads.map(v=>v);
   
@@ -41,6 +54,7 @@ export async function onReady(module) {
     }
   }
   
+  // Add all tickets to the database.
   let addSmt = await module.database.prepare('INSERT INTO tickets (userId, threadId, number) VALUES (?, ?, ?)');
   for(let ticket of tickets) {
     let number = ticket.name.slice(ticket.name.lastIndexOf('-')+2);
@@ -58,13 +72,3 @@ export async function onReady(module) {
   this.logInfo(`Module 'modmail' ready.`);
   return true;
 }
-
-/*
-Users can create a ModMail ticket by either messaging the bot directly or using a right-click context menu on a message they'd like to report.
-  Reporting a message via the context menu creates a ticket with a the first message being an embedded link to the reported message.
-    If additional messages are reported while a user has an active ticket, the new report is just appended to the existing ticket.
-Once a ticket is created, the user can message PitBot to communicate with the mod team via the ModMail queue and vice versa.
-  Mods can use a command character (currently "=") to talk in a ticket without sending a message to the user.
-Mods can manage the ticket with "lock", "unlock", and "close" commands.
-  Lock and unlock stop/start the bot from messaging the reporter while the mods discuss the issue without needing to always use the command character.
-*/

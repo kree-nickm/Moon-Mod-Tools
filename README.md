@@ -1,4 +1,5 @@
-# Moon-Mod-Tools
+# Moon Mod Tools
+Code base for all of the bots that provide moderator tools in moonmoon's subscriber Discord.
 
 ## Installation
 1. Checkout this repository onto your server.
@@ -125,3 +126,35 @@ Allows users to send reports to the moderation team as a whole, and allows the m
 Options:
 * **mailChannelId** - The snowflake ID of the channel where modmail report threads will be created for mods to discuss the report. Must be a forum channel.
 * **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores users and their modmail tickets, to make looking them up easier. Default: `modmail.sqlite`
+
+## Documentation
+The documentation in the `docs` directory is generated with [JSDoc](https://jsdoc.app) with the following configuration file:
+```javascript
+'use strict';
+
+// BigInt JSON serialization.
+BigInt.prototype.toJSON = function() {
+	return this.toString() + 'n';
+}
+
+module.exports = {
+  "plugins": ["plugins/markdown"],
+  "opts": {
+    "template": "docs/template",
+    "destination": "docs",
+    "recurse": true,
+    "readme": "README.md",
+    "package": "package.json",
+  },
+  "source": {
+    "includePattern": "\\.m?js$",
+    "exclude": ["docs", "node_modules", ".git"],
+  },
+  "templates": {
+    "default": {
+      "outputSourceFiles": false,
+    },
+  },
+};
+```
+If you add code to the bot and want your changes to be documented in the same manner, use this information to do so.

@@ -1,9 +1,17 @@
 /**
- * Requires the GuildMessages intent in order to receive any events for messages.
- * Requires the MessageContent intent in order to see any content of messages. 'MESSAGE CONTENT' must also be enabled in the bot's Discord developer portal.
+ * Logs edited and deleted messages to a specified channel in a guild.
+ * @module modules/logger
+ */
+
+/**
+ * GuildMessages is required to see messages sent in a guild, and MessageContent is required to actually see the content of those messages.
  */
 export const intents = ["GuildMessages","MessageContent"];
 
+/**
+ * Registers the event handlers for edited and deleted messages.
+ * @see {@link module:modules/logger/log}
+ */
 export async function onStart(module) {
   await this.registerEventHandlerFile('modules/logger/events/log.mjs', {
     messageUpdate: 'messageUpdate',

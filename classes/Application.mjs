@@ -1,3 +1,4 @@
+/** @module classes/Application */
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 

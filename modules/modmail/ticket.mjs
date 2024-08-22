@@ -1,11 +1,15 @@
+/**
+ * Functions that manage a ticket.
+ * @module modules/modmail/ticket
+ */
 import * as Messages from './messageTemplates.mjs';
 
 /**
  * Get the open ticket thread of a guild member, or create a new one if there is none.
- * @this Client
- * @param {ThreadOnlyChannel} mailChannel - The modmail channel that contains all ticket threads.
- * @param {GuildMember member} - The creator of the ticket.
- * @returns {ThreadChannel} - The open ticket thread for the given guild member.
+ * @this discord.js/Client
+ * @param {discord.js/ThreadOnlyChannel} mailChannel - The modmail channel that contains all ticket threads.
+ * @param {discord.js/GuildMember} member - The creator of the ticket.
+ * @returns {discord.js/ThreadChannel} The open ticket thread for the given guild member.
  */
 export async function getOrCreateThread(mailChannel, member) {
   let activeThreads = await mailChannel.threads.fetchActive();
@@ -27,8 +31,8 @@ export async function getOrCreateThread(mailChannel, member) {
 
 /**
  * Handle when a moderator closes a ticket thread via a chat command.
- * @this Client
- * @param {Message} message - The moderator's message, whose content begins with `=close`
+ * @this discord.js/Client
+ * @param {discord.js/Message} message - The moderator's message, whose content begins with `=close`
  */
 export async function closeThread(message) {
   let reason = message.content.length > 7 ? message.content.slice(7) : '';

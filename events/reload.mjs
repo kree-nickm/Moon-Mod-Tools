@@ -1,3 +1,8 @@
+/**
+ * Reloads the code for an event, application command, or whole module. If you use this, make sure it's an owner-only command.
+ * @module events/reload
+ */
+
 export async function handler(interaction) {
   let type = interaction.options.getSubcommand();
   if (type === 'event') {

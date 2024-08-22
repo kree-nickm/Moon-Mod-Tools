@@ -1,14 +1,15 @@
 /**
  * All of the templates for messages sent by the bot.
+ * @module modules/modmail/messageTemplates
  */
 
 /**
- * Message sent when a user creates or adds to a ticket.
- * @this Client
- * @param {Object} input
- * @param {?CommandInteraction} input.interaction - The interaction that was used to update the ticket, or undefined if no interaction was used.
- * @param {?Message} input.message - The message that was sent to the bot to update the ticket, or undefined if no message was sent.
- * @returns {BaseMessageOptions} - The options for creating and sending the message.
+ * Message sent to the ticket when a user creates or updates a ticket.
+ * @this discord.js/Client
+ * @param {discord.js/Object} input
+ * @param {?discord.js/CommandInteraction} input.interaction - The interaction that was used to update the ticket, or undefined if no interaction was used.
+ * @param {?discord.js/Message} input.message - The message that was sent to the bot to update the ticket, or undefined if no message was sent.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function messageReceived({interaction,message}={}) {
   let response = {
@@ -39,10 +40,40 @@ export async function messageReceived({interaction,message}={}) {
 }
 
 /**
- * Message sent when a moderator responds to the ticket.
- * @this Client
- * @param {Message} message - The message that was sent to the bot to update the ticket.
- * @returns {BaseMessageOptions} - The options for creating and sending the message.
+ * Message sent to the user when they create or update a ticket.
+ * @this discord.js/Client
+ * @param {discord.js/Object} input
+ * @param {?discord.js/CommandInteraction} input.interaction - The interaction that was used to update the ticket, or undefined if no interaction was used.
+ * @param {?discord.js/Message} input.message - The message that was sent to the bot to update the ticket, or undefined if no message was sent.
+ * @param {boolean} [input.created=false] - Whether this report has created a new ticket.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
+export async function ticketConfirmation({interaction,message,created=false}={}) {
+  let response = {
+    embeds: [{}],
+    ephemeral: true,
+  };
+  
+  if (created)
+    response.embeds[0].title = `Ticket Created`;
+  else
+    response.embeds[0].title = `Ticket Updated`;
+  
+  if (interaction) {
+    response.embeds[0].description = `The message ${interaction.targetMessage.url} has been reported to the moderators.`;
+  }
+  else if (message) {
+    response.embeds[0].description = `Your message has been sent to the moderators.`;
+  }
+  
+  return response;
+}
+
+/**
+ * Message sent to the user when a moderator responds to the ticket.
+ * @this discord.js/Client
+ * @param {discord.js/Message} message - The message that was sent to the bot to update the ticket.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function newResponse(message) {
   let response = {
@@ -58,9 +89,9 @@ export async function newResponse(message) {
 
 /**
  * The first message that will appear at the start of a newly created ticket thread.
- * @this Client
- * @param {GuildMember} member - The guild member who created the ticket.
- * @returns {BaseMessageOptions} - The options for creating and sending the message.
+ * @this discord.js/Client
+ * @param {discord.js/GuildMember} member - The guild member who created the ticket.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function newTicket(member) {
   let response = {

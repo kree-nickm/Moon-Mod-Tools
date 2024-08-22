@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>module:classes/Application - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="module-classes_Application.html">classes/Application</a><ul class='methods'><li data-type='method'><a href="module-classes_Application.html#.importJSON">importJSON</a></li><li data-type='method'><a href="module-classes_Application.html#.loadOptions">loadOptions</a></li><li data-type='method'><a href="module-classes_Application.html#.log">log</a></li><li data-type='method'><a href="module-classes_Application.html#.logDebug">logDebug</a></li><li data-type='method'><a href="module-classes_Application.html#.logError">logError</a></li><li data-type='method'><a href="module-classes_Application.html#.logInfo">logInfo</a></li><li data-type='method'><a href="module-classes_Application.html#.logWarn">logWarn</a></li><li data-type='method'><a href="module-classes_Application.html#.safeImport">safeImport</a></li><li data-type='method'><a href="module-classes_Application.html#.toModulePath">toModulePath</a></li></ul></li><li><a href="module-classes_Bot.html">classes/Bot</a><ul class='methods'><li data-type='method'><a href="module-classes_Bot.html#._fetchInteractions">_fetchInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#._onInteractionCreate">_onInteractionCreate</a></li><li data-type='method'><a href="module-classes_Bot.html#._onReady">_onReady</a></li><li data-type='method'><a href="module-classes_Bot.html#._onShutdown">_onShutdown</a></li><li data-type='method'><a href="module-classes_Bot.html#._sendInteractions">_sendInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#.compareInteractionDefinitions">compareInteractionDefinitions</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadConfigFile">loadConfigFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadModule">loadModule</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerApplicationCommand">registerApplicationCommand</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandler">registerEventHandler</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandlerFile">registerEventHandlerFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.start">start</a></li></ul></li><li><a href="module-classes_Database.html">classes/Database</a></li></ul><h3>Modules</h3><ul><li><a href="module-classes_Application.html">classes/Application</a><ul class='methods'><li data-type='method'><a href="module-classes_Application.html#.importJSON">importJSON</a></li><li data-type='method'><a href="module-classes_Application.html#.loadOptions">loadOptions</a></li><li data-type='method'><a href="module-classes_Application.html#.log">log</a></li><li data-type='method'><a href="module-classes_Application.html#.logDebug">logDebug</a></li><li data-type='method'><a href="module-classes_Application.html#.logError">logError</a></li><li data-type='method'><a href="module-classes_Application.html#.logInfo">logInfo</a></li><li data-type='method'><a href="module-classes_Application.html#.logWarn">logWarn</a></li><li data-type='method'><a href="module-classes_Application.html#.safeImport">safeImport</a></li><li data-type='method'><a href="module-classes_Application.html#.toModulePath">toModulePath</a></li></ul></li><li><a href="module-classes_Bot.html">classes/Bot</a><ul class='methods'><li data-type='method'><a href="module-classes_Bot.html#._fetchInteractions">_fetchInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#._onInteractionCreate">_onInteractionCreate</a></li><li data-type='method'><a href="module-classes_Bot.html#._onReady">_onReady</a></li><li data-type='method'><a href="module-classes_Bot.html#._onShutdown">_onShutdown</a></li><li data-type='method'><a href="module-classes_Bot.html#._sendInteractions">_sendInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#.compareInteractionDefinitions">compareInteractionDefinitions</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadConfigFile">loadConfigFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadModule">loadModule</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerApplicationCommand">registerApplicationCommand</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandler">registerEventHandler</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandlerFile">registerEventHandlerFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.start">start</a></li></ul></li><li><a href="module-classes_Database.html">classes/Database</a></li><li><a href="module-events_reload.html">events/reload</a></li><li><a href="module-events_shutdown.html">events/shutdown</a></li><li><a href="module-modules_logger.html">modules/logger</a><ul class='methods'><li data-type='method'><a href="module-modules_logger.html#.onStart">onStart</a></li></ul></li><li><a href="module-modules_logger_log.html">modules/logger/log</a><ul class='methods'><li data-type='method'><a href="module-modules_logger_log.html#.messageDelete">messageDelete</a></li><li data-type='method'><a href="module-modules_logger_log.html#.messageUpdate">messageUpdate</a></li><li data-type='method'><a href="module-modules_logger_log.html#.raw">raw</a></li><li data-type='method'><a href="module-modules_logger_log.html#~attachmentToEmbed">attachmentToEmbed</a></li></ul></li><li><a href="module-modules_modmail.html">modules/modmail</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail.html#.onReady">onReady</a></li><li data-type='method'><a href="module-modules_modmail.html#.onStart">onStart</a></li></ul></li><li><a href="module-modules_modmail_event.html">modules/modmail/event</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_event.html#.messageCreate">messageCreate</a></li><li data-type='method'><a href="module-modules_modmail_event.html#~modMailMessage">modMailMessage</a></li></ul></li><li><a href="module-modules_modmail_messageTemplates.html">modules/modmail/messageTemplates</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.messageReceived">messageReceived</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.newResponse">newResponse</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.newTicket">newTicket</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.ticketConfirmation">ticketConfirmation</a></li></ul></li><li><a href="module-modules_modmail_reportMessage.html">modules/modmail/reportMessage</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_reportMessage.html#.handler">handler</a></li></ul></li><li><a href="module-modules_modmail_ticket.html">modules/modmail/ticket</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_ticket.html#.closeThread">closeThread</a></li><li data-type='method'><a href="module-modules_modmail_ticket.html#.getOrCreateThread">getOrCreateThread</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">module:classes/Application</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        <h2>
+        
+            module:classes/Application
+        
+        </h2>
+        
+            <div class="class-description usertext"><p>Contains methods that pertain to any Node.js application, regardless of what the application's purpose is.</p></div>
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+
+    
+    <h2>Constructor</h2>
+    
+
+    <h4 class="name" id="module:classes/Application"><span class="type-signature"></span>new (require("classes/Application"))<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id="options"><span class="type-signature"></span>options<span class="type-signature"> :Object.&lt;string, string></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Object with keys as flags, and values are the option(s) of those flags in the command line.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>Object with keys as flags, and values are the option(s) of those flags in the command line.</p>
+</div>
+
+
+
+    <h5 class="h5-types">Type:</h5>
+    <ul>
+        <li>
+            
+<span class="param-type">Object.&lt;string, string></span>
+
+
+
+        </li>
+    </ul>
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".importJSON"><span class="type-signature type-signature-async, static">(async, static) </span>importJSON<span class="signature">(filename)</span><span class="type-signature"> &rarr; {*}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Import JSON data. Note that for some utterly baffling reason, EMCAScript <em>still</em> has no official method for importing a JSON file, so this &quot;experimental&quot; method will result in a warning in the application console.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filename</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>JSON file name or path relative to the application's install directory.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <ul>
+<li>The parsed data from the JSON file.</li>
+</ul>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">*</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".loadOptions"><span class="type-signature type-signature-static">(static) </span>loadOptions<span class="signature">(options<span class="signature-attributes">opt</span>)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Parses the command line via which this Node.js application was started into an object whose keys are option flags, and their associated values are the argument that followed the flag. Assumes the first argument is a flag, and the next is an option value, alternating until all arguments are iterated through. If there are an odd number of arguments, the last one will be stored in the options object with the <code>_last</code> key.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Additional instructions on how certain flags should be handled.</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>multiples</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;string></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Array of flags that will be stored as arrays in the returned object, and repeats of that flag in the command line will be added to the corresponding array.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>aliases</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object.&lt;string, Array.&lt;string>></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Object with each key being a flag, and the value is an array of flags that will be considered duplicates of the flag in the key.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".log"><span class="type-signature type-signature-static">(static) </span>log<span class="signature">(type, &hellip;args)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Log a message to the console with added formatting.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>type</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Type of message to log to the console.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>args</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The data to log.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".logDebug"><span class="type-signature type-signature-static">(static) </span>logDebug<span class="signature">(&hellip;args)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Shortcut function for logging a debug message. Will only output the message in a development environment.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>args</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The data to log.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".logError"><span class="type-signature type-signature-static">(static) </span>logError<span class="signature">(&hellip;args)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Shortcut function for reporting an error. Errors should be reported when the current operation cannot be completed.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>args</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The data to log.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".logInfo"><span class="type-signature type-signature-static">(static) </span>logInfo<span class="signature">(&hellip;args)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Shortcut function for logging a message. Messages should be logged occasionally to give the owner feedback to verify that the bot is working.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>args</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The data to log.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".logWarn"><span class="type-signature type-signature-static">(static) </span>logWarn<span class="signature">(&hellip;args)</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Shortcut function for reporting a warning. Warnings should be reported when the current operation can still be completed, but might not work exactly as the user intended.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>args</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                    &lt;repeatable><br>
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The data to log.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".safeImport"><span class="type-signature type-signature-async, static">(async, static) </span>safeImport<span class="signature">(filename, options<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {Object}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>A wrapper for the native import operation that catches errors to prevent the application from crashing when trying to import non-essential modules.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filename</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>File name or path relative to the application's install directory.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Options to send to the native import operation, with some extras noted below.</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>reload</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>If true, the module will be imported again, rather than using the cache.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <ul>
+<li>The imported Node.js module.</li>
+</ul>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".toModulePath"><span class="type-signature type-signature-static">(static) </span>toModulePath<span class="signature">(filename, append<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {string}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Converts any file path into a path that the native import operation will accept.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>filename</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>JavaScript file name or path relative to the application's install directory.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>append</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>A query string to append to the returned path.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <ul>
+<li>A full path with prefix for use in the Node.js import operation.</li>
+</ul>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">string</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Thu Aug 22 2024 01:35:32 GMT-0500 (Central Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>

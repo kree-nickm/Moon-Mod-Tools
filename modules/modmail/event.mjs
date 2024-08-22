@@ -1,6 +1,15 @@
+/**
+ * Handler for messages being sent.
+ * @module modules/modmail/event
+ */
 import { getOrCreateThread, closeThread } from './ticket.mjs';
 import * as Messages from './messageTemplates.mjs';
 
+/**
+ * Creates or updates a ticket with a user's message. For moderator messages, see {@link module:modules/modmail/event#modMailMessage}.
+ * @this discord.js/Client
+ * @param {discord.js/Message} message - Any message the bot sees.
+ */
 export async function messageCreate(message) {
   if (message.partial)
     message = await message.fetch();
@@ -20,16 +29,18 @@ export async function messageCreate(message) {
     
     // Find the user's active thread, or create a new one.
     let myThread = await getOrCreateThread.call(this, mailChannel, member);
+    this.master.logDebug({messageCount:myThread.messageCount});
     
     // Add the user's message to the thread.
     await myThread.send(await Messages.messageReceived.call(this, {message}));
+    await message.reply(await Messages.ticketConfirmation.call(this, {message}));
   }
 }
 
 /**
  * Handle when a mod sends a message in a modmail thread.
- * @this Client
- * @param {Message} message - A message sent by a mod in a modmail thread.
+ * @this discord.js/Client
+ * @param {discord.js/Message} message - A message sent by a mod in a modmail thread.
  */
 async function modMailMessage(message) {
   if (message.channel.locked || message.channel.archived) {
