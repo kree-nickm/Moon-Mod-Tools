@@ -1,6 +1,7 @@
 /**
  * Allows users to report messages or send messages to the moderation team as a whole in the form of a ticket. Also allows to moderators to discuss the report, anonymously respond to the user, and close the ticket.
  * @module modules/modmail
+ * @todo checkmark on the ticket, same as on messages mods type to the user, idk what it does if anything. tags for ticket status. interaction button that goes in the #modmail channel.
  */
 import Database from '../../classes/Database.mjs';
 

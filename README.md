@@ -134,7 +134,7 @@ The documentation in the `docs` directory is generated with [JSDoc](https://jsdo
 
 // BigInt JSON serialization.
 BigInt.prototype.toJSON = function() {
-	return this.toString() + 'n';
+  return this.toString() + 'n';
 }
 
 module.exports = {

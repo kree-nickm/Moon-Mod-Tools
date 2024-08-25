@@ -4,6 +4,7 @@ import Application from './Application.mjs';
 
 /**
  * Contains methods that pertain to a Discord.js bot.
+ * @extends module:classes/Application
  */
 export default class Bot extends Application {
   /**

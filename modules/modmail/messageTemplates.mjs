@@ -9,12 +9,18 @@
  * @param {discord.js/Object} input
  * @param {?discord.js/CommandInteraction} input.interaction - The interaction that was used to update the ticket, or undefined if no interaction was used.
  * @param {?discord.js/Message} input.message - The message that was sent to the bot to update the ticket, or undefined if no message was sent.
+ * @param {discord.js/ThreadChannel} input.ticket - Reference to the ticket channel.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function messageReceived({interaction,message}={}) {
+export async function messageReceived({interaction,message,ticket}={}) {
   let response = {
     embeds: [{
       title: `Message received`,
+      color: 0x00ff00,
+      footer: {
+        text: `Mod Team - Ticket: ${ticket.name}`,
+        icon_url: `${ticket.guild.iconURL()}`,
+      },
     }],
   };
   
@@ -46,24 +52,79 @@ export async function messageReceived({interaction,message}={}) {
  * @param {?discord.js/CommandInteraction} input.interaction - The interaction that was used to update the ticket, or undefined if no interaction was used.
  * @param {?discord.js/Message} input.message - The message that was sent to the bot to update the ticket, or undefined if no message was sent.
  * @param {boolean} [input.created=false] - Whether this report has created a new ticket.
+ * @param {discord.js/ThreadChannel} input.ticket - Reference to the ticket channel.
+ * @param {boolean} [input.ephemeral=true] - Whether the message should be is ephemeral. DMs should not be ephemeral; other replies should be.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function ticketConfirmation({interaction,message,created=false}={}) {
+export async function ticketConfirmation({interaction,message,created=false,ticket,ephemeral=true}={}) {
   let response = {
-    embeds: [{}],
-    ephemeral: true,
+    embeds: [{
+      color: 0x00ff00,
+      footer: {
+        text: `Mod Team - Ticket: ${ticket.name}`,
+        icon_url: `${ticket.guild.iconURL()}`,
+      },
+      fields: [],
+    }],
+    ephemeral,
   };
   
-  if (created)
+  if (created) {
+    // Messaging for a newly created ticket.
     response.embeds[0].title = `Ticket Created`;
-  else
-    response.embeds[0].title = `Ticket Updated`;
-  
-  if (interaction) {
-    response.embeds[0].description = `The message ${interaction.targetMessage.url} has been reported to the moderators.`;
+    response.embeds[0].description = `Your ticket has been created.`;
+    if (ephemeral) {
+      // When the message is sent in a channel. Should only be a response to an interaction.
+      response.embeds[0].fields.push({
+        name: 'Info',
+        value: `A followup DM has been sent to you.\nPlease send any related attachments and further inquiries through that channel.\n\nIf you didn't receive any DMs please make sure you enable DMs from people in the same server or you will not be able to receive support from the mod team.`,
+      });
+      response.embeds[0].fields.push({
+        name: 'Reported Message',
+        value: `${interaction.targetMessage.url}`,
+      });
+    }
+    else {
+      // When the message is sent in a DM. Could either be in response to a DM or an interaction.
+      response.embeds[0].fields.push({
+        name: 'Info',
+        value: `Anything you type in this DM will be conveyed to the Mod Team.\nOnce the Mod Team reviews your ticket they will put in contact with you through this same channel.`,
+      });
+      if (message) {
+        response.embeds[0].fields.push({
+          name: 'Message Sent',
+          value: message.content,
+        });
+      }
+      else if (interaction) {
+        response.embeds[0].fields.push({
+          name: 'Reported Message',
+          value: `${interaction.targetMessage.url}`,
+        });
+      }
+    }
   }
-  else if (message) {
-    response.embeds[0].description = `Your message has been sent to the moderators.`;
+  else {
+    // Messaging for a updating a ticket.
+    if (ephemeral) {
+      // When the message is sent in a channel. Should only be a response to an interaction.
+      response.embeds[0].title = `Ticket Updated`;
+      response.embeds[0].description = `Your ticket was updated.`;
+      response.embeds[0].fields.push({
+        name: 'Info',
+        value: `The new information was correctly sent to the ticket you previously opened.`,
+      });
+    }
+    else {
+      // When the message is sent in a DM. Could either be in response to a DM or an interaction.
+      if (message) {
+        response.embeds[0].title = `Message Sent`;
+        response.embeds[0].description = message.content;
+      }
+      else if (interaction) {
+        // No message should be sent here.
+      }
+    }
   }
   
   return response;
@@ -79,9 +140,54 @@ export async function newResponse(message) {
   let response = {
     embeds: [{
       title: `New Response`,
+      color: 0x00ff00,
       description: message.content,
+      fields: [
+        {
+          name: 'Mod Info',
+          value: `${message.author}`,
+        },
+      ],
+      footer: {
+        text: `Mod Team - Ticket: ${message.channel.name}`,
+        icon_url: `${message.guild.iconURL()}`,
+      },
     }],
     files: message.attachments.map(v=>v),
+  };
+  
+  return response;
+}
+
+/**
+ * Message sent to the user when a moderator closes the ticket.
+ * @this discord.js/Client
+ * @param {discord.js/ThreadChannel} ticket - The ticket being closed.
+ * @param {discord.js/User} moderator - The moderator who closed the ticket.
+ * @param {string} [reason] - The reason given for closing the ticket.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
+export async function closeConfirmation(ticket, moderator, reason) {
+  let response = {
+    embeds: [{
+      title: `Ticket Closed`,
+      color: 0xaa0000,
+      description: `Ticket \`${ticket.name}\` was closed.`,
+      fields: [
+        {
+          name: 'Closing Reason',
+          value: reason ? reason : 'No reason given.',
+        },
+        {
+          name: 'Mod Info',
+          value: `${moderator}`,
+        },
+      ],
+      footer: {
+        text: `Mod Team - Ticket: ${ticket.name}`,
+        icon_url: `${ticket.guild.iconURL()}`,
+      },
+    }],
   };
   
   return response;
@@ -97,6 +203,7 @@ export async function newTicket(member) {
   let response = {
     embeds: [{
       title: `New Ticket`,
+      color: 0x00aa00,
       description: `Type a message in this channel to reply. Messages starting with the server prefix \`=\` are ignored, and can be used for staff discussion. Use the command \`=close <reason:optional>\` to close the ticket.`,
       fields: [
         {

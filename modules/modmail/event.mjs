@@ -28,12 +28,18 @@ export async function messageCreate(message) {
       return;
     
     // Find the user's active thread, or create a new one.
-    let myThread = await getOrCreateThread.call(this, mailChannel, member);
-    this.master.logDebug({messageCount:myThread.messageCount});
+    let ticket = await getOrCreateThread.call(this, mailChannel, member);
+    this.master.logDebug(`Thread msg count:`, ticket.messageCount);
     
     // Add the user's message to the thread.
-    await myThread.send(await Messages.messageReceived.call(this, {message}));
-    await message.reply(await Messages.ticketConfirmation.call(this, {message}));
+    await message.author.send(await Messages.ticketConfirmation.call(this, {
+      message,
+      ephemeral: false,
+      ticket,
+      created: !ticket.messageCount,
+    }));
+    await ticket.send(await Messages.messageReceived.call(this, {message, ticket}));
+    this.master.logDebug(`Thread msg count:`, ticket.messageCount);
   }
 }
 
@@ -48,18 +54,20 @@ async function modMailMessage(message) {
     return;
   }
   
-  if (message.content.startsWith('=')) {
-    this.master.logDebug(`Command character used; no need to message user.`);
-    if (message.content === '=close' || message.content.startsWith('=close '))
-      await closeThread.call(this, message);
-    return;
-  }
-  
   let threadMsg = await message.channel.fetchStarterMessage();
   let userId = threadMsg.embeds[0].fields.find(fld => fld.name === 'Id')?.value;
   let user = await this.users.fetch(userId);
   if (!user) {
-    this.master.logError(`Unable to determine which user to send the response to.`, {message, threadMsg, userId});
+    this.master.logError(`Unable to determine which user created this ticket.`, {message, threadMsg, userId});
+    return;
+  }
+  
+  if (message.content.startsWith('=')) {
+    if (message.content === '=close' || message.content.startsWith('=close ')) {
+      let reason = message.content.length > 7 ? message.content.slice(7) : '';
+      await closeThread.call(this, message.channel, message.author, reason);
+      await user.send(await Messages.closeConfirmation.call(this, message.channel, message.author, reason));
+    }
     return;
   }
   

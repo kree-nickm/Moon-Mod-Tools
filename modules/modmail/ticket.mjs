@@ -32,11 +32,12 @@ export async function getOrCreateThread(mailChannel, member) {
 /**
  * Handle when a moderator closes a ticket thread via a chat command.
  * @this discord.js/Client
- * @param {discord.js/Message} message - The moderator's message, whose content begins with `=close`
+ * @param {discord.js/ThreadChannel} ticket - The ticket being closed.
+ * @param {discord.js/User} moderator - The moderator who closed the ticket.
+ * @param {string} [reason] - The reason given for closing the ticket.
  */
-export async function closeThread(message) {
-  let reason = message.content.length > 7 ? message.content.slice(7) : '';
-  this.master.logDebug(`Closing/locking ticket '${message.channel.name}', reason:`, reason);
-  await message.channel.setLocked(true, reason);
-  await message.channel.setArchived(true, reason);
+export async function closeThread(ticket, moderator, reason) {
+  this.master.logDebug(`Closing/locking ticket '${ticket.name}'.`, {moderator:`${moderator.username} (${moderator.id})`, reason});
+  await ticket.setLocked(true, reason);
+  await ticket.setArchived(true, reason);
 }

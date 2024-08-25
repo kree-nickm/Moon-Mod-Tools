@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    
+    <meta charset="utf-8">
+    <title>modules/logger - Documentation</title>
+    
+    
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc.css">
+    <script src="scripts/nav.js" defer></script>
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+
+<input type="checkbox" id="nav-trigger" class="nav-trigger" />
+<label for="nav-trigger" class="navicon-button x">
+  <div class="navicon"></div>
+</label>
+
+<label for="nav-trigger" class="overlay"></label>
+
+<nav >
+    
+    
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="module-classes_Application.html">classes/Application</a><ul class='methods'><li data-type='method'><a href="module-classes_Application.html#.importJSON">importJSON</a></li><li data-type='method'><a href="module-classes_Application.html#.loadOptions">loadOptions</a></li><li data-type='method'><a href="module-classes_Application.html#.log">log</a></li><li data-type='method'><a href="module-classes_Application.html#.logDebug">logDebug</a></li><li data-type='method'><a href="module-classes_Application.html#.logError">logError</a></li><li data-type='method'><a href="module-classes_Application.html#.logInfo">logInfo</a></li><li data-type='method'><a href="module-classes_Application.html#.logWarn">logWarn</a></li><li data-type='method'><a href="module-classes_Application.html#.safeImport">safeImport</a></li><li data-type='method'><a href="module-classes_Application.html#.toModulePath">toModulePath</a></li></ul></li><li><a href="module-classes_Bot.html">classes/Bot</a><ul class='methods'><li data-type='method'><a href="module-classes_Bot.html#._fetchInteractions">_fetchInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#._onInteractionCreate">_onInteractionCreate</a></li><li data-type='method'><a href="module-classes_Bot.html#._onReady">_onReady</a></li><li data-type='method'><a href="module-classes_Bot.html#._onShutdown">_onShutdown</a></li><li data-type='method'><a href="module-classes_Bot.html#._sendInteractions">_sendInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#.compareInteractionDefinitions">compareInteractionDefinitions</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadConfigFile">loadConfigFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadModule">loadModule</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerApplicationCommand">registerApplicationCommand</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandler">registerEventHandler</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandlerFile">registerEventHandlerFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.start">start</a></li></ul></li><li><a href="module-classes_Database.html">classes/Database</a></li></ul><h3>Modules</h3><ul><li><a href="module-classes_Application.html">classes/Application</a><ul class='methods'><li data-type='method'><a href="module-classes_Application.html#.importJSON">importJSON</a></li><li data-type='method'><a href="module-classes_Application.html#.loadOptions">loadOptions</a></li><li data-type='method'><a href="module-classes_Application.html#.log">log</a></li><li data-type='method'><a href="module-classes_Application.html#.logDebug">logDebug</a></li><li data-type='method'><a href="module-classes_Application.html#.logError">logError</a></li><li data-type='method'><a href="module-classes_Application.html#.logInfo">logInfo</a></li><li data-type='method'><a href="module-classes_Application.html#.logWarn">logWarn</a></li><li data-type='method'><a href="module-classes_Application.html#.safeImport">safeImport</a></li><li data-type='method'><a href="module-classes_Application.html#.toModulePath">toModulePath</a></li></ul></li><li><a href="module-classes_Bot.html">classes/Bot</a><ul class='methods'><li data-type='method'><a href="module-classes_Bot.html#._fetchInteractions">_fetchInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#._onInteractionCreate">_onInteractionCreate</a></li><li data-type='method'><a href="module-classes_Bot.html#._onReady">_onReady</a></li><li data-type='method'><a href="module-classes_Bot.html#._onShutdown">_onShutdown</a></li><li data-type='method'><a href="module-classes_Bot.html#._sendInteractions">_sendInteractions</a></li><li data-type='method'><a href="module-classes_Bot.html#.compareInteractionDefinitions">compareInteractionDefinitions</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadConfigFile">loadConfigFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.loadModule">loadModule</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerApplicationCommand">registerApplicationCommand</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandler">registerEventHandler</a></li><li data-type='method'><a href="module-classes_Bot.html#.registerEventHandlerFile">registerEventHandlerFile</a></li><li data-type='method'><a href="module-classes_Bot.html#.start">start</a></li></ul></li><li><a href="module-classes_Database.html">classes/Database</a></li><li><a href="module-events_reload.html">events/reload</a></li><li><a href="module-events_shutdown.html">events/shutdown</a></li><li><a href="module-modules_logger.html">modules/logger</a><ul class='methods'><li data-type='method'><a href="module-modules_logger.html#.onStart">onStart</a></li></ul></li><li><a href="module-modules_logger_log.html">modules/logger/log</a><ul class='methods'><li data-type='method'><a href="module-modules_logger_log.html#.messageDelete">messageDelete</a></li><li data-type='method'><a href="module-modules_logger_log.html#.messageUpdate">messageUpdate</a></li><li data-type='method'><a href="module-modules_logger_log.html#.raw">raw</a></li><li data-type='method'><a href="module-modules_logger_log.html#~attachmentToEmbed">attachmentToEmbed</a></li></ul></li><li><a href="module-modules_modmail.html">modules/modmail</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail.html#.onReady">onReady</a></li><li data-type='method'><a href="module-modules_modmail.html#.onStart">onStart</a></li></ul></li><li><a href="module-modules_modmail_event.html">modules/modmail/event</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_event.html#.messageCreate">messageCreate</a></li><li data-type='method'><a href="module-modules_modmail_event.html#~modMailMessage">modMailMessage</a></li></ul></li><li><a href="module-modules_modmail_messageTemplates.html">modules/modmail/messageTemplates</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.closeConfirmation">closeConfirmation</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.messageReceived">messageReceived</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.newResponse">newResponse</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.newTicket">newTicket</a></li><li data-type='method'><a href="module-modules_modmail_messageTemplates.html#.ticketConfirmation">ticketConfirmation</a></li></ul></li><li><a href="module-modules_modmail_reportMessage.html">modules/modmail/reportMessage</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_reportMessage.html#.handler">handler</a></li></ul></li><li><a href="module-modules_modmail_ticket.html">modules/modmail/ticket</a><ul class='methods'><li data-type='method'><a href="module-modules_modmail_ticket.html#.closeThread">closeThread</a></li><li data-type='method'><a href="module-modules_modmail_ticket.html#.getOrCreateThread">getOrCreateThread</a></li></ul></li></ul>
+    
+</nav>
+
+<div id="main">
+    
+    <h1 class="page-title">modules/logger</h1>
+    
+
+    
+
+
+
+
+<section>
+
+<header>
+    
+        
+            
+        
+    
+</header>
+
+<article>
+    
+        <div class="container-overview">
+        
+            
+                <div class="description usertext"><p>Logs edited and deleted messages to a specified channel in a guild.</p></div>
+            
+
+            
+                
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Logs edited and deleted messages to a specified channel in a guild.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            
+        
+        </div>
+    
+
+    
+
+    
+
+    
+    
+    
+
+     
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        
+            
+<h4 class="name" id=".intents"><span class="type-signature type-signature-static, constant">(static, constant) </span>intents<span class="type-signature"></span></h4>
+
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>GuildMessages is required to see messages sent in a guild, and MessageContent is required to actually see the content of those messages.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+<div class="description usertext">
+    <p>GuildMessages is required to see messages sent in a guild, and MessageContent is required to actually see the content of those messages.</p>
+</div>
+
+
+
+
+
+
+
+
+        
+    
+
+    
+        <h3 class="subsection-title">Methods</h3>
+
+        
+            
+
+    
+
+    <h4 class="name" id=".onStart"><span class="type-signature type-signature-static">(static) </span>onStart<span class="signature">()</span><span class="type-signature"></span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Registers the event handlers for edited and deleted messages.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-see">See:</dt>
+    <dd class="tag-see">
+        <ul>
+            <li><a href="module-modules_logger_log.html">module:modules/logger/log</a></li>
+        </ul>
+    </dd>
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+    
+    
+</div>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Sun Aug 25 2024 02:07:28 GMT-0500 (Central Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+</footer>
+
+<script>prettyPrint();</script>
+<script src="scripts/polyfill.js"></script>
+<script src="scripts/linenumber.js"></script>
+
+
+
+</body>
+</html>
