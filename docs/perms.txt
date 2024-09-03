@@ -1,0 +1,75 @@
+GUILD_CREATE: ['Guilds'],
+GUILD_UPDATE: ['Guilds'],
+GUILD_DELETE: ['Guilds'],
+GUILD_ROLE_CREATE: ['Guilds'],
+GUILD_ROLE_UPDATE: ['Guilds'],
+GUILD_ROLE_DELETE: ['Guilds'],
+CHANNEL_CREATE: ['Guilds'],
+CHANNEL_UPDATE: ['Guilds'],
+CHANNEL_DELETE: ['Guilds'],
+CHANNEL_PINS_UPDATE: ['Guilds'],
+THREAD_CREATE: ['Guilds'],
+THREAD_UPDATE: ['Guilds'],
+THREAD_DELETE: ['Guilds'],
+THREAD_LIST_SYNC: ['Guilds'],
+THREAD_MEMBER_UPDATE: ['Guilds'],
+THREAD_MEMBERS_UPDATE: ['Guilds','GuildMembers'],
+STAGE_INSTANCE_CREATE: ['Guilds'],
+STAGE_INSTANCE_UPDATE: ['Guilds'],
+STAGE_INSTANCE_DELETE: ['Guilds'],
+
+GUILD_MEMBER_ADD: ['GuildMembers'],
+GUILD_MEMBER_UPDATE: ['GuildMembers'],
+GUILD_MEMBER_REMOVE: ['GuildMembers'],
+
+GUILD_AUDIT_LOG_ENTRY_CREATE: ['GuildModeration'],
+GUILD_BAN_ADD: ['GuildModeration'],
+GUILD_BAN_REMOVE: ['GuildModeration'],
+
+GUILD_EMOJIS_UPDATE: ['GuildEmojisAndStickers'],
+GUILD_STICKERS_UPDATE: ['GuildEmojisAndStickers'],
+
+GUILD_INTEGRATIONS_UPDATE: ['GuildIntegrations'],
+INTEGRATION_CREATE: ['GuildIntegrations'],
+INTEGRATION_UPDATE: ['GuildIntegrations'],
+INTEGRATION_DELETE: ['GuildIntegrations'],
+
+WEBHOOKS_UPDATE: ['GuildWebhooks'],
+
+INVITE_CREATE: ['GuildInvites'],
+INVITE_DELETE: ['GuildInvites'],
+
+VOICE_STATE_UPDATE: ['GuildVoiceStates'],
+
+PRESENCE_UPDATE: ['GuildPresences'],
+
+GUILD_SCHEDULED_EVENT_CREATE: ['GuildScheduledEvents'],
+GUILD_SCHEDULED_EVENT_UPDATE: ['GuildScheduledEvents'],
+GUILD_SCHEDULED_EVENT_DELETE: ['GuildScheduledEvents'],
+GUILD_SCHEDULED_EVENT_USER_ADD: ['GuildScheduledEvents'],
+GUILD_SCHEDULED_EVENT_USER_REMOVE: ['GuildScheduledEvents'],
+
+AUTO_MODERATION_RULE_CREATE: ['AutoModerationConfiguration'],
+AUTO_MODERATION_RULE_UPDATE: ['AutoModerationConfiguration'],
+AUTO_MODERATION_RULE_DELETE: ['AutoModerationConfiguration'],
+
+AUTO_MODERATION_ACTION_EXECUTION: ['AutoModerationExecution'],
+
+MessageContent
+
+MESSAGE_CREATE: ['GuildMessages','DirectMessages'],
+MESSAGE_UPDATE: ['GuildMessages','DirectMessages'],
+MESSAGE_DELETE: ['GuildMessages','DirectMessages'],
+MESSAGE_DELETE_BULK: ['GuildMessages'],
+
+CHANNEL_PINS_UPDATE: ['DirectMessages'],
+
+MESSAGE_REACTION_ADD: ['GuildMessageReactions','DirectMessageReactions'],
+MESSAGE_REACTION_REMOVE: ['GuildMessageReactions','DirectMessageReactions'],
+MESSAGE_REACTION_REMOVE_ALL: ['GuildMessageReactions','DirectMessageReactions'],
+MESSAGE_REACTION_REMOVE_EMOJI: ['GuildMessageReactions','DirectMessageReactions'],
+
+TYPING_START: ['GuildMessageTyping','DirectMessageTyping'],
+
+MESSAGE_POLL_VOTE_ADD: ['GuildMessagePolls','DirectMessagePolls'],
+MESSAGE_POLL_VOTE_REMOVE: ['GuildMessagePolls','DirectMessagePolls'],

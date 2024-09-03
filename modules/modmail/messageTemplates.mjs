@@ -1,7 +1,47 @@
 /**
- * All of the templates for messages sent by the bot.
+ * All of the templates for messages sent by the modmail module.
  * @module modules/modmail/messageTemplates
  */
+
+/**
+ * Convert an Attachment into an embed object.
+ * @param {discord.js/Attachment} attachment - The Attachment object reported by Discord.js
+ * @param {Object} overwrites - Properties to include in the embed object after it has been populated with Attachment data.
+ * @returns {Object} An object to be included in the embeds array of a message's options before sending it.
+ */
+export async function attachmentToEmbed(attachment, overwrites={}) {
+  let embed = {
+    title: 'Attachment Details',
+    fields: [
+      {
+        name: 'Name',
+        value: attachment.name,
+      },
+      {
+        name: 'Content Type',
+        value: attachment.contentType,
+      },
+      {
+        name: 'Size (Bytes)',
+        value: attachment.size,
+      },
+    ],
+  };
+  
+  if(attachment.width && attachment.height)
+    embed.fields.push({
+      name: 'Size (Pixels)',
+      value: `${attachment.width}x${attachment.height}`,
+    });
+  
+  if (attachment.contentType.startsWith('audio/'))
+    embed.fields.push({
+      name: 'Duration',
+      value: `${attachment.duration}s`,
+    });
+  
+  return Object.assign(embed, overwrites);
+}
 
 /**
  * Message sent to the ticket when a user creates or updates a ticket.
@@ -31,7 +71,11 @@ export async function messageReceived({interaction,message,ticket}={}) {
       text: `${interaction.targetMessage.author.username}`,
       icon_url: `${interaction.targetMessage.author.avatarURL()}`,
     };
-    response.files = interaction.targetMessage.attachments.map(v=>v);
+    response.files = [];
+    for(let [attachmentId, attachment] of interaction.targetMessage.attachments) {
+      response.files.push(attachment);
+      response.embeds.push(await attachmentToEmbed.call(this, attachment));
+    }
   }
   else if (message) {
     response.embeds[0].description = message.content;
@@ -39,7 +83,11 @@ export async function messageReceived({interaction,message,ticket}={}) {
       text: `${message.author.username}`,
       icon_url: `${message.author.avatarURL()}`,
     };
-    response.files = message.attachments.map(v=>v);
+    response.files = [];
+    for(let [attachmentId, attachment] of message.attachments) {
+      response.files.push(attachment);
+      response.embeds.push(await attachmentToEmbed.call(this, attachment));
+    }
   }
   
   return response;

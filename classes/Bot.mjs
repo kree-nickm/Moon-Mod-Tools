@@ -1,6 +1,7 @@
 /** @module classes/Bot */
 import { Client, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
 import Application from './Application.mjs';
+import BotModule from './BotModule.mjs';
 
 /**
  * Contains methods that pertain to a Discord.js bot.
@@ -140,8 +141,11 @@ export default class Bot extends Application {
       return false;
     }
     
-    for(let module of this.config.modules)
-      await this.loadModule(module);
+    for(let module of this.config.modules) {
+      this.modules[module.name] = new BotModule(this, module.name, module.options);
+      if(!await this.modules[module.name].load())
+        delete this.modules[module.name];
+    }
     
     // Note: Is it better to just add them, or error out if they are missing?
     // The former is obviously easier, but the latter gives the host more
@@ -165,87 +169,18 @@ export default class Bot extends Application {
     this.client.master = this;
     
     for(let name in this.modules) {
-      if (typeof(this.modules[name]?.imports.onStart) === 'function') {
-        try {
-          let start = this.modules[name].imports.onStart.call(this, this.modules[name]);
-          if (start && start instanceof Promise)
-            start = await start;
-        }
-        catch(err) {
-          this.logError(`Module '${name}' failed to start.`, err);
-          this.modules[name] = null;
-        }
-      }
+      if(!await this.modules[name].start())
+        delete this.modules[name];
     }
     
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
-    await this.registerEventHandler('messageCreate', message => this.logDebug(`Seen: ${message.content}`));
+    await this.registerEventHandler('messageCreate', message => this.logDebug(`Msg From: ${message.author.username}: ${message.content??message.embeds?.[0]?.description??message.embeds?.[0]?.title}`));
     
     this.logInfo(`Bot logging in to Discord.`);
     this.rest = new REST().setToken(this.config.token);
     await this.client.login(this.config.token);
     
-    return true;
-  }
-  
-  /**
-   * Load a bot module from the modules directory. Can be used to reload a module's code. If used after bot is started/ready, will attempt to call the appropriate module setup methods.
-   * @param {Object} moduleData
-   * @param {string} moduleData.name - Name of the directory containing the module's code.
-   * @param {Object.<string, *>} [moduleData.options={}] - Module-specific configuration options that the module requires in order to run.
-   * @param {boolean} [moduleData.reload=false] - Whether to reload the module's code from the directory after it has already been loaded.
-   * @returns {boolean} True if the module was loaded (or reloaded) and all applicable setup methods succeeded; false otherwise.
-   */
-  static async loadModule({name, options={}, reload=false}) {
-    if (!name) {
-      this.logError(`No module name given.`);
-      return false;
-    }
-    
-    try {
-      this.modules[name] = {
-        imports: await this.safeImport(`modules/${name}/index.mjs`, {reload}),
-        options: options,
-      };
-      this.logInfo(`Loaded module '${name}'.`);
-    }
-    catch(err) {
-      this.logError(`Failed to load module '${name}'.`, err);
-      return false;
-    }
-    
-    // If module is being loaded after bot startup, we need to call the onStart method now and (TODO) double-check the intents/partials.
-    if (this.client) {
-      if (typeof(this.modules[name]?.imports.onStart) === 'function') {
-        try {
-          let start = this.modules[name].imports.onStart.call(this, this.modules[name]);
-          if (start && start instanceof Promise)
-            start = await start;
-        }
-        catch(err) {
-          this.logError(`Module '${name}' failed to start.`, err);
-          this.modules[name] = null;
-          return false;
-        }
-      }
-    }
-    
-    // If module is being loaded after bot is ready, we need to call the onReady method now.
-    if (this.client?.isReady()) {
-      if (typeof(this.modules[name]?.imports.onReady) === 'function') {
-        try {
-          let ready = this.modules[name].imports.onReady.call(this, this.modules[name]);
-          if (ready && ready instanceof Promise)
-            ready = await ready;
-        }
-        catch(err) {
-          this.logError(`Module '${name}' failed to ready.`, err);
-          this.modules[name] = null;
-          return false;
-        }
-      }
-    }
     return true;
   }
   
@@ -451,7 +386,6 @@ export default class Bot extends Application {
       }
     }
     for (let [guildId, guild] of this.client.guilds.cache) {
-      this.logInfo(`Bot is in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}).`);
       let guildInteractions = await this.rest.get(Routes.applicationGuildCommands(this.config.id, guildId));
       if (guildInteractions.length) {
         this.logWarn(`This application already has guild application commands registered in ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}):`, guildInteractions.map(inter => inter.name).join(', '), `; They will be removed and replaced by this bot's interactions.`);
@@ -509,17 +443,8 @@ export default class Bot extends Application {
     await this._fetchInteractions();
     
     for(let name in this.modules) {
-      if (typeof(this.modules[name]?.imports.onReady) === 'function') {
-        try {
-          let ready = this.modules[name].imports.onReady.call(this, this.modules[name]);
-          if (ready && ready instanceof Promise)
-            ready = await ready;
-        }
-        catch(err) {
-          this.logError(`Module '${name}' failed to ready.`, err);
-          this.modules[name] = null;
-        }
-      }
+      if(!await this.modules[name].ready())
+        delete this.modules[name];
     }
     
     for(let appCommand of this.config.applicationCommands) {
@@ -535,6 +460,7 @@ export default class Bot extends Application {
    * Method that is called when the bot receives an interaction via the Discord API. Determines which function to pass the interaction to.
    */
   static async _onInteractionCreate(interaction) {
+    //this.logDebug(`Interaction received:`, interaction);
     let commandList;
     if (interaction.isChatInputCommand())
       commandList = this.slashCommands;

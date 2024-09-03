@@ -1,5 +1,5 @@
 /**
- * Allows users to report messages or send messages to the moderation team as a whole in the form of a ticket. Also allows to moderators to discuss the report, anonymously respond to the user, and close the ticket.
+ * Allows users to report messages or send messages to the moderation team as a whole in the form of a ticket. Also allows to moderators to discuss the report, respond to the user, and close the ticket.
  * @module modules/modmail
  * @todo checkmark on the ticket, same as on messages mods type to the user, idk what it does if anything. tags for ticket status. interaction button that goes in the #modmail channel.
  */
@@ -28,12 +28,14 @@ export async function onStart(module) {
  * Registers the event handlers for opening a ticket. Fetches all tickets to build the ticket database.
  */
 export async function onReady(module) {
+  // Load the ticket channel and ensure it is set up.
   let mailChannel = await this.client.channels.fetch(module.options.mailChannelId);
   if (!mailChannel?.isThreadOnly()) {
     this.logError(`modmail requires mailChannelId to be a forum channel.`);
     return false;
   }
   
+  // Register commands/interactions
   await this.registerEventHandlerFile('modules/modmail/event.mjs', {
     messageCreate: 'messageCreate',
   });
@@ -70,6 +72,5 @@ export async function onReady(module) {
   }
   await addSmt.finalize();
   
-  this.logInfo(`Module 'modmail' ready.`);
   return true;
 }

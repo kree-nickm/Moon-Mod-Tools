@@ -5,8 +5,13 @@ Code base for all of the bots that provide moderator tools in moonmoon's subscri
 1. Checkout this repository onto your server.
 2. Obtain or create a [configuration file](#configuration-file) with the bot's ID and token, among other settings described below.
 3. Run `npm install` to install all of the dependencies.
-4. Start the bot with `node .` to use default options.
+
+## Running the Bot
+Start the bot with `node .` to use default options.
    * If your configuration file is not `config.json` in the app directory, you can instead run `node . --config <filename>` to load your configuration file.
+To use PM2, you instead run `pm2 start --name="<bot name>" "node ."` or `pm2 start --name="<bot name>" node -- .`
+   * You can either enclose the node command and arguments in quotes, or add all node arguments after `node --`, as above.
+   * Including a bot name is strongly recommended, otherwise PM2 will simply list the bot as "node" which may be confusing, especially in the log files.
 
 ## Configuration File
 Example configuration file:
@@ -126,6 +131,14 @@ Allows users to send reports to the moderation team as a whole, and allows the m
 Options:
 * **mailChannelId** - The snowflake ID of the channel where modmail report threads will be created for mods to discuss the report. Must be a forum channel.
 * **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores users and their modmail tickets, to make looking them up easier. Default: `modmail.sqlite`
+
+### pitbot
+Manages the role that marks users as suspended, and logs disciplinary actions to allow moderators to better manage punishments against users who break the server rules.
+Options:
+* **logChannelId** - The snowflake ID of the channel where pitbot will report all disciplinary actions that it takes.
+* **pitRoleId** - The snowflake ID of the role to give to users who are currently suspended.
+* **modRoleId** - A string or array of strings. Each string is a snowflake ID of a moderator role, so the bot knows who the moderators are.
+* **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores all current and past disciplinary actions. Default: `pitbot.sqlite`
 
 ## Documentation
 The documentation in the `docs` directory is generated with [JSDoc](https://jsdoc.app) with the following configuration file:

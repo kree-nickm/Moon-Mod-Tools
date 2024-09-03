@@ -2,50 +2,12 @@
  * Contains the event handlers for the logger module.
  * @module modules/logger/log
  */
+import * as Messages from './messageTemplates.mjs';
 
 /**
- * Because Discord.js only fires messageDelete for messages that are cached, we need to use this to determine which messages those are. Because when we use the raw event to log non-cached message deletion, there is no other way the raw event can know if messageDelete has also fired.
+ * Because Discord.js only emits events for messages that are cached, we need to use this to determine which messages those are. Because when we use the raw event to log non-cached message changes, there is no other way the raw event can know if the Discord.js is also being emitted.
  */
-let messageDeleteTimer;
-
-/**
- * Convert an Attachment into an embed object.
- * @param {discord.js/Attachment} attachment - The Attachment object reported by Discord.js
- * @param {Object} overwrites - Properties to include in the embed object after it has been populated with Attachment data.
- * @returns {Object} An object to be included in the embeds array of a message's options before sending it.
- */
-function attachmentToEmbed(attachment, overwrites={}) {
-  let embed = {
-    fields: [
-      {
-        name: 'Name',
-        value: attachment.name,
-      },
-      {
-        name: 'Content Type',
-        value: attachment.contentType,
-      },
-      {
-        name: 'Size (Bytes)',
-        value: attachment.size,
-      },
-    ],
-  };
-  
-  if(attachment.width && attachment.height)
-    embed.fields.push({
-      name: 'Size (Pixels)',
-      value: `${attachment.width}x${attachment.height}`,
-    });
-  
-  if (attachment.contentType.startsWith('audio/'))
-    embed.fields.push({
-      name: 'Duration',
-      value: `${attachment.duration}s`,
-    });
-  
-  return Object.assign(embed, overwrites);
-}
+var timers = {};
 
 /**
  * Log the changes to the updated message.
@@ -53,6 +15,14 @@ function attachmentToEmbed(attachment, overwrites={}) {
  * @param {discord.js/Message} newMessage - The newly edited message.
  */
 export async function messageUpdate(oldMessage, newMessage) {
+  // Prevent this function from running twice, since it will also always be called by the raw event handler.
+  if(timers[newMessage.id]) {
+    clearTimeout(timers[newMessage.id]);
+    delete timers[newMessage.id];
+  }
+  else
+    timers[newMessage.id] = true;
+  
   if (oldMessage?.partial)
     oldMessage = await oldMessage.fetch();
   if (newMessage.partial)
@@ -74,14 +44,14 @@ export async function messageUpdate(oldMessage, newMessage) {
     for(let [attachmentId, attachment] of oldMessage?.attachments??[]) {
       oldAttachList.push(attachment);
       if (!newMessage.attachments.has(attachmentId)) {
-        embeds.push(attachmentToEmbed(attachment, {title:'Attachment Removed'}));
+        embeds.push(await Messages.attachmentToEmbed.call(this, attachment, {title:'Attachment Removed'}));
         files.push(attachment);
       }
     }
     for(let [attachmentId, attachment] of newMessage.attachments??[]) {
       newAttachList.push(attachment);
       if (!oldMessage?.attachments.has(attachmentId)) {
-        embeds.push(attachmentToEmbed(attachment, {title:'Attachment Added'}));
+        embeds.push(await Messages.attachmentToEmbed.call(this, attachment, {title:'Attachment Added'}));
         files.push(attachment);
       }
     }
@@ -149,12 +119,12 @@ export async function messageUpdate(oldMessage, newMessage) {
  */
 export async function messageDelete(message) {
   // Prevent this function from running twice, since it will also always be called by the raw event handler.
-  if(messageDeleteTimer) {
-    clearTimeout(messageDeleteTimer);
-    messageDeleteTimer = null;
+  if(timers[message.id]) {
+    clearTimeout(timers[message.id]);
+    delete timers[message.id];
   }
   else
-    messageDeleteTimer = true;
+    timers[message.id] = true;
   
   if (message.partial)
     message = await message.fetch();
@@ -171,7 +141,7 @@ export async function messageDelete(message) {
   let files = [];
   if (message.attachments?.size) {
     for(let [attachmentId, attachment] of message.attachments) {
-      embeds.push(attachmentToEmbed(attachment, {title:'Attachment Removed'}));
+      embeds.push(await Messages.attachmentToEmbed.call(this, attachment, {title:'Attachment Removed'}));
       files.push(attachment);
     }
   }
@@ -218,6 +188,7 @@ export async function messageDelete(message) {
 
 /**
  * Runs when any event that we have the intents for is received from the Discord API. Necessary because Discord.js will not emit messageUpdate or messageDelete if the message is not cached.
+ * @todo This isn't doing what it's supposed to anymore.
  * @param {Object} packet
  * @param {?string} packet.t - Event name
  * @param {?*} packet.d - Event data
@@ -226,22 +197,25 @@ export async function messageDelete(message) {
  */
 export async function raw(packet) {
   if(packet.t === 'MESSAGE_UPDATE') {
-    let timestamp = Date.parse(packet.d.timestamp);
-    if(timestamp && timestamp < this.readyTimestamp) {
+    if(!timers[packet.d.id]) {
       let channel = await this.channels.fetch(packet.d.channel_id);
       let message = await channel.messages.fetch(packet.d.id);
-      this.emit('messageUpdate', null, message);
+      timers[packet.d.id] = setTimeout(()=>{
+        this.emit('messageUpdate', null, message);
+      }, 500);
     }
+    else
+      delete timers[packet.d.id];
   }
   else if(packet.t === 'MESSAGE_DELETE') {
-    if(!messageDeleteTimer) {
+    if(!timers[packet.d.id]) {
       let channel = await this.channels.fetch(packet.d.channel_id);
-      messageDeleteTimer = setTimeout(()=>{
+      timers[packet.d.id] = setTimeout(()=>{
         this.emit('messageDelete', {id:packet.d.id, channel, channelId:packet.d.channel_id, guildId:packet.d.guild_id});
       }, 500);
     }
     else
-      messageDeleteTimer = null;
+      delete timers[packet.d.id];
   }
   //else {
   //  this.master.logDebug(`Raw Event:`, packet);

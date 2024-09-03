@@ -3,7 +3,7 @@
 <head>
     
     <meta charset="utf-8">
-    <title>modules/modmail/event - Documentation</title>
+    <title>modules/logger/messageTemplates - Documentation</title>
     
     
     <script src="scripts/prettify/prettify.js"></script>
@@ -35,7 +35,7 @@
 
 <div id="main">
     
-    <h1 class="page-title">modules/modmail/event</h1>
+    <h1 class="page-title">modules/logger/messageTemplates</h1>
     
 
     
@@ -58,7 +58,7 @@
         <div class="container-overview">
         
             
-                <div class="description usertext"><p>Handler for messages being sent.</p></div>
+                <div class="description usertext"><p>All of the templates for messages sent by the logger module.</p></div>
             
 
             
@@ -70,7 +70,7 @@
 <dl class="details">
     
     <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>Handler for messages being sent.</p></li></ul></dd>
+    <dd class="tag-description"><ul class="dummy"><li><p>All of the templates for messages sent by the logger module.</p></li></ul></dd>
     
 
     
@@ -162,7 +162,7 @@
 
     
 
-    <h4 class="name" id=".messageCreate"><span class="type-signature type-signature-static">(static) </span>messageCreate<span class="signature">(message)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id=".attachmentToEmbed"><span class="type-signature type-signature-static">(static) </span>attachmentToEmbed<span class="signature">(attachment, overwrites)</span><span class="type-signature"> &rarr; {Object}</span></h4>
 
     
 
@@ -172,7 +172,7 @@
 <dl class="details">
     
     <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>Creates or updates a ticket with a user's message. For moderator messages, see module:modules/modmail/event#modMailMessage.</p></li></ul></dd>
+    <dd class="tag-description"><ul class="dummy"><li><p>Convert an Attachment into an embed object.</p></li></ul></dd>
     
 
     
@@ -216,9 +216,6 @@
 
 
 
-    <h5 class="h5-this">This:</h5>
-    <ul><li>discord.js/Client</li></ul>
-
 
 
 
@@ -248,13 +245,13 @@
 
         <tr>
             
-                <td class="name"><code>message</code></td>
+                <td class="name"><code>attachment</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">discord.js/Message</span>
+<span class="param-type">discord.js/Attachment</span>
 
 
 
@@ -265,7 +262,31 @@
 
             
 
-            <td class="description last"><p>Any message the bot sees.</p></td>
+            <td class="description last"><p>The Attachment object reported by Discord.js</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>overwrites</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Properties to include in the embed object after it has been populated with Attachment data.</p></td>
         </tr>
 
     
@@ -287,139 +308,29 @@
 
 
 
-
-
+<h5 class="h5-returns">Returns:</h5>
 
         
-            
-
-    
-
-    <h4 class="name" id="~modMailMessage"><span class="type-signature type-signature-async, inner">(async, inner) </span>modMailMessage<span class="signature">(message)</span><span class="type-signature"></span></h4>
-
-    
+<div class="param-desc">
+    <p>An object to be included in the embeds array of a message's options before sending it.</p>
+</div>
 
 
 
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Object</span>
 
-<dl class="details">
-    
-    <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>Handle when a mod sends a message in a modmail thread.</p></li></ul></dd>
-    
 
-    
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
+    </dd>
 </dl>
 
-
-
-
-
-
-
-
-
-    <h5 class="h5-this">This:</h5>
-    <ul><li>discord.js/Client</li></ul>
-
-
-
-
-
-    <h5 class="h5-parameters">Parameters:</h5>
     
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>message</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">discord.js/Message</span>
-
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last"><p>A message sent by a mod in a modmail thread.</p></td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
