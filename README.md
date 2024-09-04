@@ -8,10 +8,11 @@ Code base for all of the bots that provide moderator tools in moonmoon's subscri
 
 ## Running the Bot
 Start the bot with `node .` to use default options.
-   * If your configuration file is not `config.json` in the app directory, you can instead run `node . --config <filename>` to load your configuration file.
+* If your configuration file is not `config.json` in the app directory, you can instead run `node . --config <filename>` to load your configuration file.
+
 To use PM2, you instead run `pm2 start --name="<bot name>" "node ."` or `pm2 start --name="<bot name>" node -- .`
-   * You can either enclose the node command and arguments in quotes, or add all node arguments after `node --`, as above.
-   * Including a bot name is strongly recommended, otherwise PM2 will simply list the bot as "node" which may be confusing, especially in the log files.
+* You can either enclose the node command and arguments in quotes, or add all node arguments after `node --`, as above.
+* Including a bot name is strongly recommended, otherwise PM2 will simply list the bot as "node" which may be confusing, especially in the log files.
 
 ## Configuration File
 Example configuration file:
@@ -42,6 +43,7 @@ Example configuration file:
 * **id / token** - *(Both required)* These come from the [Discord developer portal](https://discord.com/developers/applications) for your bot. **id** is the Application ID from the General Information page. **token** comes from the Bot page (but can only be viewed once, so don't miss it).
 * **intents** - Array of strings, each being a member of [GatewayIntentBits](https://discord-api-types.dev/api/discord-api-types-v10/enum/GatewayIntentBits).
 * **partials** - Array of strings, each being a member of [Partials](https://discordjs.guide/popular-topics/partials.html#enabling-partials).
+  * *Note:* Modules can add intents and partials as well from their `index.mjs` files, in which case you don't need to add them here yourself.
 * **applicationCommands** - Array of objects, each a definition of an application command. Application command definitions have the following properties:
   * **filename** - File that contains the [properties of the application command](#application-command-file).
   * **guildIds** - Array of guild IDs where this command will be available. Do not include this property for global commands.
@@ -49,7 +51,7 @@ Example configuration file:
 * **modules** - Array of module definitions to specify which installed modules should be loaded for this bot. Module definitions have the following properties:
   * **name** - Name of the module, which matches the folder containing the module's code.
   * **options** - An object with module-specific configuration options. Different modules will want different properties here.
-* **ownerId** - Discord ID of the user who owns the bot. This user will have access to all bot features, and that access cannot be removed.
+* **ownerId** - Discord ID of the user who owns the bot. Ideally, the owner will be granted access to all bot features, though this may not be possible for restricted application commands.
 
 ## Application Command File
 Example application command file:
@@ -81,6 +83,8 @@ Application command files must export two values:
 * An Object as `definition`, which is the application command definition. Documentation for this definition can be found at the following links:
   * [Global commands](https://discord.com/developers/docs/interactions/application-commands#create-global-application-command-json-params)
   * [Guild-specific commands](https://discord.com/developers/docs/interactions/application-commands#create-guild-application-command-json-params).
+
+Note that there are other ways to add application commands; this method is to make it easier to add them via the configuration file.
 
 ## Modules
 A module is a set of features with a common purpose. Each module should be contained within its own directory inside of the `modules/` directory. Inside of the module's directory, a file named `index.mjs` must be present, which will be imported when the module is loaded. An example module index file:
@@ -123,17 +127,21 @@ Modules included with this bot are below:
 
 ### logger
 Logs the updating or deleting of messages on a server. Retains any attachments that are deleted with the message as well.
+
 Options:
 * **logChannelId** - The snowflake ID of the channel where messages are to be logged.
 
 ### modmail
 Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and anonymously interact with the user.
+
 Options:
 * **mailChannelId** - The snowflake ID of the channel where modmail report threads will be created for mods to discuss the report. Must be a forum channel.
+* **lockTagId** - The snowflake ID of a thread tag that the bot will check for. If a ticket thread as this tag, it will be treated as 'locked', even if it's not. Omit if you have no such tag.
 * **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores users and their modmail tickets, to make looking them up easier. Default: `modmail.sqlite`
 
 ### pitbot
 Manages the role that marks users as suspended, and logs disciplinary actions to allow moderators to better manage punishments against users who break the server rules.
+
 Options:
 * **logChannelId** - The snowflake ID of the channel where pitbot will report all disciplinary actions that it takes.
 * **pitRoleId** - The snowflake ID of the role to give to users who are currently suspended.

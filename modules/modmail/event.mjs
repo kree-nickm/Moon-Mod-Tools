@@ -49,7 +49,7 @@ export async function messageCreate(message) {
  * @param {discord.js/Message} message - A message sent by a mod in a modmail thread.
  */
 async function modMailMessage(message) {
-  if (message.channel.locked || message.channel.archived) {
+  if (message.channel.locked || message.channel.archived || message.channel.appliedTags.includes(this.master.modules.modmail.options.lockTagId)) {
     this.master.logDebug(`Thread is locked; no need to message user.`);
     return;
   }

@@ -188,7 +188,7 @@ export async function messageDelete(message) {
 
 /**
  * Runs when any event that we have the intents for is received from the Discord API. Necessary because Discord.js will not emit messageUpdate or messageDelete if the message is not cached.
- * @todo This isn't doing what it's supposed to anymore.
+ * @todo Check how this interacts with partial messages. Discord.js claims it will emit events for uncached messages when the Messages partial is enabled, and that will likely negatively impact this implementation.
  * @param {Object} packet
  * @param {?string} packet.t - Event name
  * @param {?*} packet.d - Event data
@@ -198,9 +198,9 @@ export async function messageDelete(message) {
 export async function raw(packet) {
   if(packet.t === 'MESSAGE_UPDATE') {
     if(!timers[packet.d.id]) {
-      let channel = await this.channels.fetch(packet.d.channel_id);
-      let message = await channel.messages.fetch(packet.d.id);
-      timers[packet.d.id] = setTimeout(()=>{
+      timers[packet.d.id] = setTimeout(async ()=>{
+        let channel = await this.channels.fetch(packet.d.channel_id);
+        let message = await channel.messages.fetch(packet.d.id);
         this.emit('messageUpdate', null, message);
       }, 500);
     }
@@ -209,8 +209,8 @@ export async function raw(packet) {
   }
   else if(packet.t === 'MESSAGE_DELETE') {
     if(!timers[packet.d.id]) {
-      let channel = await this.channels.fetch(packet.d.channel_id);
-      timers[packet.d.id] = setTimeout(()=>{
+      timers[packet.d.id] = setTimeout(async ()=>{
+        let channel = await this.channels.fetch(packet.d.channel_id);
         this.emit('messageDelete', {id:packet.d.id, channel, channelId:packet.d.channel_id, guildId:packet.d.guild_id});
       }, 500);
     }

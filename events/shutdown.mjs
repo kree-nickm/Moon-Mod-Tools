@@ -6,6 +6,7 @@
 export async function handler(interaction) {
   await interaction.reply({content:`See ya.`, ephemeral:true});
   await this.master._onShutdown();
+  process.exit();
 };
 
 export const definition = {

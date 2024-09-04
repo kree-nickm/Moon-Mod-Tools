@@ -175,7 +175,7 @@ export default class Bot extends Application {
     
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
-    await this.registerEventHandler('messageCreate', message => this.logDebug(`Msg From: ${message.author.username}: ${message.content??message.embeds?.[0]?.description??message.embeds?.[0]?.title}`));
+    await this.registerEventHandler('messageCreate', message => this.logDebug(`Msg from ${message.author.username}: ${message.content?message.content:(message.embeds?.[0]?.description??message.embeds?.[0]?.title)}`));
     
     this.logInfo(`Bot logging in to Discord.`);
     this.rest = new REST().setToken(this.config.token);
@@ -266,22 +266,15 @@ export default class Bot extends Application {
   }
   
   /**
-   * Register an application command based on specific definitions imported from a file. The command definition will be stored in memory, but it will not be sent to the Discord API until {@link Bot#_sendInteractions} is called.
+   * Register an application command. The command definition will be stored in memory, but it will not be sent to the Discord API until {@link Bot#_sendInteractions} is called.
    * @param {Object.<string, *>} options - Import and definition options. The format of this parameter matches the format of the `modules` array in the application's configuration file, so that elements of that array can be passed directly to this method.
-   * @param {Object} options.definition - The command definition as specified by the Discord API. If this parameter is not given, then `filename` must be given and export `definition` instead.
-   * @param {Function} options.handler - The function to run when the command is used. If this parameter is not given, then `filename` must be given and export `handler` instead.
-   * @param {string} options.filename - The file that exports the `definition` of the command, the `handler` for the command, or both.
+   * @param {Object} options.definition - The command definition as specified by the Discord API.
+   * @param {Function} options.handler - The function to run when the command is used.
    * @param {boolean} [options.owner=false] - Whether this command is only usable by the bot owner.
    * @param {?string[]} [options.guildIds] - For guild-specific commands, the list of guilds to register the command in. Leave undefined or null if this is a global command.
    * @returns {boolean} True if the command definition was added to the bot's interaction registry.
    */
-  static async registerApplicationCommand({definition, handler, filename, owner=false, guildIds}) {
-    let imported = filename ? await this.safeImport(filename) : null;
-    if (!definition)
-      definition = imported?.definition;
-    if (!handler)
-      handler = imported?.handler;
-    
+  static async registerApplicationCommand({definition, handler, owner=false, guildIds}) {
     if (!definition?.name) {
       this.logError(`Invalid application command definition:`, definition);
       return false;
@@ -297,7 +290,6 @@ export default class Bot extends Application {
       handler,
       api: {},
       options: {
-        filename,
         owner,
       },
     };
@@ -321,6 +313,24 @@ export default class Bot extends Application {
       this.logError(`New interaction registered after interactions have already been sent to the Discord API. This is not yet supported. Make sure all interactions are registered during the bot startup process so they can be sent in time.`);
     }
     return true;
+  }
+  
+  /**
+   * Register an application command based on definitions imported from a file.
+   * @see {@link Bot#registerApplicationCommand}
+   * @param {string} filename - The file that exports the definition of the command, the handler for the command, or both.
+   * @param {Object.<string, *>} options - Import and definition options.
+   * @param {string} [options.defProp='definition'] - The property of the imported module that contains the definition of the application command.
+   * @param {string} [options.handProp='handler'] - The property of the imported module that contains the handler for the application command.
+   * @param {boolean} [options.owner=false] - Whether this command is only usable by the bot owner.
+   * @param {?string[]} [options.guildIds] - For guild-specific commands, the list of guilds to register the command in. Leave undefined or null if this is a global command.
+   * @returns {boolean} True if the command definition was added to the bot's interaction registry.
+   */
+  static async registerApplicationCommandFile(filename, {defProp='definition', handProp='handler', owner=false, guildIds}={}) {
+    let imported = await this.safeImport(filename);
+    let definition = imported[defProp];
+    let handler = imported[handProp];
+    return await this.registerApplicationCommand({definition, handler, owner, guildIds});
   }
   
   /**
@@ -448,7 +458,7 @@ export default class Bot extends Application {
     }
     
     for(let appCommand of this.config.applicationCommands) {
-      await this.registerApplicationCommand(appCommand);
+      await this.registerApplicationCommandFile(appCommand.filename, appCommand);
     }
     
     await this._sendInteractions();
