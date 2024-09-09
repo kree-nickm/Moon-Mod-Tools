@@ -28,13 +28,25 @@ export async function attachmentToEmbed(attachment, overwrites={}) {
     ],
   };
   
+  if (attachment.title)
+    embed.fields.push({
+      name: 'Title',
+      value: attachment.title,
+    });
+  
+  if (attachment.description)
+    embed.fields.push({
+      name: 'Description',
+      value: attachment.description,
+    });
+  
   if(attachment.width && attachment.height)
     embed.fields.push({
       name: 'Size (Pixels)',
       value: `${attachment.width}x${attachment.height}`,
     });
   
-  if (attachment.contentType.startsWith('audio/'))
+  if (attachment.duration)
     embed.fields.push({
       name: 'Duration',
       value: `${attachment.duration}s`,
@@ -59,8 +71,9 @@ export async function messageReceived({interaction,message,ticket}={}) {
       color: 0x00ff00,
       footer: {
         text: `Mod Team - Ticket: ${ticket.name}`,
-        icon_url: `${ticket.guild.iconURL()}`,
+        icon_url: ticket.guild.iconURL(),
       },
+      timestamp: new Date().toISOString(),
     }],
   };
   
@@ -69,7 +82,7 @@ export async function messageReceived({interaction,message,ticket}={}) {
     response.embeds[0].description = interaction.targetMessage.content;
     response.embeds[0].footer = {
       text: `${interaction.targetMessage.author.username}`,
-      icon_url: `${interaction.targetMessage.author.avatarURL()}`,
+      icon_url: interaction.targetMessage.author.avatarURL(),
     };
     response.files = [];
     for(let [attachmentId, attachment] of interaction.targetMessage.attachments) {
@@ -81,7 +94,7 @@ export async function messageReceived({interaction,message,ticket}={}) {
     response.embeds[0].description = message.content;
     response.embeds[0].footer = {
       text: `${message.author.username}`,
-      icon_url: `${message.author.avatarURL()}`,
+      icon_url: message.author.avatarURL(),
     };
     response.files = [];
     for(let [attachmentId, attachment] of message.attachments) {
@@ -110,9 +123,10 @@ export async function ticketConfirmation({interaction,message,created=false,tick
       color: 0x00ff00,
       footer: {
         text: `Mod Team - Ticket: ${ticket.name}`,
-        icon_url: `${ticket.guild.iconURL()}`,
+        icon_url: ticket.guild.iconURL(),
       },
       fields: [],
+      timestamp: new Date().toISOString(),
     }],
     ephemeral,
   };
@@ -198,8 +212,9 @@ export async function newResponse(message) {
       ],
       footer: {
         text: `Mod Team - Ticket: ${message.channel.name}`,
-        icon_url: `${message.guild.iconURL()}`,
+        icon_url: message.guild.iconURL(),
       },
+      timestamp: new Date().toISOString(),
     }],
     files: message.attachments.map(v=>v),
   };
@@ -233,8 +248,9 @@ export async function closeConfirmation(ticket, moderator, reason) {
       ],
       footer: {
         text: `Mod Team - Ticket: ${ticket.name}`,
-        icon_url: `${ticket.guild.iconURL()}`,
+        icon_url: ticket.guild.iconURL(),
       },
+      timestamp: new Date().toISOString(),
     }],
   };
   
@@ -271,8 +287,9 @@ export async function newTicket(member) {
       ],
       footer: {
         text: `${member.user.username}`,
-        icon_url: `${member.user.avatarURL()}`,
+        icon_url: member.user.avatarURL(),
       },
+      timestamp: new Date().toISOString(),
     }],
   };
   

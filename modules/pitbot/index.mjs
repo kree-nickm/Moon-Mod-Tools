@@ -2,7 +2,7 @@
  * Verious features to handle disciplinary action against members.
  * @module modules/pitbot
  */
-import { updateAllRoles } from './manager.mjs';
+import { updateAllRoles } from './roles.mjs';
 import Database from '../../classes/Database.mjs';
 
 let updateTimer;
@@ -34,9 +34,21 @@ export async function onReady(module) {
   let logChannel = await this.client.channels.fetch(module.options.logChannelId);
   let members = await logChannel.guild.members.fetch();
   
+  await this.registerApplicationCommandFile('modules/pitbot/commands/strike.mjs', {guildIds:[logChannel.guild.id]});
+  //await this.registerApplicationCommandFile('modules/pitbot/commands/release.mjs', {guildIds:[logChannel.guild.id]});
+  //await this.registerApplicationCommandFile('modules/pitbot/commands/strikes.mjs', {guildIds:[logChannel.guild.id]});
+  //await this.registerApplicationCommandFile('modules/pitbot/commands/removestrike.mjs', {guildIds:[logChannel.guild.id]});
+  //await this.registerApplicationCommandFile('modules/pitbot/commands/editcomment.mjs', {guildIds:[logChannel.guild.id]});
+  
   await updateAllRoles.call(this.client);
   updateTimer = setInterval(async () => {
     await updateAllRoles.call(this.client);
   }, 60000);
   return true;
+}
+
+export async function onUnload(module) {
+  clearInterval(updateTimer);
+  await module.database?.close();
+  // TODO: Unregister event handlers.
 }

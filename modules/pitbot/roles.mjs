@@ -1,3 +1,7 @@
+/**
+ * Functions for managing the pit role and fetching moderators.
+ * @module modules/pitbot/roles
+ */
 import * as Messages from './messageTemplates.mjs';
 
 let severityDuration = {
@@ -27,60 +31,59 @@ let activeStrikeFactor = {
 /**
  * @this discord.js/Client
  */
-export async function addRow(table, {userId,duration,severity,modId,comment}={}) {
-  if (table === 'bullethell')
-    await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date) VALUES (?, ?, ?)', userId, duration, Date.now());
-  if (table === 'strikes')
-    await this.master.modules.pitbot.database.run('INSERT INTO strikes (userId, modId, comment, severity, date) VALUES (?, ?, ?, ?, ?)', userId, modId, comment, severity, Date.now());
-  if (table === 'warnings')
-    await this.master.modules.pitbot.database.run('INSERT INTO warnings (userId, modId, comment, date) VALUES (?, ?, ?, ?)', userId, modId, comment, Date.now());
+export async function getStrikes(userId) {
+  let active = [];
+  let expired = [];
+  let removed = [];
+  let releases = [];
   
-  await updateRole.call(this, userId);
+  let strikes = await this.master.modules.pitbot.database.all('SELECT rowId AS strikeId,* FROM strikes WHERE userId=? ORDER BY date DESC', userId);
+  for(let strike of strikes) {
+    // Severity < 0 means it's a mod explicitly releasing a user from the pit, regardless of their previous strikes.
+    if (strike.severity < 0) {
+      releases.push(strike);
+      continue;
+    }
+    
+    if (strike.severity === 0) {
+      removed.push(strike);
+      continue;
+    }
+    
+    // A strike is active if it was issued in the last month, or if it was issued less than a month before the next most recent active strike. (2592000000 milliseconds in a month)
+    let isActive = (strike.date > (Date.now() - 2592000000))
+      || active.length && (strike.date > (active[active.length-1].date - 2592000000));
+    
+    if(isActive)
+      active.push(strike);
+    else
+      expired.push(strike);
+  }
+  
+  let releaseTime = 0;
+  if (active.length) {
+    let duration = 0;
+    for(let strike of active) {
+      if (!duration)
+        duration = severityDuration[strike.severity];
+      else
+        duration += previousSeverityDuration[strike.severity];
+    }
+    duration *= activeStrikeFactor[Math.min(active.length, 5)];
+    releaseTime = active[0].date + duration;
+  }
+  
+  return {active, expired, removed, releases, releaseTime};
 }
 
 /**
  * @this discord.js/Client
  */
 export async function updateRole(userId) {
-  // Figure out what level of suspension they should have based on their strikes, if any.
-  let pitDuration = 0;
-  let released = 0;
-  let activeStrikeCount = 0;
-  let mostRecentStrikeDate = 0;
-  let nextMostRecentActiveStrikeDate = 0;
-  let strikes = await this.master.modules.pitbot.database.all('SELECT * FROM strikes WHERE userId=? ORDER BY date DESC', userId);
-  for(let strike of strikes) {
-    // Severity < 0 means it's a mod explicitly releasing a user from the pit, regardless of their previous strikes. Only note their most recent release.
-    if (strike.severity < 0) {
-      if (!released)
-        released = strike.date;
-      continue;
-    }
-    
-    // A strike is active if it was issued in the last month, or if it was issued less than a month before the next most recent active strike. (2592000000 milliseconds in a month)
-    let isActive = (strike.date > (Date.now() - 2592000000)) || nextMostRecentActiveStrikeDate && (strike.date > (nextMostRecentActiveStrikeDate - 2592000000));
-    
-    // Duration starts counting from the most recent strike.
-    if (!mostRecentStrikeDate)
-      mostRecentStrikeDate = strike.date;
-    if (!pitDuration) {
-      if (!released)
-        pitDuration = severityDuration[strike.severity];
-    }
-    else
-      pitDuration += previousSeverityDuration[strike.severity];
-    
-    // Keep track of active strikes.
-    if(isActive) {
-      activeStrikeCount++;
-      nextMostRecentActiveStrikeDate = strike.date;
-    }
-  }
-  activeStrikeCount = Math.min(activeStrikeCount, 5);
-  pitDuration *= activeStrikeFactor[activeStrikeCount];
-  let releaseDate = mostRecentStrikeDate + pitDuration;
-  if (activeStrikeCount === 5) {
-    // TODO: Moderators need to be notified when someone reaches this.
+  let strikes = await getStrikes.call(this, userId);
+  if (strikes.active.length >= 5) {
+    let logChannel = await this.channels.fetch(this.master.modules.pitbot.options.logChannelId);
+    await logChannel.send(await Messages.maximumStrikes.call(this, user));
   }
   
   // Check if they are currently pitted from bullet hell, taking into account if a mod released them as above.
@@ -88,12 +91,17 @@ export async function updateRole(userId) {
   let bullethell = await this.master.modules.pitbot.database.all('SELECT * FROM bullethell WHERE userId=? AND date>?', userId, released);
   
   // Apply any suspension that we determined.
-  if (releaseDate > Date.now())
-    await setPitRole.call(this, userId, true, 'Strike(s)');
-  else if (bullethell.length)
+  if (strikes.releaseTime > Date.now()) {
+    let mod = this.users.fetch(strikes[0].modId) ?? strikes[0].modId;
+    await setPitRole.call(this, userId, true, `Strike (L${strikes[0].severity}) issued by ${mod}: ${strikes[0].comment}`);
+  }
+  else if (bullethell.length) {
     await setPitRole.call(this, userId, true, 'Bullet Hell');
-  else
+  }
+  else {
     await setPitRole.call(this, userId, false);
+  }
+  return { strikes, bullethell };
 }
 
 /**
@@ -108,7 +116,7 @@ async function setPitRole(userId, add=true, reason='') {
   if (add && !role.members.has(member.id)) {
     try {
       await member.roles.add(role);
-      await logChannel.send(await Messages.pitAdded.call(this, user, reason));
+      await logChannel.send(await Messages.pitNotice.call(this, user, true, reason));
     }
     catch(err) {
       this.master.logError(`Failed to add '${role.name}' to ${user.username}:`, err);
@@ -119,7 +127,7 @@ async function setPitRole(userId, add=true, reason='') {
   if (!add && role.members.has(member.id)) {
     try {
       await member.roles.remove(role);
-      await logChannel.send(await Messages.pitRemoved.call(this, user, reason));
+      await logChannel.send(await Messages.pitNotice.call(this, user, false, reason));
     }
     catch(err) {
       this.master.logError(`Failed to remove '${role.name}' from ${user.username}:`, err);
@@ -147,4 +155,25 @@ export async function updateAllRoles() {
   
   for(let userId of userIds)
     await updateRole.call(this, userId);
+}
+
+export async function getModeratorIds(includeOwner=false) {
+  let logChannel = await this.channels.fetch(this.master.modules.pitbot.options.logChannelId);
+  let moderatorIds = [];
+  
+  if (includeOwner && this.master.config.ownerId)
+    moderatorIds.push(this.master.config.ownerId);
+  
+  let roleIds = this.master.modules.pitbot.options.modRoleId;
+  if(!Array.isArray(roleIds))
+    roleIds = [roleIds];
+  for(let roleId of roleIds) {
+    let role = await logChannel.guild.roles.fetch(roleId);
+    for(let [moderatorId, moderator] of role.members) {
+      this.master.logDebug(`Moderator:`, moderator.user.username);
+      if (!moderatorIds.includes(moderator.user.id))
+        moderatorIds.push(moderator.user.id);
+    }
+  }
+  return moderatorIds;
 }

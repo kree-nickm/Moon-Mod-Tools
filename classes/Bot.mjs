@@ -161,7 +161,7 @@ export default class Bot extends Application {
     intents = [...new Set(intents)];
     partials = [...new Set(partials)];
     
-    this.logDebug(`Creating Discord.js client.`, {intents, partials});
+    this.logDebug(`Creating Discord.js client. Intents: [${intents.join(', ')}], Partials: [${partials.join(', ')}]`);
     this.client = new Client({
       intents: intents.map(intent => GatewayIntentBits[intent]),
       partials: partials.map(partial => Partials[partial]),

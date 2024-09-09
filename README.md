@@ -33,7 +33,7 @@ Example configuration file:
     {
       "name": "logger",
       "options": {
-        "logChannelId": "1272732359665647688"
+        "msgLogChannelId": "1272732359665647688"
       }
     }
   ],
@@ -107,6 +107,9 @@ export const partials = [];
  * active connection to Discord. This function can be async, in which case the
  * bot startup will await it.
  * @this Bot
+ * @throws If there is a problem starting the module, you can throw an
+ * exception to cancel the loading of the module. This will not cancel the
+ * loading of the bot.
  * @param {Object} module - The stored data of the loaded module.
  */
 export function onStart(module) {
@@ -117,6 +120,9 @@ export function onStart(module) {
  * Function that is called after the bot is logged in and ready. This function
  * can be async, in which case the bot startup will await it.
  * @this Bot
+ * @throws If there is a problem readying the module, you can throw an
+ * exception to cancel the loading of the module. This will not cancel the
+ * loading of the bot.
  * @param {Object} module - The stored data of the loaded module.
  */
 export function onReady(module) {
@@ -126,10 +132,11 @@ export function onReady(module) {
 Modules included with this bot are below:
 
 ### logger
-Logs the updating or deleting of messages on a server. Retains any attachments that are deleted with the message as well.
+Logs the updating or deleting of messages on a server, and or user joins and removals. Retains any attachments that are deleted with the message as well. At least one of the following log channel IDs must be provided.
 
 Options:
-* **logChannelId** - The snowflake ID of the channel where messages are to be logged.
+* **msgLogChannelId** - The snowflake ID of the channel where messages are to be logged.
+* **joinLogChannelId** - The snowflake ID of the channel where member joins and removals are to be logged.
 
 ### modmail
 Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and anonymously interact with the user.

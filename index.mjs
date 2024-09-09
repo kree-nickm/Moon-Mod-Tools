@@ -1,6 +1,8 @@
 import Bot from './classes/Bot.mjs';
 
-Bot.logInfo(`Starting Discord bot...`);
+Bot.logInfo(`************************************************`);
+Bot.logInfo(`************* Starting Discord Bot *************`);
+Bot.logInfo(`************************************************`);
   
 Bot.loadOptions({
   multiples: [],

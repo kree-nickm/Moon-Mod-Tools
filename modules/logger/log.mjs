@@ -15,22 +15,21 @@ var timers = {};
  * @param {discord.js/Message} newMessage - The newly edited message.
  */
 export async function messageUpdate(oldMessage, newMessage) {
-  // Prevent this function from running twice, since it will also always be called by the raw event handler.
-  if(timers[newMessage.id]) {
-    clearTimeout(timers[newMessage.id]);
-    delete timers[newMessage.id];
-  }
-  else
-    timers[newMessage.id] = true;
-  
-  if (oldMessage?.partial)
-    oldMessage = await oldMessage.fetch();
   if (newMessage.partial)
     newMessage = await newMessage.fetch();
+  // We can't actually fetch the old message. If it is partial, just forget it.
+  if (oldMessage?.partial)
+    oldMessage = null;
+  
+  if (newMessage.author.id === this.user.id) {
+    // This happens sometimes when the bot logs something and I don't know why.
+    this.master.logDebug(`Erroneous self message update:`, {oldMessage, newMessage});
+    return;
+  }
   
   // Assume each guild only has one log channel, and each log channel only reports messages from its guild.
-  let logChannel = await this.channels.fetch(this.master.modules.logger.options.logChannelId);
-  if (logChannel.guildId !== newMessage.guildId)
+  let logChannel = await this.channels.fetch(this.master.modules.logger.options.msgLogChannelId);
+  if (!logChannel || logChannel.guildId !== newMessage.guildId)
     return;
   
   let embeds = [];
@@ -105,6 +104,7 @@ export async function messageUpdate(oldMessage, newMessage) {
     description: `\`${newMessage.author.username}\` ${newMessage.author} (${newMessage.author.id})`,
     color: 0x6666ff,
     fields: mainFields,
+    timestamp: new Date().toISOString(),
   });
   
   await logChannel.send({
@@ -118,20 +118,9 @@ export async function messageUpdate(oldMessage, newMessage) {
  * @param {?discord.js/Message} message - The message before it was deleted, or null if the message was not cached.
  */
 export async function messageDelete(message) {
-  // Prevent this function from running twice, since it will also always be called by the raw event handler.
-  if(timers[message.id]) {
-    clearTimeout(timers[message.id]);
-    delete timers[message.id];
-  }
-  else
-    timers[message.id] = true;
-  
-  if (message.partial)
-    message = await message.fetch();
-  
   // Assume each guild only has one log channel, and each log channel only reports messages from its guild.
-  let logChannel = await this.channels.fetch(this.master.modules.logger.options.logChannelId);
-  if (logChannel.guildId !== message.guildId)
+  let logChannel = await this.channels.fetch(this.master.modules.logger.options.msgLogChannelId);
+  if (!logChannel || !message.guildId || logChannel.guildId !== message.guildId)
     return;
   
   let embeds = [];
@@ -147,22 +136,29 @@ export async function messageDelete(message) {
   }
   
   // Show the old message if possible.
-  if ('content' in message)
+  let channel;
+  if (message.partial)
   {
+    channel = await this.channels.fetch(message.channelId);
+    mainFields.push({
+      name: 'Uh oh!',
+      value: `Old message content can't be fetched, because it is too old.`,
+    });
+    mainFields.push({
+      name: 'Original Date',
+      value: `<t:${Math.round(message.createdTimestamp/1000)}:f>`,
+    });
+  }
+  else
+  {
+    channel = message.channel;
     mainFields.push({
       name: 'Message',
       value: message.content,
     });
     mainFields.push({
       name: `Link`,
-      value: `${message.channel} / ${message.url}`,
-    });
-  }
-  else
-  {
-    mainFields.push({
-      name: 'Uh oh!',
-      value: `Old message content can't be fetched, because it is too old.`,
+      value: `${channel} / ${message.url}`,
     });
   }
   
@@ -175,9 +171,10 @@ export async function messageDelete(message) {
   // Construct the primary embed object and add it onto the front of the embeds.
   embeds.unshift({
     title: 'Message Deleted',
-    description: message.author ? `\`${message.author.username}\` ${message.author} (${message.author.id})` : `in channel ${message.channel}`,
+    description: message.author ? `\`${message.author.username}\` ${message.author} (${message.author.id})` : `In channel ${channel}`,
     color: 0xff0000,
     fields: mainFields,
+    timestamp: new Date().toISOString(),
   });
   
   await logChannel.send({
@@ -187,37 +184,83 @@ export async function messageDelete(message) {
 };
 
 /**
- * Runs when any event that we have the intents for is received from the Discord API. Necessary because Discord.js will not emit messageUpdate or messageDelete if the message is not cached.
- * @todo Check how this interacts with partial messages. Discord.js claims it will emit events for uncached messages when the Messages partial is enabled, and that will likely negatively impact this implementation.
- * @param {Object} packet
- * @param {?string} packet.t - Event name
- * @param {?*} packet.d - Event data
- * @param {?integer} packet.s - Sequence number of event used for [resuming sessions]{@link https://discord.com/developers/docs/topics/gateway#resuming} and [heartbeating]{@link https://discord.com/developers/docs/topics/gateway#sending-heartbeats}
- * @param {integer} packet.op - [Gateway opcode]{@link https://discord.com/developers/docs/topics/opcodes-and-status-codes#gateway-gateway-opcodes}, which indicates the payload type
+ * Log the user joining.
+ * @param {?discord.js/GuildMember} member - The guild member who was added.
  */
-export async function raw(packet) {
-  if(packet.t === 'MESSAGE_UPDATE') {
-    if(!timers[packet.d.id]) {
-      timers[packet.d.id] = setTimeout(async ()=>{
-        let channel = await this.channels.fetch(packet.d.channel_id);
-        let message = await channel.messages.fetch(packet.d.id);
-        this.emit('messageUpdate', null, message);
-      }, 500);
+export async function guildMemberAdd(member) {
+  if (member.partial)
+    member = await member.fetch();
+  
+  // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
+  let logChannel = await this.channels.fetch(this.master.modules.logger.options.joinLogChannelId);
+  if (!logChannel || logChannel.guild.id !== member.guild.id)
+    return;
+  
+  let inviteUsed;
+  try {
+    for(let [inviteId, invite] of await logChannel.guild.invites.fetch()) {
+      let storedUses = this.master.modules.logger.memory.inviteUses[inviteId] ?? 0;
+      if (invite.uses > 0 && invite.uses > storedUses) {
+        if (inviteUsed)
+          inviteUsed = null;
+        else if(inviteUsed !== null)
+          inviteUsed = invite;
+      }
+      this.master.modules.logger.memory.inviteUses[inviteId] = invite.uses;
     }
-    else
-      delete timers[packet.d.id];
-  }
-  else if(packet.t === 'MESSAGE_DELETE') {
-    if(!timers[packet.d.id]) {
-      timers[packet.d.id] = setTimeout(async ()=>{
-        let channel = await this.channels.fetch(packet.d.channel_id);
-        this.emit('messageDelete', {id:packet.d.id, channel, channelId:packet.d.channel_id, guildId:packet.d.guild_id});
-      }, 500);
+    if (inviteUsed === null) {
+      this.master.logWarn(`Cannot determine which invite was used when ${member.user.username} joined ${member.guild.name}.`);
+      inviteUsed = 'Cannot determine invite used; invites were out of sync.';
     }
-    else
-      delete timers[packet.d.id];
   }
-  //else {
-  //  this.master.logDebug(`Raw Event:`, packet);
-  //}
+  catch(err) {
+    // We probably don't have permissions. No need to report an error every time this happens; it would have already been reported by now.
+  }
+  
+  await logChannel.send(await Messages.memberAdded.call(this, member, inviteUsed));
 };
+
+/**
+ * Log the user leaving or being kicked.
+ * @param {?discord.js/GuildMember} member - The guild member who was removed.
+ */
+export async function guildMemberRemove(member) {
+  if (member.partial)
+    member = await member.fetch();
+  
+  // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
+  let logChannel = await this.channels.fetch(this.master.modules.logger.options.joinLogChannelId);
+  if (!logChannel || logChannel.guild.id !== member.guild.id)
+    return;
+  
+  logChannel.send(await Messages.memberRemoved.call(this, member));
+};
+
+export async function updateInvites() {
+  let joinLogChannel = this.master.modules.logger.options.joinLogChannelId ? await this.channels.fetch(this.master.modules.logger.options.joinLogChannelId) : null;
+  if (joinLogChannel) {
+    let invites;
+    try {
+      invites = await joinLogChannel.guild.invites.fetch();
+    }
+    catch(err) {
+      this.master.logWarn(`Bot cannot access guild invites; perhaps it lacks the MANAGE_GUILD permission. As a result, created invites will not be logged, and the invite used when a member joins will not be reported.`);
+      return joinLogChannel;
+    }
+    this.master.modules.logger.memory.inviteUses = {};
+    for(let [inviteId, invite] of invites)
+      this.master.modules.logger.memory.inviteUses[inviteId] = invite.uses;
+    this.master.logDebug(`Fetched ${Object.entries(this.master.modules.logger.memory.inviteUses).length} invites from: ${joinLogChannel.guild.name}`);
+  }
+  return joinLogChannel;
+}
+
+export async function inviteCreate(inviteChanged) {
+  let joinLogChannel = await updateInvites.call(this);
+  if (joinLogChannel)
+    await joinLogChannel.send(await Messages.inviteCreated(inviteChanged));
+}
+
+export async function inviteDelete(inviteChanged) {
+  let joinLogChannel = await updateInvites.call(this);
+}

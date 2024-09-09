@@ -74,3 +74,8 @@ export async function onReady(module) {
   
   return true;
 }
+
+export async function onUnload(module) {
+  await module.database?.close();
+  // TODO: Unregister event handlers.
+}
