@@ -150,12 +150,40 @@ export async function memberAdded(member, invite) {
   };
   
   if (invite) {
-    response.embeds[0].fields.push({
-      name: 'Invite',
-      value: typeof(invite)==='string' ?
-        invite :
-        `\`\`\`Code: ${invite.code}\nInviter: ${invite.inviter}\nCreated: ${invite.createdAt}\nExpires: ${invite.expiresAt}\nType: ${invite.type}\`\`\``,
-    });
+    if (invite.removed) {
+      response.embeds[0].fields.push({
+        name: 'Invite Used',
+        value: `${invite.code} (deleted)`,
+        inline: true,
+      });
+      response.embeds[0].fields.push({
+        name: 'Invite Creator',
+        value: `${invite.inviter}`,
+        inline: true,
+      });
+      response.embeds[0].fields.push({
+        name: 'Invite Date',
+        value: `<t:${Math.round(invite.createdTimestamp/1000)}:f>`,
+        inline: true,
+      });
+    }
+    else {
+      response.embeds[0].fields.push({
+        name: 'Invite Used',
+        value: invite.code,
+        inline: true,
+      });
+      response.embeds[0].fields.push({
+        name: 'Max Uses',
+        value: invite.maxUses ? invite.maxUses : 'infinite',
+        inline: true,
+      });
+      response.embeds[0].fields.push({
+        name: 'Lifetime',
+        value: durationString(invite.maxAge*1000),
+        inline: true,
+      });
+    }
   }
   
   return response;

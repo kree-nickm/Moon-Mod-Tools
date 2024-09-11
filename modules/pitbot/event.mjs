@@ -5,6 +5,9 @@
 import { updateRole, getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 
+export async function guildMemberAdd(add) {
+}
+
 /**
  * @this discord.js/Client
  * @param {discord.js/Message} message - Any message the bot sees.

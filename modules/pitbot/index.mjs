@@ -29,6 +29,7 @@ export async function onStart(module) {
 export async function onReady(module) {
   await this.registerEventHandlerFile('modules/pitbot/event.mjs', {
     messageCreate: 'messageCreate',
+    guildMemberAdd: 'guildMemberAdd',
   });
   
   let logChannel = await this.client.channels.fetch(module.options.logChannelId);

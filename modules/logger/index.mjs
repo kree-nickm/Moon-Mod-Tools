@@ -4,7 +4,6 @@
  */
 import { updateInvites } from './log.mjs';
 
-
 /**
  * GuildMessages is required to see messages sent in a guild, and MessageContent is required to actually see the content of those messages. GuildMembers is required to log user joins/leaves. GuildInvites is required in order to track what invite was used when a user joins.
  */
@@ -28,7 +27,7 @@ export async function onStart(module) {
     inviteCreate: 'inviteCreate',
     inviteDelete: 'inviteDelete',
   });
-  module.memory = {inviteUses: {}};
+  module.memory = {};
 };
 
 /**

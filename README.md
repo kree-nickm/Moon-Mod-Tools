@@ -132,16 +132,24 @@ export function onReady(module) {
 Modules included with this bot are below:
 
 ### logger
-Logs the updating or deleting of messages on a server, and or user joins and removals. Retains any attachments that are deleted with the message as well. At least one of the following log channel IDs must be provided.
+If `msgLogChannelId` option is provided, the bot logs the updating or deleting of messages to that channel for that server. Retains any attachments that are deleted with the message as well. Note that Discord does not allow you to fetch the original message once it has been updated or deleted, so the only messages that can be reported are those that have been cached in the bot's memory. The bot will try to cache as many messages as it can upon startup, but there will be a limit.
 
-Options:
+If `joinLogChannelId` option is provided, the bot logs information about users who join and leave the server. If the bot has appropriate permissions, it will also log when invites are created and used.
+
+Requirements:
+* **Message Content Intent** for the bot in the [Discord Dev Portal](https://discord.com/developers/applications).
+* **Server Members Intent** for the bot in the [Discord Dev Portal](https://discord.com/developers/applications).
+* *(Optional)* **Manage Server** general server permission. Needed in order to track invites. Without it, invites won't be tracked.
+* *(Optional)* **Manage Channels** general server permission. Needed in order to track invites. Without it, invites won't be tracked.
+
+Configuration Options (at least one must be provided):
 * **msgLogChannelId** - The snowflake ID of the channel where messages are to be logged.
 * **joinLogChannelId** - The snowflake ID of the channel where member joins and removals are to be logged.
 
 ### modmail
-Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and anonymously interact with the user.
+Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and interact with the user.
 
-Options:
+Configuration Options:
 * **mailChannelId** - The snowflake ID of the channel where modmail report threads will be created for mods to discuss the report. Must be a forum channel.
 * **lockTagId** - The snowflake ID of a thread tag that the bot will check for. If a ticket thread as this tag, it will be treated as 'locked', even if it's not. Omit if you have no such tag.
 * **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores users and their modmail tickets, to make looking them up easier. Default: `modmail.sqlite`
@@ -149,7 +157,7 @@ Options:
 ### pitbot
 Manages the role that marks users as suspended, and logs disciplinary actions to allow moderators to better manage punishments against users who break the server rules.
 
-Options:
+Configuration Options:
 * **logChannelId** - The snowflake ID of the channel where pitbot will report all disciplinary actions that it takes.
 * **pitRoleId** - The snowflake ID of the role to give to users who are currently suspended.
 * **modRoleId** - A string or array of strings. Each string is a snowflake ID of a moderator role, so the bot knows who the moderators are.

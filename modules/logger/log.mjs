@@ -197,24 +197,18 @@ export async function guildMemberAdd(member) {
     return;
   
   let inviteUsed;
-  try {
-    for(let [inviteId, invite] of await logChannel.guild.invites.fetch()) {
-      let storedUses = this.master.modules.logger.memory.inviteUses[inviteId] ?? 0;
-      if (invite.uses > 0 && invite.uses > storedUses) {
-        if (inviteUsed)
-          inviteUsed = null;
-        else if(inviteUsed !== null)
-          inviteUsed = invite;
+  if (this.master.modules.logger.memory.invites) {
+    let changes = await updateInvites.call(this);
+    if (Object.entries(changes).length === 2 && (Object.values(changes)[1] === 1 || Object.values(changes)[1] === -1))
+      inviteUsed = Object.keys(changes)[1];
+    if (inviteUsed) {
+      if (changes.removed[inviteUsed]) {
+        inviteUsed = changes.removed[inviteUsed];
+        inviteUsed.removed = true;
       }
-      this.master.modules.logger.memory.inviteUses[inviteId] = invite.uses;
+      else
+        inviteUsed = await logChannel.guild.invites.fetch(inviteUsed);
     }
-    if (inviteUsed === null) {
-      this.master.logWarn(`Cannot determine which invite was used when ${member.user.username} joined ${member.guild.name}.`);
-      inviteUsed = 'Cannot determine invite used; invites were out of sync.';
-    }
-  }
-  catch(err) {
-    // We probably don't have permissions. No need to report an error every time this happens; it would have already been reported by now.
   }
   
   await logChannel.send(await Messages.memberAdded.call(this, member, inviteUsed));
@@ -236,7 +230,10 @@ export async function guildMemberRemove(member) {
   logChannel.send(await Messages.memberRemoved.call(this, member));
 };
 
+let updateInvitesTimeout;
 export async function updateInvites() {
+  if (updateInvitesTimeout)
+    clearTimeout(updateInvitesTimeout);
   let joinLogChannel = this.master.modules.logger.options.joinLogChannelId ? await this.channels.fetch(this.master.modules.logger.options.joinLogChannelId) : null;
   if (joinLogChannel) {
     let invites;
@@ -245,22 +242,44 @@ export async function updateInvites() {
     }
     catch(err) {
       this.master.logWarn(`Bot cannot access guild invites; perhaps it lacks the MANAGE_GUILD permission. As a result, created invites will not be logged, and the invite used when a member joins will not be reported.`);
-      return joinLogChannel;
+      this.master.logDebug(err);
+      return {};
     }
-    this.master.modules.logger.memory.inviteUses = {};
-    for(let [inviteId, invite] of invites)
-      this.master.modules.logger.memory.inviteUses[inviteId] = invite.uses;
-    this.master.logDebug(`Fetched ${Object.entries(this.master.modules.logger.memory.inviteUses).length} invites from: ${joinLogChannel.guild.name}`);
+    let changes = {removed:{}};
+    let previousUses = this.master.modules.logger.memory.invites ?? {};
+    this.master.modules.logger.memory.invites = {};
+    for(let [inviteId, invite] of invites) {
+      // Check if the invite usage has changed.
+      let uses = invite.uses;
+      let prevUses = previousUses[inviteId]?.uses ?? 0;
+      if (!previousUses[inviteId])
+        changes[inviteId] = uses;
+      else if (prevUses < uses)
+        changes[inviteId] = uses - prevUses;
+      
+      // Store the invite data in memory.
+      this.master.modules.logger.memory.invites[inviteId] = {invite, uses};
+    }
+    for(let inviteId in previousUses) {
+      if (!this.master.modules.logger.memory.invites[inviteId]) {
+        changes[inviteId] = -1;
+        changes.removed[inviteId] = previousUses[inviteId].invite;
+      }
+    }
+    this.master.logDebug(`Fetched ${Object.entries(this.master.modules.logger.memory.invites).length} invites from ${joinLogChannel.guild.name}.`, `Changes since last fetch:`, changes);
+    return changes;
   }
-  return joinLogChannel;
+  return {};
 }
 
 export async function inviteCreate(inviteChanged) {
-  let joinLogChannel = await updateInvites.call(this);
+  await updateInvites.call(this);
+  let joinLogChannel = this.channels.cache.get(this.master.modules.logger.options.joinLogChannelId);
   if (joinLogChannel)
     await joinLogChannel.send(await Messages.inviteCreated(inviteChanged));
 }
 
 export async function inviteDelete(inviteChanged) {
-  let joinLogChannel = await updateInvites.call(this);
+  // Delay this for half a second in case the invite is being deleted because it was one-time-use, and the member was added to the guild. This will let guildMemberAdd see the invite before it gets removed from memory.
+  updateInvitesTimeout = setTimeout(async () => await updateInvites.call(this), 500);
 }
