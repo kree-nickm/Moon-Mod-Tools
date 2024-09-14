@@ -17,26 +17,27 @@ export async function handler(interaction) {
   
   // Find the user's active thread, or create a new one.
   let ticket = await getOrCreateThread.call(this, mailChannel, interaction.member);
-  this.master.logDebug(`Thread msg count:`, ticket.messageCount);
+  //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
   
   // Add the user's message to the thread.
+  let created = !ticket.messageCount;
+  await ticket.send(await Messages.messageReceived.call(this, {interaction, ticket}));
   await interaction.reply(await Messages.ticketConfirmation.call(this, {
     interaction,
     ephemeral: true,
     ticket,
-    created: !ticket.messageCount,
+    created,
   }));
   // Only send DM for ticket creation.
-  if (!ticket.messageCount) {
+  if (created) {
     await interaction.user.send(await Messages.ticketConfirmation.call(this, {
       interaction,
       ephemeral: false,
       ticket,
-      created: !ticket.messageCount,
+      created,
     }));
   }
-  await ticket.send(await Messages.messageReceived.call(this, {interaction, ticket}));
-  this.master.logDebug(`Thread msg count:`, ticket.messageCount);
+  //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
 }
 
 export const definition = {

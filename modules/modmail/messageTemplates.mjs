@@ -77,7 +77,7 @@ export async function messageReceived({interaction,message,ticket}={}) {
     }],
   };
   
-  if (interaction) {
+  if (interaction?.targetMessage) {
     response.embeds[0].url = interaction.targetMessage.url;
     response.embeds[0].description = interaction.targetMessage.content;
     response.embeds[0].footer = {
@@ -141,10 +141,11 @@ export async function ticketConfirmation({interaction,message,created=false,tick
         name: 'Info',
         value: `A followup DM has been sent to you.\nPlease send any related attachments and further inquiries through that channel.\n\nIf you didn't receive any DMs please make sure you enable DMs from people in the same server or you will not be able to receive support from the mod team.`,
       });
-      response.embeds[0].fields.push({
-        name: 'Reported Message',
-        value: `${interaction.targetMessage.url}`,
-      });
+      if (interaction?.targetMessage?.url)
+        response.embeds[0].fields.push({
+          name: 'Reported Message',
+          value: `${interaction.targetMessage.url}`,
+        });
     }
     else {
       // When the message is sent in a DM. Could either be in response to a DM or an interaction.
@@ -158,7 +159,7 @@ export async function ticketConfirmation({interaction,message,created=false,tick
           value: message.content,
         });
       }
-      else if (interaction) {
+      else if (interaction?.targetMessage?.url) {
         response.embeds[0].fields.push({
           name: 'Reported Message',
           value: `${interaction.targetMessage.url}`,
@@ -291,6 +292,28 @@ export async function newTicket(member) {
       },
       timestamp: new Date().toISOString(),
     }],
+  };
+  
+  return response;
+}
+
+export async function modmailButton(button) {
+  let response = {
+    embeds: [{
+      title: 'Contact Staff',
+      description: `To create a message react with 📩\n\nPlease refrain from using modmail to send memes. Doing so will result in a timeout and a strike.`,
+      color: 0x990000,
+      /*footer: {
+        text: `Mod Team`,
+        icon_url: guild.iconURL(),
+      },*/
+    }],
+    components: [
+      {
+        type: 1,
+        components: [button],
+      },
+    ],
   };
   
   return response;

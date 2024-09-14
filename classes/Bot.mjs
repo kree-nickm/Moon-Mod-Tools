@@ -60,6 +60,12 @@ export default class Bot extends Application {
   static messageCommands = {};
   
   /**
+   * The currently registered message component interactions. The keys are the customIds of the components.
+   * @type {Object.<string, *>}
+   */
+  static componentInteractions = {};
+  
+  /**
    * @typedef {Object} BotModule
    * @property {Object} imports - All of the properties exported by the module's index.mjs file.
    * @property {Object} options - Module options defined in the configuration file.
@@ -315,6 +321,22 @@ export default class Bot extends Application {
     return true;
   }
   
+  static async registerComponentInteraction({component, handler}) {
+    if (!component?.custom_id) {
+      this.logError(`Invalid component interaction definition:`, component);
+      return false;
+    }
+    
+    if (typeof(handler) !== 'function') {
+      this.logError(`Tried to register a non-function to the component interaction '${component.custom_id}'.`);
+      return false;
+    }
+    
+    this.componentInteractions[component.custom_id] = {component, handler};
+    
+    return true;
+  }
+  
   /**
    * Register an application command based on definitions imported from a file.
    * @see {@link Bot#registerApplicationCommand}
@@ -478,6 +500,8 @@ export default class Bot extends Application {
       commandList = this.userCommands;
     else if (interaction.isMessageContextMenuCommand())
       commandList = this.messageCommands;
+    else if (interaction.isMessageComponent() || interaction.isModalSubmit())
+      return await this._onComponentInteraction(interaction);
     else {
       this.logError(`Bot received an unknown interaction.`, {interaction});
       return;
@@ -515,5 +539,16 @@ export default class Bot extends Application {
     else {
       this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in an unknown location; see channel object:`, channel);
     }
+  }
+  
+  static async _onComponentInteraction(interaction) {
+    if (!this.componentInteractions[interaction.customId]) {
+      this.logError(`Bot received a component interaction '${interaction.customId}'.`, {knownInteractions:this.componentInteractions});
+      return;
+    }
+    
+    this.componentInteractions[interaction.customId].handler.call(this.client, interaction);
+    
+    this.logInfo(`Component interaction '${interaction.customId}' used by ${interaction.user?.username} (${interaction.user?.id})`);
   }
 }

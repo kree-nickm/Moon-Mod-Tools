@@ -5,6 +5,7 @@
  */
 import Database from '../../classes/Database.mjs';
 import { getTicketCreator } from './ticket.mjs';
+import * as ModmailButton from './button.mjs';
 
 /**
  * Requires the DirectMessages intent in order to receive any events for messages, and the MessageContent intent in order to see any content of messages.
@@ -70,6 +71,11 @@ export async function onReady(module) {
     await addSmt.run(user.id, ticket.id, number);
   }
   await addSmt.finalize();
+  
+  // Button for submitting modmail.
+  await this.registerApplicationCommand({definition:ModmailButton.definition, handler:ModmailButton.handler, guildIds:[mailChannel.guild.id]});
+  await this.registerComponentInteraction({component:ModmailButton.button, handler:ModmailButton.setup_modmail_button});
+  await this.registerComponentInteraction({component:ModmailButton.modal, handler:ModmailButton.post_modmail});
   
   return true;
 }
