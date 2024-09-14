@@ -102,7 +102,7 @@ export async function inviteCreated(invite) {
         },
         {
           name: 'Max Age',
-          value: `${invite.maxAge}`,
+          value: durationString(invite.maxAge*1000),
           inline: true,
         },
       ],
@@ -174,12 +174,12 @@ export async function memberAdded(member, invite) {
         inline: true,
       });
       response.embeds[0].fields.push({
-        name: 'Max Uses',
+        name: 'Invite Max Uses',
         value: invite.maxUses ? invite.maxUses : 'infinite',
         inline: true,
       });
       response.embeds[0].fields.push({
-        name: 'Lifetime',
+        name: 'Invite Lifetime',
         value: durationString(invite.maxAge*1000),
         inline: true,
       });

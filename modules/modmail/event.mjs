@@ -2,7 +2,7 @@
  * Handler for messages being sent.
  * @module modules/modmail/event
  */
-import { getOrCreateThread, closeThread } from './ticket.mjs';
+import { getOrCreateThread, closeThread, getTicketCreator } from './ticket.mjs';
 import * as Messages from './messageTemplates.mjs';
 
 /**
@@ -29,17 +29,19 @@ export async function messageCreate(message) {
     
     // Find the user's active thread, or create a new one.
     let ticket = await getOrCreateThread.call(this, mailChannel, member);
-    this.master.logDebug(`Thread msg count:`, ticket.messageCount);
+    //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
     
     // Add the user's message to the thread.
+    let created = !ticket.messageCount;
+    await ticket.send(await Messages.messageReceived.call(this, {message, ticket}));
+    await message.react('✅');
     await message.author.send(await Messages.ticketConfirmation.call(this, {
       message,
       ephemeral: false,
       ticket,
-      created: !ticket.messageCount,
+      created,
     }));
-    await ticket.send(await Messages.messageReceived.call(this, {message, ticket}));
-    this.master.logDebug(`Thread msg count:`, ticket.messageCount);
+    //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
   }
 }
 
@@ -49,27 +51,48 @@ export async function messageCreate(message) {
  * @param {discord.js/Message} message - A message sent by a mod in a modmail thread.
  */
 async function modMailMessage(message) {
-  if (message.channel.locked || message.channel.archived || message.channel.appliedTags.includes(this.master.modules.modmail.options.lockTagId)) {
-    this.master.logDebug(`Thread is locked; no need to message user.`);
+  // Define these to make the code easier to read.
+  let module = this.master.modules.modmail;
+  let ticket = message.channel;
+  
+  // Note: This might be pointless, because threads are supposed to reopen instantly if a message is sent to them by someone with the ability to type in closed threads.
+  if (ticket.archived) {
+    this.master.logDebug(`Thread is archived; no need to do anything with it.`);
     return;
   }
   
-  let threadMsg = await message.channel.fetchStarterMessage();
-  let userId = threadMsg.embeds[0].fields.find(fld => fld.name === 'Id')?.value;
-  let user = await this.users.fetch(userId);
+  let user = await getTicketCreator.call(this, ticket);
   if (!user) {
-    this.master.logError(`Unable to determine which user created this ticket.`, {message, threadMsg, userId});
+    this.master.logError(`Unable to determine which user created this ticket.`, {message});
+    await message.react('❗');
     return;
   }
   
   if (message.content.startsWith('=')) {
     if (message.content === '=close' || message.content.startsWith('=close ')) {
       let reason = message.content.length > 7 ? message.content.slice(7) : '';
-      await closeThread.call(this, message.channel, message.author, reason);
-      await user.send(await Messages.closeConfirmation.call(this, message.channel, message.author, reason));
+      await closeThread.call(this, ticket, message.author, reason);
+      await user.send(await Messages.closeConfirmation.call(this, ticket, message.author, reason));
+    }
+    else if (message.content === '=lock' || message.content.startsWith('=lock ')) {
+      let reason = message.content.length > 7 ? message.content.slice(7) : '';
+      await ticket.setLocked(true, reason);
+      if (module.options.lockedTagId)
+        await ticket.setAppliedTags([module.options.lockedTagId], reason);
+    }
+    else if (message.content === '=unlock' || message.content.startsWith('=unlock ')) {
+      let reason = message.content.length > 7 ? message.content.slice(7) : '';
+      await ticket.setLocked(false, reason);
+      await ticket.setAppliedTags(ticket.appliedTags.filter(tagId => tagId != module.options.lockedTagId), reason);
     }
     return;
   }
   
+  if (ticket.locked || ticket.appliedTags.includes(module.options.lockedTagId)) {
+    this.master.logDebug(`Thread is locked; no need to message user.`);
+    return;
+  }
+  
   await user.send(await Messages.newResponse.call(this, message));
+  await message.react('✅');
 }

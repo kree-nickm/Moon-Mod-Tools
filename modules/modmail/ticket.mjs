@@ -24,7 +24,10 @@ export async function getOrCreateThread(mailChannel, member) {
       name: `${member.user.username} - ${number}`,
       message: await Messages.newTicket.call(this, member),
     });
+    if (this.master.modules.modmail.options.newTagId)
+      await myThread.setAppliedTags([this.master.modules.modmail.options.newTagId]);
     await this.master.modules.modmail.database.run('INSERT INTO tickets (userId, threadId, number) VALUES (?, ?, ?)', member.user.id, myThread.id, number);
+    await (await myThread.fetchStarterMessage()).react('✅');
   }
   return myThread;
 }
@@ -38,6 +41,47 @@ export async function getOrCreateThread(mailChannel, member) {
  */
 export async function closeThread(ticket, moderator, reason) {
   this.master.logDebug(`Closing/locking ticket '${ticket.name}'.`, {moderator:`${moderator.username} (${moderator.id})`, reason});
+  if (!ticket.archived && this.master.modules.modmail.options.resolvedTagId)
+    await ticket.setAppliedTags([this.master.modules.modmail.options.resolvedTagId], reason);
   await ticket.setLocked(true, reason);
   await ticket.setArchived(true, reason);
+}
+
+/**
+ * Determine who created a ticket.
+ * @this discord.js/Client
+ * @param {discord.js/ThreadChannel} ticket - The ticket in question.
+ * @returns {discord.js/User} The user who created the ticket, or null if it could not be determined.
+ */
+export async function getTicketCreator(ticket) {
+  let module = this.master.modules.modmail;
+  let starterMessage = await ticket.fetchStarterMessage();
+  
+  // Ticket already in database.
+  let userId = (await module.database.get('SELECT userId FROM tickets WHERE threadId=?', ticket.id))?.userId;
+  let user = userId ? await this.users.fetch(userId) : null;
+  if (user) {
+    this.master.logDebug(`Found ticket '${ticket.name}' in database.`);
+    return user;
+  }
+  
+  // Ticket posted by this bot.
+  userId = starterMessage.embeds[0].fields.find(fld => fld.name === 'Id')?.value;
+  user = userId ? await this.users.fetch(userId) : null;
+  if (user)
+    return user;
+  
+  // Ticket posted by previous bot.
+  let userString = starterMessage.embeds[0].fields.find(fld => fld.name === 'User')?.value;
+  let start = userString.lastIndexOf('(');
+  if(start > -1) {
+    start += 1;
+    let end = userString.lastIndexOf(')');
+    userId = userString.slice(start, end-start);
+    user = userId ? await this.users.fetch(userId) : null;
+    if (user)
+      return user;
+  }
+  
+  return null;
 }

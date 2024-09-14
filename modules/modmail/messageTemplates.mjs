@@ -70,7 +70,7 @@ export async function messageReceived({interaction,message,ticket}={}) {
       title: `Message received`,
       color: 0x00ff00,
       footer: {
-        text: `Mod Team - Ticket: ${ticket.name}`,
+        text: `Mod Team • Ticket: ${ticket.name}`,
         icon_url: ticket.guild.iconURL(),
       },
       timestamp: new Date().toISOString(),
@@ -122,7 +122,7 @@ export async function ticketConfirmation({interaction,message,created=false,tick
     embeds: [{
       color: 0x00ff00,
       footer: {
-        text: `Mod Team - Ticket: ${ticket.name}`,
+        text: `Mod Team • Ticket: ${ticket.name}`,
         icon_url: ticket.guild.iconURL(),
       },
       fields: [],
@@ -211,7 +211,7 @@ export async function newResponse(message) {
         },
       ],
       footer: {
-        text: `Mod Team - Ticket: ${message.channel.name}`,
+        text: `Mod Team • Ticket: ${message.channel.name}`,
         icon_url: message.guild.iconURL(),
       },
       timestamp: new Date().toISOString(),
@@ -247,7 +247,7 @@ export async function closeConfirmation(ticket, moderator, reason) {
         },
       ],
       footer: {
-        text: `Mod Team - Ticket: ${ticket.name}`,
+        text: `Mod Team • Ticket: ${ticket.name}`,
         icon_url: ticket.guild.iconURL(),
       },
       timestamp: new Date().toISOString(),

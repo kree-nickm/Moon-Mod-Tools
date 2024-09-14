@@ -147,12 +147,20 @@ Configuration Options (at least one must be provided):
 * **joinLogChannelId** - The snowflake ID of the channel where member joins and removals are to be logged.
 
 ### modmail
-Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and interact with the user.
+Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and interact with the user. When a user reports a message or sends a DM to the bot, the bot will create a ticket thread in the modmail channel with that information. If the user already has an open ticket, the new report/DM will be added to the existing ticket.
+
+Moderators can type in the ticket thread to send messages to the user. To discuss the ticket without messaging the user, moderators can prepend messages with the control character `=`. Alternatively, moderators can lock the ticket, either with the Discord lock feature or by typing `=lock`, and then they can type freely in the ticket without the user receiving said messages. Then, type `=unlock` to resume messages to the user.
+
+Once the ticket is resolved, moderators can type `=close` to send the user a final closing message and close the ticket. A reason for the close can be added after the command, e.g. `=close we fixed the issue`
+
+The bot can also automatically add tags to these tickets so they are easier to track. See the options below.
 
 Configuration Options:
 * **mailChannelId** - The snowflake ID of the channel where modmail report threads will be created for mods to discuss the report. Must be a forum channel.
-* **lockTagId** - The snowflake ID of a thread tag that the bot will check for. If a ticket thread as this tag, it will be treated as 'locked', even if it's not. Omit if you have no such tag.
-* **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores users and their modmail tickets, to make looking them up easier. Default: `modmail.sqlite`
+* **newTagId** - *(Optional)* The snowflake ID of a thread tag that the bot will add to any newly created ticket. Omit if you have no such tag.
+* **lockedTagId** - *(Optional)* The snowflake ID of a thread tag that the bot will add to a ticket when a mod uses the 'lock' command. Additionally, if a ticket thread as this tag, it will be treated as 'locked', even if it's not. Omit if you have no such tag.
+* **resolvedTagId** - *(Optional)* The snowflake ID of a thread tag that the bot will add to a thread when a mod uses the 'close' command. Omit if you have no such tag.
+* **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores users and their modmail tickets, to make looking them up easier. *Default:* `modmail.sqlite`
 
 ### pitbot
 Manages the role that marks users as suspended, and logs disciplinary actions to allow moderators to better manage punishments against users who break the server rules.
@@ -161,7 +169,7 @@ Configuration Options:
 * **logChannelId** - The snowflake ID of the channel where pitbot will report all disciplinary actions that it takes.
 * **pitRoleId** - The snowflake ID of the role to give to users who are currently suspended.
 * **modRoleId** - A string or array of strings. Each string is a snowflake ID of a moderator role, so the bot knows who the moderators are.
-* **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores all current and past disciplinary actions. Default: `pitbot.sqlite`
+* **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores all current and past disciplinary actions. *Default:* `pitbot.sqlite`
 
 ## Documentation
 The documentation in the `docs` directory is generated with [JSDoc](https://jsdoc.app) with the following configuration file:

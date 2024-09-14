@@ -4,6 +4,7 @@
  * @todo checkmark on the ticket, same as on messages mods type to the user, idk what it does if anything. tags for ticket status. interaction button that goes in the #modmail channel.
  */
 import Database from '../../classes/Database.mjs';
+import { getTicketCreator } from './ticket.mjs';
 
 /**
  * Requires the DirectMessages intent in order to receive any events for messages, and the MessageContent intent in order to see any content of messages.
@@ -61,11 +62,9 @@ export async function onReady(module) {
   let addSmt = await module.database.prepare('INSERT INTO tickets (userId, threadId, number) VALUES (?, ?, ?)');
   for(let ticket of tickets) {
     let number = ticket.name.slice(ticket.name.lastIndexOf('-')+2);
-    let threadMsg = await ticket.fetchStarterMessage();
-    let userId = threadMsg.embeds[0].fields.find(fld => fld.name === 'Id')?.value;
-    let user = await this.client.users.fetch(userId);
+    let user = await getTicketCreator.call(this.client, ticket);
     if (!user) {
-      this.logError(`Unable to determine which user to send the response to.`, {ticket, threadMsg, userId});
+      this.logError(`Unable to determine which user created this ticket.`, {ticket});
       continue;
     }
     await addSmt.run(user.id, ticket.id, number);
