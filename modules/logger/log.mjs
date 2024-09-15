@@ -21,9 +21,7 @@ export async function messageUpdate(oldMessage, newMessage) {
   if (oldMessage?.partial)
     oldMessage = null;
   
-  if (newMessage.author.id === this.user.id) {
-    // This happens sometimes when the bot logs something and I don't know why.
-    this.master.logDebug(`Erroneous self message update:`, {oldMessage, newMessage});
+  if (newMessage.author.bot || !newMessage.editedTimestamp) {
     return;
   }
   

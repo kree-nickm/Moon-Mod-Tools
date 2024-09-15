@@ -44,9 +44,14 @@ export async function onReady(module) {
     for(let [channelId, channel] of channels) {
       if (channel.partial)
         channel = await channel.fetch();
-      if (channel.messages && channel.viewable) {
-        let messages = await channel.messages.fetch();
-        this.logDebug(`Fetched ${messages.size} messages from: #${channel.name}`);
+      if (channel.messages && channel.viewable && channel.isTextBased()) {
+        try {
+          let messages = await channel.messages.fetch();
+          this.logDebug(`Fetched ${messages.size} messages from: #${channel.name}`);
+        }
+        catch(err) {
+          this.logWarn(`Could not cache messages in channel: ${channel.name}`);
+        }
       }
     }
     
