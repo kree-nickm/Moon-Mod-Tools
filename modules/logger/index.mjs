@@ -5,9 +5,9 @@
 import { updateInvites } from './log.mjs';
 
 /**
- * GuildMessages is required to see messages sent in a guild, and MessageContent is required to actually see the content of those messages. GuildMembers is required to log user joins/leaves. GuildInvites is required in order to track what invite was used when a user joins.
+ * GuildMessages is required to see messages sent in a guild, and MessageContent is required to actually see the content of those messages. GuildMembers is required to log user joins/leaves. GuildInvites is required in order to track what invite was used when a user joins. GuildModeration is needed to view the audit log, which is needed to determine when a user has been kicked.
  */
-export const intents = ["GuildMessages","MessageContent","GuildMembers","GuildInvites"];
+export const intents = ["GuildMessages","MessageContent","GuildMembers","GuildInvites","GuildModeration"];
 
 /**
  * GuildMember might be required. Not sure, because I don't know what circumstances would cause a GuildMember to be partial.
@@ -23,11 +23,16 @@ export async function onStart(module) {
     messageUpdate: 'messageUpdate',
     messageDelete: 'messageDelete',
     guildMemberAdd: 'guildMemberAdd',
+    guildMemberUpdate: 'guildMemberUpdate',
     guildMemberRemove: 'guildMemberRemove',
-    inviteCreate: 'inviteCreate',
-    inviteDelete: 'inviteDelete',
+    guildAuditLogEntryCreate: 'guildAuditLogEntryCreate', // Requires VIEW_AUDIT_LOG
+    inviteCreate: 'inviteCreate', // Requires MANAGE_GUILD
+    inviteDelete: 'inviteDelete', // Requires MANAGE_GUILD
   });
-  module.memory = {};
+  module.memory = {
+    pendingMembers: [],
+    removedMembers: [],
+  };
 };
 
 /**

@@ -40,11 +40,11 @@ export async function onReady(module) {
   //await this.registerApplicationCommandFile('modules/pitbot/commands/strikes.mjs', {guildIds:[logChannel.guild.id]});
   //await this.registerApplicationCommandFile('modules/pitbot/commands/removestrike.mjs', {guildIds:[logChannel.guild.id]});
   //await this.registerApplicationCommandFile('modules/pitbot/commands/editcomment.mjs', {guildIds:[logChannel.guild.id]});
+  //await this.registerApplicationCommandFile('modules/pitbot/commands/warn.mjs', {guildIds:[logChannel.guild.id]});
+  //await this.registerApplicationCommandFile('modules/pitbot/commands/warns.mjs', {guildIds:[logChannel.guild.id]});
   
   await updateAllRoles.call(this.client);
-  updateTimer = setInterval(async () => {
-    await updateAllRoles.call(this.client);
-  }, 60000);
+  updateTimer = setInterval(updateAllRoles.bind(this.client), 60000);
   return true;
 }
 

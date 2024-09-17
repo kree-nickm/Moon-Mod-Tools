@@ -5,7 +5,8 @@
 import { updateRole, getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 
-export async function guildMemberAdd(add) {
+export async function guildMemberAdd(member) {
+  // TODO: When someone joins, update their roles.
 }
 
 /**

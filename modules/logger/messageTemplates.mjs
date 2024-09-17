@@ -55,7 +55,11 @@ export async function attachmentToEmbed(attachment, overwrites={}) {
 }
 
 function durationString(ms) {
-  if (ms > 86400000 * 2)
+  if (ms > (86400000 * 365) * 2)
+    return `${(ms/(86400000 * 365)).toFixed(1)} years`;
+  else if (ms > (86400000 * 30) * 3)
+    return `${Math.round(ms/(86400000 * 30))} months`;
+  else if (ms > 86400000 * 2)
     return `${Math.round(ms/86400000)} days`;
   else if (ms > 3600000 * 3)
     return `${Math.round(ms/3600000)} hours`;
@@ -119,33 +123,27 @@ export async function memberAdded(member, invite) {
   let response = {
     embeds: [{
       title: `Member Added`,
+      description: `${member.user} joined the server.`,
       color: 0x00ff00,
       fields: [
         {
-          name: 'User',
-          value: `${member.user.username} (${member.user.id}) ${member.user}`,
+          name: 'Username',
+          value: member.user.username,
+          inline: true,
         },
         {
-          name: 'Account Creation Date',
-          value: `<t:${Math.round(member.user.createdTimestamp/1000)}:f>`,
-        },
-        {
-          name: 'Server Joined Date',
-          value: `<t:${Math.round(member.joinedTimestamp/1000)}:f>`,
+          name: 'ID',
+          value: member.user.id,
+          inline: true,
         },
         {
           name: 'Account Age',
           value: isNewAcct ? `:warning: ${age} :warning:` : `${age}`,
           inline: true,
         },
-        {
-          name: 'Member Count',
-          value: `${member.guild.memberCount}`,
-          inline: true,
-        },
       ],
       thumbnail: {url: member.user.avatarURL()},
-      timestamp: new Date().toISOString(),
+      timestamp: member.joinedAt,
     }],
   };
   
@@ -189,43 +187,27 @@ export async function memberAdded(member, invite) {
   return response;
 }
 
-export async function memberRemoved(member) {
-  let age = durationString(member.joinedTimestamp - member.user.createdTimestamp);
+export async function memberRemoved(member, reason) {
   let duration = durationString(Date.now() - member.joinedTimestamp);
   let response = {
     embeds: [{
       title: `Member Removed`,
+      description: `**Reason:** ${reason}`,
       color: 0xff0000,
       fields: [
         {
-          name: 'User',
-          value: `${member.user.username} (${member.user.id}) ${member.user}`,
+          name: 'Username',
+          value: member.user.username,
+          inline: true,
         },
         {
-          name: 'Account Creation Date',
-          value: `<t:${Math.round(member.user.createdTimestamp/1000)}:f>`,
-        },
-        {
-          name: 'Server Joined Date',
-          value: `<t:${Math.round(member.joinedTimestamp/1000)}:f>`,
-        },
-        {
-          name: 'Server Removed Date',
-          value: `<t:${Math.round(Date.now()/1000)}:f>`,
-        },
-        {
-          name: 'Account Age (On Join)',
-          value: `${age}`,
+          name: 'ID',
+          value: member.user.id,
           inline: true,
         },
         {
           name: 'Here For',
           value: `${duration}`,
-          inline: true,
-        },
-        {
-          name: 'Member Count',
-          value: `${member.guild.memberCount}`,
           inline: true,
         },
       ],

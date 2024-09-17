@@ -37,6 +37,7 @@ Example configuration file:
       }
     }
   ],
+  "messageCacheLimit": 50,
   "ownerId": "12345678901234567890"
 }
 ```
@@ -51,6 +52,7 @@ Example configuration file:
 * **modules** - Array of module definitions to specify which installed modules should be loaded for this bot. Module definitions have the following properties:
   * **name** - Name of the module, which matches the folder containing the module's code.
   * **options** - An object with module-specific configuration options. Different modules will want different properties here.
+* **messageCacheLimit** - Impose a per-channel limit to how many messages the bot will cache. By default, Discord.js caches up to 50 messages per channel.
 * **ownerId** - Discord ID of the user who owns the bot. Ideally, the owner will be granted access to all bot features, though this may not be possible for restricted application commands.
 
 ## Application Command File
@@ -145,6 +147,7 @@ Requirements:
 Configuration Options (at least one must be provided):
 * **msgLogChannelId** - The snowflake ID of the channel where messages are to be logged.
 * **joinLogChannelId** - The snowflake ID of the channel where member joins and removals are to be logged.
+* **syncRoleId** - The snowflake ID of the role that syncronizes the user's subscription status, e.g via Twitch connection. The bot can use this to determine if the user was removed due to lacking the role, or left of their own accord.
 
 ### modmail
 Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and interact with the user. When a user reports a message or sends a DM to the bot, the bot will create a ticket thread in the modmail channel with that information. If the user already has an open ticket, the new report/DM will be added to the existing ticket.

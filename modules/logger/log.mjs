@@ -186,16 +186,49 @@ export async function messageDelete(message) {
  * @param {?discord.js/GuildMember} member - The guild member who was added.
  */
 export async function guildMemberAdd(member) {
+  let module = this.master.modules.logger;
+  
   if (member.partial)
     member = await member.fetch();
   
+  if(member.pending) {
+    this.master.logDebug(`${member.user.username} is onboarding.`);
+    module.memory.pendingMembers.push(member.id);
+    return;
+  }
+  
+  this.master.logDebug(`${member.user.username} joined server.`);
+  await processJoin.call(this, member);
+};
+
+export async function guildMemberUpdate(oldMember, newMember) {
+  let module = this.master.modules.logger;
+  
+  if (oldMember.partial)
+    oldMember = null;
+  if (newMember.partial)
+    newMember = await newMember.fetch();
+  
+  if(!newMember.pending) {
+    if(module.memory.pendingMembers.includes(newMember.id)) {
+      module.memory.pendingMembers = module.memory.pendingMembers.filter(id => id !== newMember.id);
+      this.master.logDebug(`${member.user.username} finished onboarding.`);
+      await processJoin.call(this, newMember);
+    }
+  }
+};
+
+async function processJoin(member) {
+  let module = this.master.modules.logger;
+  
   // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
-  let logChannel = await this.channels.fetch(this.master.modules.logger.options.joinLogChannelId);
+  let logChannel = await this.channels.fetch(module.options.joinLogChannelId);
   if (!logChannel || logChannel.guild.id !== member.guild.id)
     return;
   
+  // Note: This might not work with pending members.
   let inviteUsed;
-  if (this.master.modules.logger.memory.invites) {
+  if (module.memory.invites) {
     let changes = await updateInvites.call(this);
     if (Object.entries(changes).length === 2 && (Object.values(changes)[1] === 1 || Object.values(changes)[1] === -1))
       inviteUsed = Object.keys(changes)[1];
@@ -210,22 +243,62 @@ export async function guildMemberAdd(member) {
   }
   
   await logChannel.send(await Messages.memberAdded.call(this, member, inviteUsed));
-};
+}
+
+export async function guildAuditLogEntryCreate(entry, guild) {
+  this.master.logDebug(`Audit log: ${entry.actionType} ${entry.targetType} ${entry.targetId}: ${entry.reason}`);
+  let module = this.master.modules.logger;
+  if (entry.action === 20 || entry.action === 21 || entry.action === 22) {
+    module.memory.removedMembers.push({
+      type: entry.action,
+      executorId: entry.executorId,
+      targetId: entry.targetId,
+      reason: entry.reason,
+    });
+  }
+}
 
 /**
  * Log the user leaving or being kicked.
  * @param {?discord.js/GuildMember} member - The guild member who was removed.
  */
 export async function guildMemberRemove(member) {
+  this.master.logDebug(`Guild member remove: ${member.user.username}`);
+  let module = this.master.modules.logger;
+  
   if (member.partial)
     member = await member.fetch();
   
   // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
-  let logChannel = await this.channels.fetch(this.master.modules.logger.options.joinLogChannelId);
+  let logChannel = await this.channels.fetch(module.options.joinLogChannelId);
   if (!logChannel || logChannel.guild.id !== member.guild.id)
     return;
   
-  logChannel.send(await Messages.memberRemoved.call(this, member));
+  // Give the audit log time to update so we can see if the removal reason is in it.
+  await new Promise((resolve, reject) => {
+    setTimeout(() => resolve(), 1000);
+  });
+  
+  let reason = 'User left the server.';
+  let auditLog = module.memory.removedMembers.find(audit => audit.targetId === member.id);
+  if (auditLog) {
+    if (auditLog.type === 20)
+      reason = `User was kicked by <@${auditLog.executorId}>.` + auditLog.reason ? `\n${auditLog.reason}` : '';
+    else if (auditLog.type === 21)
+      reason = 'User was pruned.';
+    else if (auditLog.type === 22)
+      reason = `User was banned by <@${auditLog.executorId}>.` + auditLog.reason ? `\n${auditLog.reason}` : '';
+    module.memory.removedMembers = module.memory.removedMembers.filter(audit => audit.targetId !== member.id);
+  }
+  else {
+    let hasRole = module.options.syncRoleId
+      ? member.roles.cache.has(module.options.syncRoleId)
+      : true;
+    if (!hasRole)
+      reason = 'User removed by auto-sync.';
+  }
+  
+  logChannel.send(await Messages.memberRemoved.call(this, member, reason));
 };
 
 let updateInvitesTimeout;

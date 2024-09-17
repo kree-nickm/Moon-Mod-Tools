@@ -1,5 +1,5 @@
 /** @module classes/Bot */
-import { Client, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
+import { Client, Options, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
 import Application from './Application.mjs';
 import BotModule from './BotModule.mjs';
 
@@ -135,6 +135,8 @@ export default class Bot extends Application {
       this.config.modules = [];
     if (!this.config.ownerId)
       this.logWarn(`No ownerId set in the configuration file. You may want to specify your Discord user ID in that property to ensure you have full bot access.`);
+    if (isNaN(this.config.messageCacheLimit))
+      this.config.messageCacheLimit = -1;
   }
   
   /**
@@ -167,11 +169,19 @@ export default class Bot extends Application {
     intents = [...new Set(intents)];
     partials = [...new Set(partials)];
     
-    this.logDebug(`Creating Discord.js client. Intents: [${intents.join(', ')}], Partials: [${partials.join(', ')}]`);
-    this.client = new Client({
+    let clientOptions = {
       intents: intents.map(intent => GatewayIntentBits[intent]),
       partials: partials.map(partial => Partials[partial]),
-    });
+    };
+    let cacheOptions;
+    if(this.config.messageCacheLimit > -1 /* more cache limits */) {
+      cacheOptions = Options.DefaultMakeCacheSettings;
+      if(this.config.messageCacheLimit > -1)
+        cacheOptions.MessageManager = this.config.messageCacheLimit;
+      clientOptions.makeCache = Options.cacheWithLimits(cacheOptions);
+    }
+    this.logDebug(`Creating Discord.js client. Intents: [${intents.join(', ')}], Partials: [${partials.join(', ')}], Cache:`, cacheOptions);
+    this.client = new Client(clientOptions);
     this.client.master = this;
     
     for(let name in this.modules) {
