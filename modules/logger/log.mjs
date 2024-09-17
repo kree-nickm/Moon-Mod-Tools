@@ -283,11 +283,11 @@ export async function guildMemberRemove(member) {
   let auditLog = module.memory.removedMembers.find(audit => audit.targetId === member.id);
   if (auditLog) {
     if (auditLog.type === 20)
-      reason = `User was kicked by <@${auditLog.executorId}>.` + auditLog.reason ? `\n${auditLog.reason}` : '';
+      reason = `User was kicked by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
     else if (auditLog.type === 21)
       reason = 'User was pruned.';
     else if (auditLog.type === 22)
-      reason = `User was banned by <@${auditLog.executorId}>.` + auditLog.reason ? `\n${auditLog.reason}` : '';
+      reason = `User was banned by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
     module.memory.removedMembers = module.memory.removedMembers.filter(audit => audit.targetId !== member.id);
   }
   else {

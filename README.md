@@ -141,6 +141,7 @@ If `joinLogChannelId` option is provided, the bot logs information about users w
 Requirements:
 * **Message Content Intent** for the bot in the [Discord Dev Portal](https://discord.com/developers/applications).
 * **Server Members Intent** for the bot in the [Discord Dev Portal](https://discord.com/developers/applications).
+* *(Optional)* **View Audit Log** general server permission. Needed in order to determine if a removed user was kicked or banned, instead of just left.
 * *(Optional)* **Manage Server** general server permission. Needed in order to track invites. Without it, invites won't be tracked.
 * *(Optional)* **Manage Channels** general server permission. Needed in order to track invites. Without it, invites won't be tracked.
 
