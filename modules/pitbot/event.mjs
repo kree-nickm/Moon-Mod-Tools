@@ -9,6 +9,10 @@ export async function guildMemberAdd(member) {
   // TODO: When someone joins, update their roles.
 }
 
+export async function guildMemberUpdate(oldMember, member) {
+  // TODO: When a mod manually manages the pit role, update the database accordingly.
+}
+
 /**
  * @this discord.js/Client
  * @param {discord.js/Message} message - Any message the bot sees.

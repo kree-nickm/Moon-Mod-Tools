@@ -42,6 +42,7 @@ export async function onReady(module) {
     messageCreate: 'messageCreate',
   });
   await this.registerApplicationCommandFile('modules/modmail/reportMessage.mjs', {guildIds:[mailChannel.guildId]});
+  await this.registerApplicationCommandFile('modules/modmail/command.mjs', {guildIds:[mailChannel.guildId]});
   
   // Fetch all tickets.
   let activeTickets = await mailChannel.threads.fetchActive();

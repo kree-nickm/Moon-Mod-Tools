@@ -1,6 +1,6 @@
 /**
  * Functions for managing a user's strikes.
- * @module modules/pitbot/strikes
+ * @module modules/pitbot/strikeManager
  */
 import { updateRole, getStrikes, getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
@@ -14,7 +14,7 @@ export async function add(user, mod, severity, comment, replyTo) {
   let pitData = await updateRole.call(this, user.id);
   if(replyTo && typeof(replyTo.reply) === 'function')
     replyTo.reply(await Messages.strikeConfirmation.call(this, user, mod, severity, comment, pitData.strikes.releaseDate));
-  user.send(await Messages.strikeNotification.call(this, severity, comment, pitData.strikes.releaseDate));
+  await user.send(await Messages.strikeNotification.call(this, severity, comment, pitData.strikes.releaseDate));
 }
 
 export async function release(user, mod, amend, replyTo) {
@@ -35,12 +35,12 @@ export async function release(user, mod, amend, replyTo) {
   let pitData = await updateRole.call(this, user.id);
   //if(replyTo && typeof(replyTo.reply) === 'function')
   //  replyTo.reply(await Messages.releaseConfirmation.call(this));
-  //user.send(await Messages.releaseNotification.call(this));
+  //await user.send(await Messages.releaseNotification.call(this));
 }
 
 export async function list(user, replyTo) {
   let mods = await getModeratorIds.call(this, true);
-  if (!mods.includes(mod.id))
+  if (!mods.includes(replyTo?.author?.id))
     return;
   
   let strikes = await getStrikes.call(this, user.id);
@@ -50,7 +50,7 @@ export async function list(user, replyTo) {
 
 export async function remove(strikeId, replyTo) {
   let mods = await getModeratorIds.call(this, true);
-  if (!mods.includes(mod.id))
+  if (!mods.includes(replyTo?.author?.id))
     return;
   
   let strike = await this.master.modules.pitbot.database.get('SELECT rowId AS strikeId,* FROM strikes WHERE rowId=?', strikeId);
@@ -64,12 +64,12 @@ export async function remove(strikeId, replyTo) {
   let pitData = await updateRole.call(this, user.id);
   //if(replyTo && typeof(replyTo.reply) === 'function')
   //  replyTo.reply(await Messages.removeConfirmation.call(this));
-  //user.send(await Messages.removeNotification.call(this));
+  //await user.send(await Messages.removeNotification.call(this));
 }
 
 export async function comment(strikeId, comment, replyTo) {
   let mods = await getModeratorIds.call(this, true);
-  if (!mods.includes(mod.id))
+  if (!mods.includes(replyTo?.author?.id))
     return;
   
   await this.master.modules.pitbot.database.run('UPDATE strikes SET comment=? WHERE rowId=?', comment, strikeId);

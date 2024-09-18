@@ -8,7 +8,7 @@ import Database from '../../classes/Database.mjs';
 let updateTimer;
 
 /**
- * Requires the DirectMessages and GuildMessages intents in order to receive events for messages, and the MessageContent intent in order to see any content of messages. Also requires GuildMembers to fetch the roles of guild members in bulk.
+ * Requires the DirectMessages and GuildMessages intents in order to receive events for messages, and the MessageContent intent in order to see any content of messages. Also requires GuildMembers to fetch the roles of guild members.
  */ 
 export const intents = ["GuildMembers","DirectMessages","GuildMessages","MessageContent"];
 
@@ -30,18 +30,19 @@ export async function onReady(module) {
   await this.registerEventHandlerFile('modules/pitbot/event.mjs', {
     messageCreate: 'messageCreate',
     guildMemberAdd: 'guildMemberAdd',
+    guildMemberUpdate: 'guildMemberUpdate',
   });
   
   let logChannel = await this.client.channels.fetch(module.options.logChannelId);
   let members = await logChannel.guild.members.fetch();
   
   await this.registerApplicationCommandFile('modules/pitbot/commands/strike.mjs', {guildIds:[logChannel.guild.id]});
-  //await this.registerApplicationCommandFile('modules/pitbot/commands/release.mjs', {guildIds:[logChannel.guild.id]});
-  //await this.registerApplicationCommandFile('modules/pitbot/commands/strikes.mjs', {guildIds:[logChannel.guild.id]});
-  //await this.registerApplicationCommandFile('modules/pitbot/commands/removestrike.mjs', {guildIds:[logChannel.guild.id]});
-  //await this.registerApplicationCommandFile('modules/pitbot/commands/editcomment.mjs', {guildIds:[logChannel.guild.id]});
-  //await this.registerApplicationCommandFile('modules/pitbot/commands/warn.mjs', {guildIds:[logChannel.guild.id]});
-  //await this.registerApplicationCommandFile('modules/pitbot/commands/warns.mjs', {guildIds:[logChannel.guild.id]});
+  await this.registerApplicationCommandFile('modules/pitbot/commands/release.mjs', {guildIds:[logChannel.guild.id]});
+  await this.registerApplicationCommandFile('modules/pitbot/commands/strikes.mjs', {guildIds:[logChannel.guild.id]});
+  await this.registerApplicationCommandFile('modules/pitbot/commands/removestrike.mjs', {guildIds:[logChannel.guild.id]});
+  await this.registerApplicationCommandFile('modules/pitbot/commands/editcomment.mjs', {guildIds:[logChannel.guild.id]});
+  await this.registerApplicationCommandFile('modules/pitbot/commands/warn.mjs', {guildIds:[logChannel.guild.id]});
+  await this.registerApplicationCommandFile('modules/pitbot/commands/warns.mjs', {guildIds:[logChannel.guild.id]});
   
   await updateAllRoles.call(this.client);
   updateTimer = setInterval(updateAllRoles.bind(this.client), 60000);

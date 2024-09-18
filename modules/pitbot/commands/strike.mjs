@@ -1,7 +1,7 @@
 /**
  * @module modules/pitbot/commands/strike
  */
-import * as Strikes from '../strikes.mjs';
+import * as Strikes from '../strikeManager.mjs';
 
 export async function handler(interaction) {
   let user = interaction.options.getUser('user');
