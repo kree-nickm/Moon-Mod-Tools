@@ -14,15 +14,15 @@ export async function attachmentToEmbed(attachment, overwrites={}) {
     fields: [
       {
         name: 'Name',
-        value: attachment.name,
+        value: attachment.name ?? '?',
       },
       {
         name: 'Content Type',
-        value: attachment.contentType,
+        value: attachment.contentType ?? '?',
       },
       {
         name: 'Size (Bytes)',
-        value: attachment.size,
+        value: attachment.size ?? '?',
       },
     ],
   };

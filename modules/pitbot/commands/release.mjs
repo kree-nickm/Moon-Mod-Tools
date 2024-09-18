@@ -2,11 +2,19 @@
  * @module modules/pitbot/commands/release
  */
 import * as Strikes from '../strikeManager.mjs';
+import { getModeratorIds } from '../roles.mjs';
 
 export async function handler(interaction) {
+  let mods = await getModeratorIds.call(this, true);
+  if (!mods.includes(interaction.user.id)) {
+    await interaction.reply({ephemeral:true, content:"You don't have permission to do that."});
+    return;
+  }
+  
   let user = interaction.options.getUser('user');
   let amend = interaction.options.getBoolean('amend');
-  await Strikes.release.call(this, user, interaction.user, amend, interaction);
+  await Strikes.release.call(this, user, interaction.user, amend);
+  await interaction.reply({ephemeral:true,content:'Check log channel for confirmation.'});
 }
 
 export const definition = {

@@ -2,10 +2,19 @@
  * @module modules/pitbot/commands/strikes
  */
 import * as Strikes from '../strikeManager.mjs';
+import { getModeratorIds } from '../roles.mjs';
 
 export async function handler(interaction) {
-  let user = interaction.options.getUser('user');
-  await Strikes.list.call(this, user, interaction);
+  let user;
+  let fromMod = false;
+  let mods = await getModeratorIds.call(this, true);
+  if (mods.includes(interaction.user.id)) {
+    user = interaction.options.getUser('user') ?? interaction.user;
+    fromMod = true;
+  }
+  else
+    user = interaction.user;
+  await Strikes.list.call(this, user, fromMod, {interaction});
 }
 
 export const definition = {
@@ -14,10 +23,8 @@ export const definition = {
   "options": [
     {
       "name": "user",
-      "description": "The user fetch.",
+      "description": "(Mods only) The user to fetch. Fetches your own if blank or you're not a mod.",
       "type": 6,
-      "required": true,
     },
   ],
-  "default_member_permissions": String(1 << 28), // MANAGE_ROLES
 };

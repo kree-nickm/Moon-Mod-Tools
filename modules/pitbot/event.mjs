@@ -65,23 +65,29 @@ async function handleBulletHell(message) {
   }
   else {
     let moderatorIds = await getModeratorIds.call(this);
-    this.master.logDebug(`moderators:`, moderatorIds);
+    this.master.logDebug(`BH Shooters:`, moderatorIds);
     let moderatorId = moderatorIds[Math.floor(Math.random()*moderatorIds.length)];
     let moderator = await this.users.fetch(moderatorId);
     
-    let prefixes = ['GIGA'];
+    let prefixes = ["GIGA", "Weak", "Cum", "Burning", "Stinky", "Auto-aim", "Tracking", "Weeb", "Penetrating", "Thrusting", "Slimy", "Invisible", "Holy", "Daunting", "Demonic", "Bald", "Rimjob", "Femboy turning", "Catgirl turning", "Ass gaping", "Mediocre", "Explosive", "Extra large", "Cheating", "Ultra Mastermode Hardcore", "Shitting", "Chugging", "Rotting", "Pissing", "Twerking", "Sussy", "REALLY MAD", "Gachi"];
     let prefix = prefixes[Math.floor(Math.random()*prefixes.length)];
     
-    let suffixes = ['HELL'];
+    let suffixes = ["OFHELL", "of Cum", "of Thrusting", "of Poop", "of Slime", "of Pride", "of Rimjob", "of Goatsie", "of Balding", "up their ass", "of the Pit", "of Fire and Destruction", "of the Abyss", "of the Unending Suffering", "of the Deceased Souls", "of Happiness", "of Infinite Darkness", "of Mediocrity", "of the Two Wives", "of the Fuck", "of Choking", "of Shitting", "of the Locker Room", "of Cringe", "of the Green Frog", "of the Shiny Orb", "of the Microwaved Coffee", "of the Chug Boot"];
     let suffix = suffixes[Math.floor(Math.random()*suffixes.length)];
     
-    let bullet = `${prefix} bullet of ${suffix}`;
-    
-    //let duration = 3600000*Math.floor(Math.random()*24);
-    let duration = 10000;
+    let duration = 3600000 * 12;
+    let roll = Math.random();
+    if(roll < 0.01)
+      duration = 3600000 * 48;
+    else if(roll < 0.06)
+      duration = 3600000 * 36;
+    else if(roll < 0.21)
+      duration = 3600000 * 24;
+    else if(roll < 0.51)
+      duration = 3600000 * 16;
     
     await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date) VALUES (?, ?, ?)', message.author.id, duration, Date.now());
+    await message.reply(await Messages.bulletHell.call(this, message, moderator, {prefix, suffix, duration}));
     await updateRole.call(this, message.author.id);
-    await message.reply(await Messages.bulletHell.call(this, message, moderator, {bullet, duration}));
   }
 }

@@ -29,15 +29,35 @@ let activeStrikeFactor = {
 };
 
 /**
+ * @typedef {Object} Strike
+ * @property {number} strikeId - ID of the strike, which corresponds to the database row ID.
+ * @property {string} userId - Snowflake ID of the user who was struck.
+ * @property {string} modId - Snowflake ID of the mod who issued the strike.
+ * @property {number} severity - Severity of the strike.
+ * @property {string} comment - Reason for the strike.
+ * @property {number} date - Unix timestamp of the strike in milliseconds.
+ */
+/**
+ * @typedef {Object} StrikeReport
+ * @property {Strike[]} active - List of active strikes, most recent first.
+ * @property {Strike[]} expired - List of expired strikes, most recent first.
+ * @property {Strike[]} removed - List of removed strikes, most recent first.
+ * @property {Strike[]} releases - List of releases, most recent first.
+ * @property {number} releaseTime - Unix timestamp (milliseconds) of when the user was or will be freed from the pit due to their most recent active strike, or 0 if they have no active strikes.
+ */
+/**
+ * @param {string} userId - Snowflake ID of the user whose strike data to fetch.
  * @this discord.js/Client
+ * @returns {StrikeReport} A report of all of the users strikes and releases.
  */
 export async function getStrikes(userId) {
+  let module = this.master.modules.pitbot;
   let active = [];
   let expired = [];
   let removed = [];
   let releases = [];
   
-  let strikes = await this.master.modules.pitbot.database.all('SELECT rowId AS strikeId,* FROM strikes WHERE userId=? ORDER BY date DESC', userId);
+  let strikes = await module.database.all('SELECT rowId AS strikeId,* FROM strikes WHERE userId=? ORDER BY date DESC', userId);
   for(let strike of strikes) {
     // Severity < 0 means it's a mod explicitly releasing a user from the pit, regardless of their previous strikes.
     if (strike.severity < 0) {
@@ -45,6 +65,7 @@ export async function getStrikes(userId) {
       continue;
     }
     
+    // Severity = 0 means the strike was removed. It could be deleted from the database entirely in the future.
     if (strike.severity === 0) {
       removed.push(strike);
       continue;
@@ -80,20 +101,17 @@ export async function getStrikes(userId) {
  * @this discord.js/Client
  */
 export async function updateRole(userId) {
+  let module = this.master.modules.pitbot;
   let strikes = await getStrikes.call(this, userId);
-  if (strikes.active.length >= 5) {
-    let logChannel = await this.channels.fetch(this.master.modules.pitbot.options.logChannelId);
-    await logChannel.send(await Messages.maximumStrikes.call(this, user));
-  }
   
   // Check if they are currently pitted from bullet hell, taking into account if a mod released them as above.
-  await this.master.modules.pitbot.database.run('DELETE FROM bullethell WHERE userId=? AND date+duration<?', userId, Date.now());
-  let bullethell = await this.master.modules.pitbot.database.all('SELECT * FROM bullethell WHERE userId=? AND date>?', userId, released);
+  await module.database.run('DELETE FROM bullethell WHERE userId=? AND date+duration<?', userId, Date.now());
+  let bullethell = await module.database.all('SELECT * FROM bullethell WHERE userId=? AND date>?', userId, strikes.releaseTime);
   
   // Apply any suspension that we determined.
   if (strikes.releaseTime > Date.now()) {
-    let mod = this.users.fetch(strikes[0].modId) ?? strikes[0].modId;
-    await setPitRole.call(this, userId, true, `Strike (L${strikes[0].severity}) issued by ${mod}: ${strikes[0].comment}`);
+    let strike = strikes.active[0];
+    await setPitRole.call(this, userId, true, `Strike ID:\`${strike.strikeId}\` Lvl ${strike.severity} issued by <@${strike.modId}>\n> ${strike.comment}`);
   }
   else if (bullethell.length) {
     await setPitRole.call(this, userId, true, 'Bullet Hell');
@@ -108,10 +126,11 @@ export async function updateRole(userId) {
  * @this discord.js/Client
  */
 async function setPitRole(userId, add=true, reason='') {
+  let module = this.master.modules.pitbot;
   let user = await this.users.fetch(userId);
-  let logChannel = await this.channels.fetch(this.master.modules.pitbot.options.logChannelId);
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
   let member = await logChannel.guild.members.fetch(user);
-  let role = await logChannel.guild.roles.fetch(this.master.modules.pitbot.options.pitRoleId);
+  let role = await logChannel.guild.roles.fetch(module.options.pitRoleId);
   
   if (add && !role.members.has(member.id)) {
     try {
@@ -140,15 +159,16 @@ async function setPitRole(userId, add=true, reason='') {
  * @this discord.js/Client
  */
 export async function updateAllRoles() {
+  let module = this.master.modules.pitbot;
   let userIds = [];
   
-  let bullethell = await this.master.modules.pitbot.database.all('SELECT * FROM bullethell');
+  let bullethell = await module.database.all('SELECT userId FROM bullethell');
   for(let row of bullethell)
     if(!userIds.includes(row.userId))
       userIds.push(row.userId);
-  await this.master.modules.pitbot.database.run('DELETE FROM bullethell WHERE date+duration<?', Date.now());
+  await module.database.run('DELETE FROM bullethell WHERE date+duration<?', Date.now());
     
-  let strikes = await this.master.modules.pitbot.database.all('SELECT * FROM strikes');
+  let strikes = await module.database.all('SELECT userId FROM strikes');
   for(let row of strikes)
     if(!userIds.includes(row.userId))
       userIds.push(row.userId);
@@ -158,13 +178,14 @@ export async function updateAllRoles() {
 }
 
 export async function getModeratorIds(includeOwner=false) {
-  let logChannel = await this.channels.fetch(this.master.modules.pitbot.options.logChannelId);
+  let module = this.master.modules.pitbot;
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
   let moderatorIds = [];
   
   if (includeOwner && this.master.config.ownerId)
     moderatorIds.push(this.master.config.ownerId);
   
-  let roleIds = this.master.modules.pitbot.options.modRoleId;
+  let roleIds = module.options.modRoleId;
   if(!Array.isArray(roleIds))
     roleIds = [roleIds];
   for(let roleId of roleIds) {

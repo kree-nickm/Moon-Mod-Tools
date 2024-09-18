@@ -5,23 +5,23 @@
 import { getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 
-export async function add(user, mod, comment, replyTo) {
-  let mods = await getModeratorIds.call(this, true);
-  if (!mods.includes(mod.id))
-    return;
+export async function add(user, mod, comment) {
+  let module = this.master.modules.pitbot;
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
   
-  await this.master.modules.pitbot.database.run('INSERT INTO warns (userId, modId, comment, date) VALUES (?, ?, ?, ?)', user.id, mod.id, comment, Date.now());
-  if(replyTo && typeof(replyTo.reply) === 'function')
-    replyTo.reply(await Messages.warnConfirmation.call(this, user, mod, comment));
-  await user.send(await Messages.warnNotification.call(this, comment));
+  await module.database.run('INSERT INTO warnings (userId, modId, comment, date) VALUES (?, ?, ?, ?)', user.id, mod.id, comment, Date.now());
+  let warnings = await module.database.all('SELECT rowId AS warnId,* FROM warnings WHERE userId=?', user.id);
+  
+  await logChannel.send(await Messages.warnConfirmation.call(this, user, mod, comment, warnings));
+  await user.send(await Messages.warnNotification.call(this, logChannel.guild, comment, warnings));
 }
 
-export async function list(user, replyTo) {
-  let mods = await getModeratorIds.call(this, true);
-  if (!mods.includes(replyTo?.author?.id))
-    return;
+export async function list(user, fromMod, {message, interaction}={}) {
+  let module = this.master.modules.pitbot;
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
+  let replyTo = interaction ?? message;
   
-  let strikes = await getStrikes.call(this, user.id);
-  //if(replyTo && typeof(replyTo.reply) === 'function')
-  //  replyTo.reply(await Messages.strikes.call(this, strikes));
+  let warnings = await module.database.all('SELECT rowId AS warnId,* FROM warnings WHERE userId=?', user.id);
+  
+  await replyTo.reply(await Messages.listWarnings.call(this, logChannel.guild, user, warnings, {fromMod, ephemeral: replyTo.channel.id !== logChannel.id}));
 }

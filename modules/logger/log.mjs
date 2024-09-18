@@ -89,11 +89,13 @@ export async function messageUpdate(oldMessage, newMessage) {
   // Basic information about the change.
   mainFields.push({
     name: `Link`,
-    value: `${newMessage.channel} / ${newMessage.url}`,
+    value: `${newMessage.url}`,
+    inline: true,
   });
   mainFields.push({
     name: `When`,
     value: `<t:${Math.round(newMessage.editedTimestamp/1000)}:R>`,
+    inline: true,
   });
   
   // Construct the primary embed object and add it onto the front of the embeds.
@@ -134,10 +136,8 @@ export async function messageDelete(message) {
   }
   
   // Show the old message if possible.
-  let channel;
   if (message.partial)
   {
-    channel = await this.channels.fetch(message.channelId);
     mainFields.push({
       name: 'Uh oh!',
       value: `Old message content can't be fetched, because it is too old.`,
@@ -149,14 +149,14 @@ export async function messageDelete(message) {
   }
   else
   {
-    channel = message.channel;
     mainFields.push({
       name: 'Message',
       value: message.content,
     });
     mainFields.push({
       name: `Link`,
-      value: `${channel} / ${message.url}`,
+      value: `${message.url}`,
+      inline: true,
     });
   }
   
@@ -164,12 +164,13 @@ export async function messageDelete(message) {
   mainFields.push({
     name: `When`,
     value: `<t:${Math.round(Date.now()/1000)}:R>`,
+    inline: true,
   });
   
   // Construct the primary embed object and add it onto the front of the embeds.
   embeds.unshift({
     title: 'Message Deleted',
-    description: message.author ? `\`${message.author.username}\` ${message.author} (${message.author.id})` : `In channel ${channel}`,
+    description: message.author ? `\`${message.author.username}\` ${message.author} (${message.author.id})` : `In channel <#${message.channelId}>`,
     color: 0xff0000,
     fields: mainFields,
     timestamp: new Date().toISOString(),
@@ -273,6 +274,10 @@ export async function guildMemberRemove(member) {
   if (member.partial)
     member = await member.fetch();
   
+  // If they haven't even finished joining, don't log anything.
+  if (member.pending)
+    return;
+  
   // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
   let logChannel = await this.channels.fetch(module.options.joinLogChannelId);
   if (!logChannel || logChannel.guild.id !== member.guild.id)
@@ -280,11 +285,11 @@ export async function guildMemberRemove(member) {
   
   // Give the audit log time to update so we can see if the removal reason is in it.
   await new Promise((resolve, reject) => {
-    setTimeout(() => resolve(), 1000);
+    setTimeout(() => resolve(), 500);
   });
   
   let reason = 'User left the server.';
-  let auditLog = module.memory.removedMembers.find(audit => audit.targetId === member.id);
+  let auditLog = module.memory.removedMembers.findLast(audit => audit.targetId === member.id);
   if (auditLog) {
     if (auditLog.type === 20 && auditLog.executorId)
       reason = `User was kicked by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
