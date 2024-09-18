@@ -66,12 +66,6 @@ export default class Bot extends Application {
   static componentInteractions = {};
   
   /**
-   * @typedef {Object} BotModule
-   * @property {Object} imports - All of the properties exported by the module's index.mjs file.
-   * @property {Object} options - Module options defined in the configuration file.
-   * @property {Database} [database] - If needed, stores a reference to the database used by the module.
-   */
-  /**
    * The modules loaded by {@link Bot#loadModule}. These are bot modules from the modules/ directory, not Node.js modules. Perhaps another name should be used, but oh well. The keys are the module names.
    * @type {Object.<string, BotModule>}
    */
@@ -155,9 +149,7 @@ export default class Bot extends Application {
         delete this.modules[module.name];
     }
     
-    // Note: Is it better to just add them, or error out if they are missing?
-    // The former is obviously easier, but the latter gives the host more
-    // transparency and control over which partials/intents to include.
+    // Add all the intents/partials required by the modules to the initial ones.
     let intents = this.config.intents;
     let partials = this.config.partials;
     for(let name in this.modules) {
@@ -168,11 +160,12 @@ export default class Bot extends Application {
     }
     intents = [...new Set(intents)];
     partials = [...new Set(partials)];
-    
     let clientOptions = {
       intents: intents.map(intent => GatewayIntentBits[intent]),
       partials: partials.map(partial => Partials[partial]),
     };
+    
+    // Set any cache limits.
     let cacheOptions;
     if(this.config.messageCacheLimit > -1 /* more cache limits */) {
       cacheOptions = Options.DefaultMakeCacheSettings;
@@ -180,20 +173,25 @@ export default class Bot extends Application {
         cacheOptions.MessageManager = this.config.messageCacheLimit;
       clientOptions.makeCache = Options.cacheWithLimits(cacheOptions);
     }
+    
+    // Create the Discord bot.
     this.logDebug(`Creating Discord.js client. Intents: [${intents.join(', ')}], Partials: [${partials.join(', ')}], Cache:`, cacheOptions);
     this.client = new Client(clientOptions);
     this.client.master = this;
     
+    // Start the modules.
     for(let name in this.modules) {
       if(!await this.modules[name].start())
         delete this.modules[name];
     }
     
+    // Register the basic event handlers.
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
     await this.registerEventHandler('messageCreate', message => this.logDebug(`Msg from ${message.author.username}: ${message.content?message.content:(message.embeds?.[0]?.description??message.embeds?.[0]?.title)}`));
     
-    this.logInfo(`Bot logging in to Discord.`);
+    // Log the bot into Discord.
+    this.logInfo(`Bot logging in to Discord...`);
     this.rest = new REST().setToken(this.config.token);
     await this.client.login(this.config.token);
     

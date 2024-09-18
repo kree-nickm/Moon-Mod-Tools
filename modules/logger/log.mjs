@@ -249,12 +249,16 @@ export async function guildAuditLogEntryCreate(entry, guild) {
   this.master.logDebug(`Audit log: ${entry.actionType} ${entry.targetType} ${entry.targetId}: ${entry.reason}`);
   let module = this.master.modules.logger;
   if (entry.action === 20 || entry.action === 21 || entry.action === 22) {
-    module.memory.removedMembers.push({
-      type: entry.action,
-      executorId: entry.executorId,
-      targetId: entry.targetId,
-      reason: entry.reason,
-    });
+    if(entry.executorId && entry.targetId)
+      module.memory.removedMembers.push({
+        id: entry.id,
+        type: entry.action,
+        executorId: entry.executorId,
+        targetId: entry.targetId,
+        reason: entry.reason,
+      });
+    else
+      this.master.logWarn(`Audit log reported a confusing entry:`, entry);
   }
 }
 
@@ -282,12 +286,14 @@ export async function guildMemberRemove(member) {
   let reason = 'User left the server.';
   let auditLog = module.memory.removedMembers.find(audit => audit.targetId === member.id);
   if (auditLog) {
-    if (auditLog.type === 20)
+    if (auditLog.type === 20 && auditLog.executorId)
       reason = `User was kicked by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
     else if (auditLog.type === 21)
       reason = 'User was pruned.';
-    else if (auditLog.type === 22)
+    else if (auditLog.type === 22 && auditLog.executorId)
       reason = `User was banned by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
+    else
+      this.master.logWarn(`User had an unknown record in the audit log:`, auditLog);
     module.memory.removedMembers = module.memory.removedMembers.filter(audit => audit.targetId !== member.id);
   }
   else {
