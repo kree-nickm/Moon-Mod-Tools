@@ -55,7 +55,7 @@ export async function onReady(module) {
           this.logDebug(`Fetched ${messages.size} messages from: #${channel.name}`);
         }
         catch(err) {
-          this.logWarn(`Could not cache messages in channel: ${channel.name}`);
+          //this.logWarn(`Could not cache messages in channel: ${channel.name}`);
         }
       }
     }

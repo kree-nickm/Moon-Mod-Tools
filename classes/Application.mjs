@@ -12,6 +12,8 @@ export default class Application {
    */
   static options = {};
   
+  static debugMode;
+  
   /**
    * Parses the command line via which this Node.js application was started into an object whose keys are option flags, and their associated values are the argument that followed the flag. Assumes the first argument is a flag, and the next is an option value, alternating until all arguments are iterated through. If there are an odd number of arguments, the last one will be stored in the options object with the `_last` key.
    * @param {Object} [options] - Additional instructions on how certain flags should be handled.
@@ -61,6 +63,8 @@ export default class Application {
         midway = "\x1b[0m\x1b[91m";
         closer = "\x1b[0m";
       }
+      else
+        midway = " [ERROR]";
     }
     else if (type === 'warn') {
       func = console.warn;
@@ -69,6 +73,8 @@ export default class Application {
         midway = "\x1b[0m\x1b[93m";
         closer = "\x1b[0m";
       }
+      else
+        midway = " [WARN]";
     }
     else if (type === 'debug') {
       func = console.debug;
@@ -77,6 +83,8 @@ export default class Application {
         midway = "\x1b[0m\x1b[90m";
         closer = "\x1b[0m";
       }
+      else if(this.debugMode)
+        midway = " [DEBUG]";
       else
         return;
     }

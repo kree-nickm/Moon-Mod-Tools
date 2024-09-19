@@ -11,6 +11,10 @@ export default class BotModule {
   defaultOptions;
   options;
   
+  imports;
+  database;
+  memory;
+  
   /**
    * @param {Bot} bot - Reference to the Bot that owns this module.
    * @param {string} name - Name of the module. Without custom loading options, this must match the directory that contains the module's index.mjs file.
@@ -85,6 +89,7 @@ export default class BotModule {
       return false;
     }
     
+    // Verify the bot has the correct intents and partials that the module needs.
     let error = false;
     this.imports.intents?.forEach(intent => {
       if(!this.bot.client.options.intents.has(GatewayIntentBits[intent])) {
@@ -92,7 +97,7 @@ export default class BotModule {
         this.bot.logError(`Bot module '${this.name}' requires the ${intent} intent, but the client was not constructed with that intent, so features that rely on it will not work.`);
       }
     });
-    
+    // TODO: I'm sure it's possible to just enable new partials here, since it's an internal Discord.js thing.
     this.imports.partials?.forEach(partial => {
       if(!this.bot.client.options.partials.includes(Partials[partial])) {
         error = true;
@@ -102,6 +107,7 @@ export default class BotModule {
     if (error)
       return false;
     
+    // Run the module's start method.
     if (typeof(this.imports.onStart) === 'function') {
       try {
         let start = this.imports.onStart.call(this.bot, this);

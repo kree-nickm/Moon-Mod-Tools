@@ -250,7 +250,7 @@ export async function guildAuditLogEntryCreate(entry, guild) {
   this.master.logDebug(`Audit log: ${entry.actionType} ${entry.targetType} ${entry.targetId}: ${entry.reason}`);
   let module = this.master.modules.logger;
   if (entry.action === 20 || entry.action === 21 || entry.action === 22) {
-    if(entry.executorId && entry.targetId)
+    if(entry.targetId)
       module.memory.removedMembers.push({
         id: entry.id,
         type: entry.action,
@@ -293,6 +293,8 @@ export async function guildMemberRemove(member) {
   if (auditLog) {
     if (auditLog.type === 20 && auditLog.executorId)
       reason = `User was kicked by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
+    else if (auditLog.type === 20)
+      reason = 'User removed by auto-sync.';
     else if (auditLog.type === 21)
       reason = 'User was pruned.';
     else if (auditLog.type === 22 && auditLog.executorId)

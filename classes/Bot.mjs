@@ -33,6 +33,9 @@ export default class Bot extends Application {
    */
   static rest;
   
+  static dmErrors = true;
+  static dmWarnings = false;
+  
   /**
    * @typedef {Object} ApplicationCommandDef
    * @property {Object} definition - Application command definition as required by the Discord API.
@@ -186,9 +189,15 @@ export default class Bot extends Application {
     }
     
     // Register the basic event handlers.
+    await this.registerEventHandler('debug', this.logDebug.bind(this, '[Discord.js]'));
+    await this.registerEventHandler('warn', this.logWarn.bind(this, '[Discord.js]'));
+    await this.registerEventHandler('error', this.logError.bind(this, '[Discord.js]'));
     await this.registerEventHandler('ready', this._onReady.bind(this));
     await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
-    await this.registerEventHandler('messageCreate', message => this.logDebug(`Msg from ${message.author.username}: ${message.content?message.content:(message.embeds?.[0]?.description??message.embeds?.[0]?.title)}`));
+    await this.registerEventHandler('messageCreate', message => {
+      if (message.author.id === this.config.ownerId && message.content.startsWith('!'))
+        return this._onOwnerMessage(message);
+    });
     
     // Log the bot into Discord.
     this.logInfo(`Bot logging in to Discord...`);
@@ -258,7 +267,7 @@ export default class Bot extends Application {
     
     for (let eventName in handlers) {
       let property = handlers[eventName];
-      if (this.registerEventHandler(eventName, module[property], {suppressError:true})) {
+      if (await this.registerEventHandler(eventName, module[property], {suppressError:true})) {
         this.logInfo(`Registered event handler for event '${eventName}': ${file}:${property}`);
         
         // Remember the assignment, so it can be undone if this file is reloaded.
@@ -390,6 +399,42 @@ export default class Bot extends Application {
       }
     }
     return true;
+  }
+  
+  //---------------------------------------------------------------------------
+  
+  static logError(...args) {
+    super.logError(...args);
+    if (this.dmErrors && this.client?.isReady() && this.config.ownerId) {
+      this.client.users.fetch(this.config.ownerId).then(owner => owner.send({
+        embeds: [
+          {
+            title: `🔴 App Error 🔴`,
+            color: 0xff0000,
+            description: '```\n' + args.join(' ') + '\n```',
+            timestamp: new Date().toISOString(),
+            footer: {text: '🔴'},
+          },
+        ],
+      })).catch(err => super.logError(`Couldn't send the previous error to the bot owner.`, err));
+    }
+  }
+  
+  static logWarn(...args) {
+    super.logWarn(...args);
+    if (this.dmWarnings && this.client?.isReady() && this.config.ownerId) {
+      this.client.users.fetch(this.config.ownerId).then(owner => owner.send({
+        embeds: [
+          {
+            title: `🟡 App Warning 🟡`,
+            color: 0xffff00,
+            description: '```\n' + args.join(' ') + '\n```',
+            timestamp: new Date().toISOString(),
+            footer: {text: '🟡'},
+          },
+        ],
+      })).catch(err => super.logError(`Couldn't send the previous warning to the bot owner.`, err));
+    }
   }
   
   //---------------------------------------------------------------------------
@@ -527,7 +572,14 @@ export default class Bot extends Application {
     }
     
     // Handle the interaction.
-    commandList[interaction.commandName].handler.call(this.client, interaction);
+    try {
+      let result = commandList[interaction.commandName].handler.call(this.client, interaction);
+      if (result && result instanceof Promise)
+        result = await result;
+    }
+    catch(err) {
+      this.logError(`Failed to run command '${interaction.commandName}'.`, err);
+    }
     
     // Log the interaction to the console.
     let channel = await this.client.channels.fetch(interaction.channelId);
@@ -555,8 +607,46 @@ export default class Bot extends Application {
       return;
     }
     
-    this.componentInteractions[interaction.customId].handler.call(this.client, interaction);
+    // Handle the interaction.
+    try {
+      let result = this.componentInteractions[interaction.customId].handler.call(this.client, interaction);
+      if (result && result instanceof Promise)
+        result = await result;
+    }
+    catch(err) {
+      this.logError(`Failed to run interaction '${interaction.customId}'.`, err);
+    }
     
     this.logInfo(`Component interaction '${interaction.customId}' used by ${interaction.user?.username} (${interaction.user?.id})`);
+  }
+  
+  static async _onOwnerMessage(message) {
+    if (message.content === '!crash') {
+      throw new Error('Crash command used.');
+    }
+    else if (message.content === '!debug on') {
+      message.reply({ephemeral:true, content:'Debug mode enabled.'});
+      this.debugMode = true;
+    }
+    else if (message.content === '!debug off') {
+      message.reply({ephemeral:true, content:'Debug mode disabled.'});
+      this.debugMode = false;
+    }
+    else if (message.content === '!dmme errors on') {
+      message.reply({ephemeral:true, content:'Errors will now be sent to you.'});
+      this.dmErrors = true;
+    }
+    else if (message.content === '!dmme errors off') {
+      message.reply({ephemeral:true, content:'Errors will no longer be sent to you.'});
+      this.dmErrors = false;
+    }
+    else if (message.content === '!dmme warnings on') {
+      message.reply({ephemeral:true, content:'Warnings will now be sent to you.'});
+      this.dmWarnings = true;
+    }
+    else if (message.content === '!dmme warnings off') {
+      message.reply({ephemeral:true, content:'Warnings will no longer be sent to you.'});
+      this.dmWarnings = false;
+    }
   }
 }
