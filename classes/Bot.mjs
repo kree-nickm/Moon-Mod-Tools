@@ -134,6 +134,9 @@ export default class Bot extends Application {
       this.logWarn(`No ownerId set in the configuration file. You may want to specify your Discord user ID in that property to ensure you have full bot access.`);
     if (isNaN(this.config.messageCacheLimit))
       this.config.messageCacheLimit = -1;
+    this.debugMode = !!this.config.debugOut;
+    this.dmErrors = !!this.config.dmErrors;
+    this.dmWarnings = !!this.config.dmWarnings;
   }
   
   /**

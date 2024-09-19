@@ -54,6 +54,9 @@ Example configuration file:
   * **options** - An object with module-specific configuration options. Different modules will want different properties here.
 * **messageCacheLimit** - Impose a per-channel limit to how many messages the bot will cache. By default, Discord.js caches up to 50 messages per channel.
 * **ownerId** - Discord ID of the user who owns the bot. Ideally, the owner will be granted access to all bot features, though this may not be possible for restricted application commands.
+* **debugOut** - True or false, whether to print debug messages to the log. Discord.js sends these frequently, so this does not happen by default in order to conserve space. This can be enabled during runtime if the owner types `!debug on` anywhere the bot can see. Likewise, `!debug off` will disable it.
+* **dmErrors** - True or false, whether to DM Node.js errors to the owner. This can be enabled during runtime if the owner types `!dmme errors on` anywhere the bot can see. Likewise, `!dmme errors off` will disable it.
+* **dmWarnings** - True or false, whether to DM Node.js warnings to the owner. This can be enabled during runtime if the owner types `!dmme warnings on` anywhere the bot can see. Likewise, `!dmme warnings off` will disable it.
 
 ## Application Command File
 Example application command file:

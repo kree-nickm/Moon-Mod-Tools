@@ -209,7 +209,7 @@ export async function guildMemberUpdate(oldMember, member) {
     member = await member.fetch();
   
   if(!member.pending) {
-    if(module.memory.pendingMembers.includes(member.id)) {
+    if(module.memory.pendingMembers.includes(member.id) || oldMember?.pending) {
       module.memory.pendingMembers = module.memory.pendingMembers.filter(id => id !== member.id);
       this.master.logDebug(`Guild member finished onboarding: ${member.id}`);
       await processJoin.call(this, member);
