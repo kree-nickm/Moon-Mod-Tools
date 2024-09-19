@@ -188,33 +188,31 @@ export async function messageDelete(message) {
  */
 export async function guildMemberAdd(member) {
   let module = this.master.modules.logger;
-  
-  if (member.partial)
-    member = await member.fetch();
+  if (!module.options.joinLogChannelId)
+    return;
   
   if(member.pending) {
-    this.master.logDebug(`${member.user.username} is onboarding.`);
+    this.master.logDebug(`Guild member onboarding: ${member.id}`);
     module.memory.pendingMembers.push(member.id);
     return;
   }
   
-  this.master.logDebug(`${member.user.username} joined server.`);
   await processJoin.call(this, member);
 };
 
-export async function guildMemberUpdate(oldMember, newMember) {
+export async function guildMemberUpdate(oldMember, member) {
   let module = this.master.modules.logger;
+  if (!module.options.joinLogChannelId)
+    return;
   
-  if (oldMember.partial)
-    oldMember = null;
-  if (newMember.partial)
-    newMember = await newMember.fetch();
+  if (member.partial)
+    member = await member.fetch();
   
-  if(!newMember.pending) {
-    if(module.memory.pendingMembers.includes(newMember.id)) {
-      module.memory.pendingMembers = module.memory.pendingMembers.filter(id => id !== newMember.id);
-      this.master.logDebug(`${member.user.username} finished onboarding.`);
-      await processJoin.call(this, newMember);
+  if(!member.pending) {
+    if(module.memory.pendingMembers.includes(member.id)) {
+      module.memory.pendingMembers = module.memory.pendingMembers.filter(id => id !== member.id);
+      this.master.logDebug(`Guild member finished onboarding: ${member.id}`);
+      await processJoin.call(this, member);
     }
   }
 };
@@ -222,10 +220,18 @@ export async function guildMemberUpdate(oldMember, newMember) {
 async function processJoin(member) {
   let module = this.master.modules.logger;
   
+  if (module.memory.pendingMembers.length)
+    this.master.logDebug(`Guild members still pending:`, module.memory.pendingMembers);
+  
+  if (member.partial)
+    member = await member.fetch();
+  
   // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
   let logChannel = await this.channels.fetch(module.options.joinLogChannelId);
-  if (!logChannel || logChannel.guild.id !== member.guild.id)
+  if (!logChannel || logChannel.guild.id !== member.guild.id) {
+    this.master.logDebug(`Incorrect guild joined. Expected: ${logChannel?.guild.name}. Got: $member.guild.name{}.`);
     return;
+  }
   
   // Note: This might not work with pending members.
   let inviteUsed;
@@ -243,6 +249,7 @@ async function processJoin(member) {
     }
   }
   
+  this.master.logDebug(`Guild member joined: ${member.id}`);
   await logChannel.send(await Messages.memberAdded.call(this, member, inviteUsed));
 }
 
@@ -268,15 +275,19 @@ export async function guildAuditLogEntryCreate(entry, guild) {
  * @param {?discord.js/GuildMember} member - The guild member who was removed.
  */
 export async function guildMemberRemove(member) {
-  this.master.logDebug(`Guild member remove: ${member.user.username}`);
   let module = this.master.modules.logger;
+  if (!module.options.joinLogChannelId)
+    return;
   
   if (member.partial)
     member = await member.fetch();
   
   // If they haven't even finished joining, don't log anything.
-  if (member.pending)
+  if (member.pending) {
+    this.master.logDebug(`Guild member removed while still pending: ${member.user.username} (${member.user.id})`);
+    module.memory.pendingMembers = module.memory.pendingMembers.filter(id => id !== member.id);
     return;
+  }
   
   // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
   let logChannel = await this.channels.fetch(module.options.joinLogChannelId);
@@ -311,6 +322,7 @@ export async function guildMemberRemove(member) {
       reason = 'User removed by auto-sync.';
   }
   
+  this.master.logDebug(`Guild member removed: ${member.user.username} (${member.user.id}): "${reason}"`);
   logChannel.send(await Messages.memberRemoved.call(this, member, reason));
 };
 
