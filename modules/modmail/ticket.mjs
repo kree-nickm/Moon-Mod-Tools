@@ -75,12 +75,17 @@ export async function getTicketCreator(ticket) {
   let userString = starterMessage.embeds[0].fields.find(fld => fld.name === 'User')?.value;
   let start = userString.lastIndexOf('(');
   if(start > -1) {
-    start += 1;
+    start = start + 1;
     let end = userString.lastIndexOf(')');
-    userId = userString.slice(start, end-start);
+    userId = userString.slice(start, end);
     user = userId ? await this.users.fetch(userId) : null;
     if (user)
       return user;
+    else
+      this.master.logWarn(`Couldn't parse id from old format:`, {userString, start, end, userId});
+  }
+  else {
+    this.master.logWarn(`Couldn't parse field from old format:`, {userString, start});
   }
   
   return null;

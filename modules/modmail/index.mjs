@@ -10,12 +10,12 @@ import * as ModmailButton from './button.mjs';
 /**
  * Requires the DirectMessages intent in order to receive any events for messages, and the MessageContent intent in order to see any content of messages.
  */ 
-export const intents = ["DirectMessages","MessageContent"];
+export const intents = ["DirectMessages","GuildMessages","MessageContent"];
 
 /**
  * Requires the Channel partial to recognize when DM channels are created.
  */ 
-export const partials = ["Channel"];
+export const partials = ["Message","Channel"];
 
 /**
  * Loads the database of tickets, creating and initializing it if necessary.
@@ -63,11 +63,16 @@ export async function onReady(module) {
   // Add all tickets to the database.
   let addSmt = await module.database.prepare('INSERT INTO tickets (userId, threadId, number) VALUES (?, ?, ?)');
   for(let ticket of tickets) {
-    let number = ticket.name.slice(ticket.name.lastIndexOf('-')+2);
+    let dashIdx = ticket.name.lastIndexOf('-');
+    if (dashIdx < 0) {
+      this.logWarn(`Ticket name doesn't follow expected convention: '${ticket.name}' (${ticket.id}).`);
+      break;
+    }
+    let number = ticket.name.slice(dashIdx+2);
     let user = await getTicketCreator.call(this.client, ticket);
     if (!user) {
-      this.logError(`Unable to determine which user created this ticket.`, {ticket});
-      continue;
+      this.logWarn(`Unable to determine which user created ticket '${ticket.name}' (${ticket.id}).`);
+      break;
     }
     await addSmt.run(user.id, ticket.id, number);
   }

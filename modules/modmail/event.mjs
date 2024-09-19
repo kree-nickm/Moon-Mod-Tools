@@ -69,18 +69,18 @@ async function modMailMessage(message) {
   }
   
   if (message.content.startsWith('=')) {
-    if (message.content === '=close' || message.content.startsWith('=close ')) {
+    if (message.content === '=close' || message.content.startsWith('=close ') || message.content === '= close' || message.content.startsWith('= close ')) {
       let reason = message.content.length > 7 ? message.content.slice(7) : '';
       await closeThread.call(this, ticket, message.author, reason);
       await user.send(await Messages.closeConfirmation.call(this, ticket, message.author, reason));
     }
-    else if (message.content === '=lock' || message.content.startsWith('=lock ')) {
+    else if (message.content === '=lock' || message.content.startsWith('=lock ') || message.content === '= lock' || message.content.startsWith('= lock ')) {
       let reason = message.content.length > 7 ? message.content.slice(7) : '';
       await ticket.setLocked(true, reason);
       if (module.options.lockedTagId)
         await ticket.setAppliedTags([module.options.lockedTagId], reason);
     }
-    else if (message.content === '=unlock' || message.content.startsWith('=unlock ')) {
+    else if (message.content === '=unlock' || message.content.startsWith('=unlock ') || message.content === '= unlock' || message.content.startsWith('= unlock ')) {
       let reason = message.content.length > 7 ? message.content.slice(7) : '';
       await ticket.setLocked(false, reason);
       await ticket.setAppliedTags(ticket.appliedTags.filter(tagId => tagId != module.options.lockedTagId), reason);
