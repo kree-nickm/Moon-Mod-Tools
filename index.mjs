@@ -1,5 +1,5 @@
 import Bot from './classes/Bot.mjs';
-
+//console.log(process);
 Bot.logInfo(`************************************************`);
 Bot.logInfo(`************* Starting Discord Bot *************`);
 Bot.logInfo(`************************************************`);

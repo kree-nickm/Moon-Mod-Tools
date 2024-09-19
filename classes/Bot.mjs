@@ -538,6 +538,20 @@ export default class Bot extends Application {
     
     await this._sendInteractions();
     
+    if (this.config.ownerId) {
+      let owner = await this.client.users.fetch(this.config.ownerId);
+      await owner.send({
+        embeds: [
+          {
+            title: 'Bot Started',
+            description: '```' + process.argv.join(`\n`) + '```',
+            color: 0x0000ff,
+          },
+        ],
+      });
+      await owner.dmChannel.fetch();
+    }
+    
     this.logInfo(`Discord bot is ready.`);
   }
 
