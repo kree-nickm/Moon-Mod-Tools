@@ -12,8 +12,15 @@ export async function add(user, mod, severity, comment) {
   await module.database.run('INSERT INTO strikes (userId, modId, comment, severity, date) VALUES (?, ?, ?, ?, ?)', user.id, mod.id, comment, severity, Date.now());
   let pitData = await updateRole.call(this, user.id);
   
-  await logChannel.send(await Messages.strikeConfirmation.call(this, user, mod, severity, comment, pitData.strikes));
-  await user.send(await Messages.strikeNotification.call(this, logChannel.guild, severity, comment, pitData.strikes));
+  let notifSent = false;
+  try {
+    await user.send(await Messages.strikeNotification.call(this, logChannel.guild, severity, comment, pitData.strikes));
+    notifSent = true;
+  }
+  catch(err) {
+    this.master.logDebug(`Failed to DM user ${user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+  }
+  await logChannel.send(await Messages.strikeConfirmation.call(this, user, mod, severity, comment, pitData.strikes, notifSent));
   
   if (pitData.strikes.active.length >= 5) {
     await logChannel.send(await Messages.maximumStrikes.call(this, user));
@@ -33,8 +40,15 @@ export async function release(user, mod, amend) {
     await module.database.run('INSERT INTO strikes (userId, modId, severity, date) VALUES (?, ?, ?, ?)', user.id, mod.id, -1, Date.now());
   let pitData = await updateRole.call(this, user.id);
   
-  await logChannel.send(await Messages.releaseConfirmation.call(this, user, mod, amend, pitData.strikes));
-  await user.send(await Messages.releaseNotification.call(this, logChannel.guild, amend, pitData.strikes));
+  let notifSent = false;
+  try {
+    await user.send(await Messages.releaseNotification.call(this, logChannel.guild, amend, pitData.strikes));
+    notifSent = true;
+  }
+  catch(err) {
+    this.master.logDebug(`Failed to DM user ${user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+  }
+  await logChannel.send(await Messages.releaseConfirmation.call(this, user, mod, amend, pitData.strikes, notifSent));
 }
 
 export async function remove(strikeId, {message, interaction}={}) {
@@ -53,18 +67,38 @@ export async function remove(strikeId, {message, interaction}={}) {
   let user = await this.users.fetch(strike.userId);
   let pitData = await updateRole.call(this, user.id);
   
-  await logChannel.send(await Messages.removeConfirmation.call(this, user, mod, strike, pitData.strikes));
-  await user.send(await Messages.removeNotification.call(this, logChannel.guild, strike, pitData.strikes));
+  let notifSent = false;
+  try {
+    await user.send(await Messages.removeNotification.call(this, logChannel.guild, strike, pitData.strikes));
+    notifSent = true;
+  }
+  catch(err) {
+    this.master.logDebug(`Failed to DM user ${user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+  }
+  await logChannel.send(await Messages.removeConfirmation.call(this, user, mod, strike, pitData.strikes, notifSent));
 }
 
-export async function list(user, fromMod, {message, interaction}={}) {
+export async function list(user, mod, {message, interaction}={}) {
   let module = this.master.modules.pitbot;
   let logChannel = await this.channels.fetch(module.options.logChannelId);
-  let replyTo = interaction ?? message;
   
   let strikeReport = await getStrikes.call(this, user.id);
   
-  await replyTo.reply(await Messages.listStrikes.call(this, logChannel.guild, user, strikeReport, {fromMod, ephemeral: replyTo.channel.id !== logChannel.id}));
+  if (interaction)
+    await interaction.reply(await Messages.listStrikes.call(this, logChannel.guild, user, strikeReport, {mod, ephemeral: interaction.channel.id !== logChannel.id}));
+  else if (message) {
+    if (message.channel.id === logChannel.id)
+      await message.reply(await Messages.listStrikes.call(this, logChannel.guild, user, strikeReport, {mod}));
+    else {
+      try {
+        await user.send(await Messages.listStrikes.call(this, logChannel.guild, user, strikeReport, {mod}));
+      }
+      catch(err) {
+        this.master.logDebug(`Failed to DM user ${user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+        await message.react('🔇');
+      }
+    }
+  }
 }
 
 export async function comment(strikeId, comment, {message, interaction}={}) {

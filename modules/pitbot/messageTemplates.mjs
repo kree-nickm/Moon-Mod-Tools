@@ -270,7 +270,7 @@ export async function removeNotification(guild, strike, strikeReport) {
   return response;
 }
 
-export async function listStrikes(guild, user, strikeReport, {ephemeral,fromMod}={}) {
+export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={}) {
   let response = {
     ephemeral,
     embeds: [{
@@ -301,17 +301,17 @@ export async function listStrikes(guild, user, strikeReport, {ephemeral,fromMod}
     }],
   };
   
-  let strikeToString = strike => `ID:\`${strike.strikeId}\` Lvl ${strike.severity} on <t:${Math.floor(strike.date/1000)}:d>` + (fromMod?` by <@${strike.modId}>`:'') + `\n> ${strike.comment}`;
+  let strikeToString = strike => `ID:\`${strike.strikeId}\` Lvl ${strike.severity} on <t:${Math.floor(strike.date/1000)}:d>` + (mod?` by <@${strike.modId}>`:'') + `\n> ${strike.comment}`;
   if (strikeReport.active.length) {
     response.embeds[0].fields.push({
       name: 'Active Strike List',
-      value: strikeReport.active.map(strikeToString).join(`\n`),
+      value: strikeReport.active.map(strikeToString).join(`\n`).slice(0, 1024),
     });
   }
   if (strikeReport.expired.length) {
     response.embeds[0].fields.push({
       name: 'Expired Strike List',
-      value: strikeReport.expired.map(strikeToString).join(`\n`),
+      value: strikeReport.expired.map(strikeToString).join(`\n`).slice(0, 1024),
     });
   }
   
@@ -394,7 +394,7 @@ export async function warnNotification(guild, comment, warnings) {
   return response;
 }
 
-export async function listWarnings(guild, user, warnings, {ephemeral,fromMod}={}) {
+export async function listWarnings(guild, user, warnings, {ephemeral,mod}={}) {
   let response = {
     ephemeral,
     embeds: [{
@@ -409,11 +409,11 @@ export async function listWarnings(guild, user, warnings, {ephemeral,fromMod}={}
     }],
   };
   
-  let warningToString = warn => `ID:\`${warn.warnId}\` on <t:${Math.floor(warn.date/1000)}:d>` + (fromMod?` by <@${warn.modId}>`:'') + `\n> ${warn.comment}`;
+  let warningToString = warn => `ID:\`${warn.warnId}\` on <t:${Math.floor(warn.date/1000)}:d>` + (mod?` by <@${warn.modId}>`:'') + `\n> ${warn.comment}`;
   if (warnings.length) {
     response.embeds[0].fields.push({
       name: 'Warnings List',
-      value: warnings.map(warningToString).join(`\n`),
+      value: warnings.map(warningToString).join(`\n`).slice(0, 1024),
     });
   }
   

@@ -6,44 +6,36 @@ import * as path from 'node:path';
  * Contains methods that pertain to any Node.js application, regardless of what the application's purpose is.
  */
 export default class Application {
-  /**
-   * Object with keys as flags, and values are the option(s) of those flags in the command line.
-   * @type {Object.<string, string>}
-   */
-  static options = {};
-  
-  static debugMode;
-  
-  /**
-   * Parses the command line via which this Node.js application was started into an object whose keys are option flags, and their associated values are the argument that followed the flag. Assumes the first argument is a flag, and the next is an option value, alternating until all arguments are iterated through. If there are an odd number of arguments, the last one will be stored in the options object with the `_last` key.
-   * @param {Object} [options] - Additional instructions on how certain flags should be handled.
-   * @param {string[]} [options.multiples] - Array of flags that will be stored as arrays in the returned object, and repeats of that flag in the command line will be added to the corresponding array.
-   * @param {Object.<string, string[]>} [options.aliases] - Object with each key being a flag, and the value is an array of flags that will be considered duplicates of the flag in the key.
-   */
-  static loadOptions({multiples=[], aliases={}}={}) {
-    let flag;
+  static parseCmdLine({flagPrefix='-', optionPrefix='--'}={}) {
+    let options = {};
+    let lastArgs = '';
     for (let arg of process.argv.slice(2)) {
-      if (!flag) {
-        for (let baseFlag in aliases) {
-          if (aliases[baseFlag].includes(arg))
-            arg = baseFlag;
-        }
-        flag = arg;
+      if(arg.startsWith(optionPrefix)) {
+        lastArgs = [arg.slice(optionPrefix.length)];
+        lastArgs.forEach(a => options[a] = options[a] ?? true);
+      }
+      else if(arg.startsWith(flagPrefix)) {
+        lastArgs = arg.split('').slice(flagPrefix.length);
+        lastArgs.forEach(a => options[a] = options[a] ?? true);
       }
       else {
-        if (multiples.includes(flag)) {
-          if (!this.options[flag])
-            this.options[flag] = [arg];
-          else
-            this.options[flag].push(arg);
-        }
+        if (lastArgs)
+          lastArgs.forEach(a => options[a] = options[a] ?? arg);
         else
-          this.options[flag] = arg;
-        flag = null;
+          options[arg] = true;
       }
     }
-    if (flag)
-      this.options._last = flag;
+    return options;
+  }
+  
+  /**
+   * Converts any file path into a path that the native import operation will accept.
+   * @param {string} filename - JavaScript file name or path relative to the application's install directory.
+   * @param {string} [append] - A query string to append to the returned path.
+   * @returns {string} - A full path with prefix for use in the Node.js import operation.
+   */
+  static toModulePath(filename, append='') {
+    return "file:" + path.resolve(filename) + append;
   }
   
   /**
@@ -83,10 +75,8 @@ export default class Application {
         midway = "\x1b[0m\x1b[90m";
         closer = "\x1b[0m";
       }
-      else if(this.debugMode)
-        midway = " [DEBUG]";
       else
-        return;
+        midway = " [DEBUG]";
     }
     else if (type === 'info') {
       func = console.log;
@@ -101,6 +91,12 @@ export default class Application {
     if (func)
       func(`${opener}[${(new Date()).toUTCString()}]${midway}`, ...args, closer);
   }
+  
+  //---------------------------------------------------------------------------
+  
+  static imports = {};
+  
+  static debugMode;
   
   /**
    * Shortcut function for reporting an error. Errors should be reported when the current operation cannot be completed.
@@ -131,7 +127,8 @@ export default class Application {
    * @param {...*} args - The data to log.
    */
   static logDebug(...args) {
-    this.log('debug', ...args);
+    if(this.debugMode)
+      this.log('debug', ...args);
   }
   
   /**
@@ -159,31 +156,23 @@ export default class Application {
       return;
     }
     
-    let append = '';
-    if ('reload' in options) {
-      if (options.reload)
-        append = '?t='+Date.now();
+    let fileabs = path.resolve(filename);
+    if (this.imports[fileabs] && !options.reload)
+      return this.imports[fileabs];
+    
+    if ('reload' in options)
       delete options.reload;
-    }
     
     try {
+      let append = '?t='+Date.now();
       let filepath = this.toModulePath(filename, append);
       this.logDebug(`Importing file '${filepath}'.`);
-      return await import(filepath, options);
+      this.imports[fileabs] = await import(filepath, options);
+      return this.imports[fileabs];
     }
     catch(err) {
       this.logError(`File '${filename}${append}' cannot be imported by Node.js.`, err);
       return;
     }
-  }
-  
-  /**
-   * Converts any file path into a path that the native import operation will accept.
-   * @param {string} filename - JavaScript file name or path relative to the application's install directory.
-   * @param {string} [append] - A query string to append to the returned path.
-   * @returns {string} - A full path with prefix for use in the Node.js import operation.
-   */
-  static toModulePath(filename, append='') {
-    return "file:" + path.resolve(filename) + append;
   }
 }

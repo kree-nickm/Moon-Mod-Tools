@@ -14,7 +14,8 @@ export async function handler(interaction) {
   let strikeId = interaction.options.getInteger('strike');
   let comment = interaction.options.getString('comment');
   await Strikes.comment.call(this, strikeId, comment, {interaction});
-  await interaction.reply({ephemeral:true, content:'Check log channel for confirmation.'});
+  if(!interaction.replied)
+    await interaction.reply({ephemeral:true, content:'Check log channel for confirmation.'});
 }
 
 export const definition = {

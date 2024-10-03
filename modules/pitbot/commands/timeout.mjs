@@ -1,5 +1,5 @@
 /**
- * @module modules/pitbot/commands/strike
+ * @module modules/pitbot/commands/timeout
  */
 import * as Strikes from '../strikeManager.mjs';
 import { getModeratorIds } from '../roles.mjs';
@@ -15,11 +15,12 @@ export async function handler(interaction) {
   let severity = interaction.options.getInteger('severity');
   let comment = interaction.options.getString('comment');
   await Strikes.add.call(this, user, interaction.user, severity, comment);
-  await interaction.reply({ephemeral:true,content:'Check log channel for confirmation.'});
+  if(!interaction.replied)
+    await interaction.reply({ephemeral:true,content:'Check log channel for confirmation.'});
 }
 
 export const definition = {
-  "name": "strike",
+  "name": "timeout",
   "description": "Issue a strike to a user.",
   "options": [
     {

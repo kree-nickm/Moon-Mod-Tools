@@ -19,30 +19,39 @@ export async function onStart(module) {
   module.database = new Database();
   await module.database.connect(`storage/${module.options.databaseFile??'pitbot.sqlite'}`);
   await module.database.run('CREATE TABLE IF NOT EXISTS bullethell (userId TEXT, date NUMBER, duration NUMBER);');
-  await module.database.run('CREATE TABLE IF NOT EXISTS strikes (userId TEXT, modId TEXT, comment TEXT, date NUMBER, severity NUMBER);');
-  await module.database.run('CREATE TABLE IF NOT EXISTS warnings (userId TEXT, modId TEXT, comment TEXT, date NUMBER);');
+  await module.database.run('CREATE TABLE IF NOT EXISTS strikes (userId TEXT, modId TEXT, comment TEXT, severity NUMBER, date NUMBER UNIQUE ON CONFLICT IGNORE);');
+  await module.database.run('CREATE TABLE IF NOT EXISTS warnings (userId TEXT, modId TEXT, comment TEXT, date NUMBER UNIQUE ON CONFLICT IGNORE);');
 }
 
 /**
  * Registers the event handlers for interacting with the bot.
  */
 export async function onReady(module) {
-  await this.registerEventHandlerFile('modules/pitbot/event.mjs', {
-    messageCreate: 'messageCreate',
-    guildMemberAdd: 'guildMemberAdd',
-    guildMemberUpdate: 'guildMemberUpdate',
+  await this.listenerManager.createFromFile('modules/pitbot/event.mjs', {
+    eventHandlers: {
+      messageCreate: 'messageCreate',
+      guildMemberAdd: 'guildMemberAdd',
+      guildMemberUpdate: 'guildMemberUpdate',
+    },
+    nocache: true,
   });
   
   let logChannel = await this.client.channels.fetch(module.options.logChannelId);
   let members = await logChannel.guild.members.fetch();
   
-  await this.registerApplicationCommandFile('modules/pitbot/commands/strike.mjs', {guildIds:[logChannel.guild.id]});
-  await this.registerApplicationCommandFile('modules/pitbot/commands/release.mjs', {guildIds:[logChannel.guild.id]});
-  await this.registerApplicationCommandFile('modules/pitbot/commands/strikes.mjs', {guildIds:[logChannel.guild.id]});
-  await this.registerApplicationCommandFile('modules/pitbot/commands/removestrike.mjs', {guildIds:[logChannel.guild.id]});
-  await this.registerApplicationCommandFile('modules/pitbot/commands/editcomment.mjs', {guildIds:[logChannel.guild.id]});
-  await this.registerApplicationCommandFile('modules/pitbot/commands/warn.mjs', {guildIds:[logChannel.guild.id]});
-  await this.registerApplicationCommandFile('modules/pitbot/commands/warns.mjs', {guildIds:[logChannel.guild.id]});
+  let options = {
+    cmdDefs: {definition:'definition', handler:'handler'},
+    guildIds: [logChannel.guild.id],
+    nocache: true,
+    source: {module:module.name},
+  };
+  await this.listenerManager.createFromFile('modules/pitbot/commands/timeout.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/release.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/strikes.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/removestrike.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/editcomment.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/warn.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/warns.mjs', options);
   
   await updateAllRoles.call(this.client);
   updateTimer = setInterval(updateAllRoles.bind(this.client), 60000);
@@ -52,5 +61,7 @@ export async function onReady(module) {
 export async function onUnload(module) {
   clearInterval(updateTimer);
   await module.database?.close();
-  // TODO: Unregister event handlers.
+  this.listenerManager.listeners
+    .filter(lis => lis.source?.module === module.name)
+    .forEach(lis => lis.delete());
 }

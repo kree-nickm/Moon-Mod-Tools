@@ -127,18 +127,18 @@ export async function memberAdded(member, invite) {
       color: 0x00ff00,
       fields: [
         {
+          name: 'Account Age',
+          value: isNewAcct ? `:warning: ${age} :warning:` : `${age}`,
+          inline: true,
+        },
+        {
           name: 'Username',
-          value: member.user.username,
+          value: `\`${member.user.username}\``,
           inline: true,
         },
         {
           name: 'ID',
           value: member.user.id,
-          inline: true,
-        },
-        {
-          name: 'Account Age',
-          value: isNewAcct ? `:warning: ${age} :warning:` : `${age}`,
           inline: true,
         },
       ],
@@ -187,8 +187,8 @@ export async function memberAdded(member, invite) {
   return response;
 }
 
-export async function memberRemoved(member, reason) {
-  let duration = durationString(Date.now() - member.joinedTimestamp);
+export async function memberRemoved({user, member, reason}) {
+  let duration = member.joinedTimestamp ? durationString(Date.now() - member.joinedTimestamp) : 'unknown';
   let response = {
     embeds: [{
       title: `Member Removed`,
@@ -197,12 +197,12 @@ export async function memberRemoved(member, reason) {
       fields: [
         {
           name: 'Username',
-          value: member.user.username,
+          value: `\`${user.username}\``,
           inline: true,
         },
         {
           name: 'ID',
-          value: member.user.id,
+          value: user.id,
           inline: true,
         },
         {
@@ -211,7 +211,7 @@ export async function memberRemoved(member, reason) {
           inline: true,
         },
       ],
-      thumbnail: {url: member.user.avatarURL()},
+      thumbnail: {url: user.avatarURL()},
       timestamp: new Date().toISOString(),
     }],
   };

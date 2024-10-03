@@ -15,18 +15,17 @@ var timers = {};
  * @param {discord.js/Message} newMessage - The newly edited message.
  */
 export async function messageUpdate(oldMessage, newMessage) {
+  let module = this.master.modules.logger;
+  
   if (newMessage.partial)
     newMessage = await newMessage.fetch();
-  // We can't actually fetch the old message. If it is partial, just forget it.
-  if (oldMessage?.partial)
-    oldMessage = null;
   
-  if (newMessage.author.bot || !newMessage.editedTimestamp) {
+  // Some edits don't need to be logged.
+  if (newMessage.author.bot || !newMessage.editedTimestamp)
     return;
-  }
   
   // Assume each guild only has one log channel, and each log channel only reports messages from its guild.
-  let logChannel = await this.channels.fetch(this.master.modules.logger.options.msgLogChannelId);
+  let logChannel = await this.channels.fetch(module.options.msgLogChannelId);
   if (!logChannel || logChannel.guildId !== newMessage.guildId)
     return;
   
@@ -47,7 +46,7 @@ export async function messageUpdate(oldMessage, newMessage) {
     }
     for(let [attachmentId, attachment] of newMessage.attachments??[]) {
       newAttachList.push(attachment);
-      if (!oldMessage?.attachments.has(attachmentId)) {
+      if (!oldMessage?.attachments?.has(attachmentId)) {
         embeds.push(await Messages.attachmentToEmbed.call(this, attachment, {title:'Attachment Added'}));
         files.push(attachment);
       }
@@ -57,11 +56,11 @@ export async function messageUpdate(oldMessage, newMessage) {
   newAttachList = newAttachList.map(attachment => `[${attachment.name}](${attachment.url}) (${attachment.contentType})`).join(', ');
   
   // Show the old (if possible) and new messages and a brief list of attachments, if any.
-  if (oldMessage && 'content' in oldMessage)
+  if (oldMessage && !isNaN(oldMessage.content?.length))
   {
     mainFields.push({
-      name: 'Old Message',
-      value: oldMessage.content,
+      name: 'Old Message' + (oldMessage.content.length > 1024 ? ' (Trimmed)' : ''),
+      value: oldMessage.content.slice(0, 1024),
     });
     if (oldAttachList.length)
       mainFields.push({
@@ -75,10 +74,11 @@ export async function messageUpdate(oldMessage, newMessage) {
       name: 'Uh oh!',
       value: `Old message content can't be fetched, because it is too old.`,
     });
+    //this.master.logDebug(`Too-old message:`, oldMessage);
   }
   mainFields.push({
-    name: 'New Message',
-    value: newMessage.content,
+    name: 'New Message' + (newMessage.content.length > 1024 ? ' (Trimmed)' : ''),
+    value: newMessage.content.slice(0, 1024),
   });
   if (newAttachList.length)
     mainFields.push({
@@ -120,7 +120,7 @@ export async function messageUpdate(oldMessage, newMessage) {
 export async function messageDelete(message) {
   // Assume each guild only has one log channel, and each log channel only reports messages from its guild.
   let logChannel = await this.channels.fetch(this.master.modules.logger.options.msgLogChannelId);
-  if (!logChannel || !message.guildId || logChannel.guildId !== message.guildId)
+  if (!logChannel || !message?.guildId || logChannel.guildId !== message?.guildId)
     return;
   
   let embeds = [];
@@ -128,34 +128,42 @@ export async function messageDelete(message) {
   
   // Collect the message's attachments so they can be reported in the logger.
   let files = [];
-  if (message.attachments?.size) {
-    for(let [attachmentId, attachment] of message.attachments) {
+  if (message?.attachments?.size) {
+    for(let [attachmentId, attachment] of message?.attachments??[]) {
       embeds.push(await Messages.attachmentToEmbed.call(this, attachment, {title:'Attachment Removed'}));
       files.push(attachment);
     }
   }
   
   // Show the old message if possible.
-  if (message.partial)
+  if (message && !isNaN(message.content?.length))
   {
     mainFields.push({
-      name: 'Uh oh!',
-      value: `Old message content can't be fetched, because it is too old.`,
-    });
-    mainFields.push({
-      name: 'Original Date',
-      value: `<t:${Math.round(message.createdTimestamp/1000)}:f>`,
+      name: 'Message' + (message.content.length > 1024 ? ' (Trimmed)' : ''),
+      value: message.content.slice(0, 1024),
     });
   }
   else
   {
     mainFields.push({
-      name: 'Message',
-      value: message.content,
+      name: 'Uh oh!',
+      value: `Old message content can't be fetched, because it is too old.`,
     });
+    //this.master.logDebug(`Too-old message:`, message);
+  }
+  if (message && !isNaN(message.url?.length))
+  {
     mainFields.push({
       name: `Link`,
       value: `${message.url}`,
+      inline: true,
+    });
+  }
+  else if(message)
+  {
+    mainFields.push({
+      name: 'Original Date',
+      value: `<t:${Math.round(message.createdTimestamp/1000)}:f>`,
       inline: true,
     });
   }
@@ -170,7 +178,11 @@ export async function messageDelete(message) {
   // Construct the primary embed object and add it onto the front of the embeds.
   embeds.unshift({
     title: 'Message Deleted',
-    description: message.author ? `\`${message.author.username}\` ${message.author} (${message.author.id})` : `In channel <#${message.channelId}>`,
+    description: message?.author
+      ? `\`${message.author.username}\` ${message.author} (${message.author.id})`
+      : message?.channelId
+      ? `In channel <#${message.channelId}>`
+      : '*Cannot fetch any message properties.*',
     color: 0xff0000,
     fields: mainFields,
     timestamp: new Date().toISOString(),
@@ -181,6 +193,8 @@ export async function messageDelete(message) {
     files,
   });
 };
+
+//-----------------------------------------------------------------------------
 
 /**
  * Log the user joining.
@@ -194,6 +208,9 @@ export async function guildMemberAdd(member) {
   if(member.pending) {
     this.master.logDebug(`Guild member onboarding: ${member.id}`);
     module.memory.pendingMembers.push(member.id);
+    // Don't let the array just grow forever.
+    if (module.memory.pendingMembers.length > 20)
+      module.memory.pendingMembers.shift();
     return;
   }
   
@@ -249,9 +266,13 @@ async function processJoin(member) {
     }
   }
   
+  //TODO: Log an extra message in alertLogChannelId for new accounts.
+  
   this.master.logDebug(`Guild member joined: ${member.id}`);
   await logChannel.send(await Messages.memberAdded.call(this, member, inviteUsed));
 }
+
+//-----------------------------------------------------------------------------
 
 export async function guildAuditLogEntryCreate(entry, guild) {
   this.master.logDebug(`Audit log: ${entry.actionType} ${entry.targetType} ${entry.targetId}: ${entry.reason}`);
@@ -279,19 +300,18 @@ export async function guildMemberRemove(member) {
   if (!module.options.joinLogChannelId)
     return;
   
-  if (member.partial)
-    member = await member.fetch();
+  let user = await this.users.fetch(member.id);
   
   // If they haven't even finished joining, don't log anything.
-  if (member.pending) {
-    this.master.logDebug(`Guild member removed while still pending: ${member.user.username} (${member.user.id})`);
-    module.memory.pendingMembers = module.memory.pendingMembers.filter(id => id !== member.id);
+  if (member.pending || module.memory.pendingMembers.includes(member.id)) {
+    this.master.logDebug(`Guild member removed while still pending: ${user.username} (${user.id})`);
+    module.memory.pendingMembers = module.memory.pendingMembers.filter(id => id !== user.id);
     return;
   }
   
   // Assume each guild only has one log channel, and each log channel only reports joins/leaves from its guild.
   let logChannel = await this.channels.fetch(module.options.joinLogChannelId);
-  if (!logChannel || logChannel.guild.id !== member.guild.id)
+  if (!logChannel || logChannel.guild.id !== member.guild?.id)
     return;
   
   // Give the audit log time to update so we can see if the removal reason is in it.
@@ -300,7 +320,7 @@ export async function guildMemberRemove(member) {
   });
   
   let reason = 'User left the server.';
-  let auditLog = module.memory.removedMembers.findLast(audit => audit.targetId === member.id);
+  let auditLog = module.memory.removedMembers.findLast(audit => audit.targetId === user.id);
   if (auditLog) {
     if (auditLog.type === 20 && auditLog.executorId)
       reason = `User was kicked by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
@@ -312,19 +332,14 @@ export async function guildMemberRemove(member) {
       reason = `User was banned by <@${auditLog.executorId}>.` + (auditLog.reason ? `\n> ${auditLog.reason}` : '');
     else
       this.master.logWarn(`User had an unknown record in the audit log:`, auditLog);
-    module.memory.removedMembers = module.memory.removedMembers.filter(audit => audit.targetId !== member.id);
-  }
-  else {
-    let hasRole = module.options.syncRoleId
-      ? member.roles.cache.has(module.options.syncRoleId)
-      : true;
-    if (!hasRole)
-      reason = 'User removed by auto-sync.';
+    module.memory.removedMembers = module.memory.removedMembers.filter(audit => audit.targetId !== user.id);
   }
   
-  this.master.logDebug(`Guild member removed: ${member.user.username} (${member.user.id}): "${reason}"`);
-  logChannel.send(await Messages.memberRemoved.call(this, member, reason));
+  this.master.logDebug(`Guild member removed: ${user.username} (${user.id}): "${reason}"`);
+  logChannel.send(await Messages.memberRemoved.call(this, {user, member, reason}));
 };
+
+//-----------------------------------------------------------------------------
 
 let updateInvitesTimeout;
 export async function updateInvites() {

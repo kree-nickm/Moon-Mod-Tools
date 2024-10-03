@@ -1,6 +1,6 @@
 /**
  * Shuts down the bot. If you use this, make sure it's an owner-only command.
- * @module events/shutdown
+ * @module imports/shutdown
  */
 
 export async function handler(interaction) {
@@ -11,5 +11,5 @@ export async function handler(interaction) {
 
 export const definition = {
   "name": "shutdown",
-  "description": "Gracefully shuts down the bot.",
+  "description": "Gracefully shuts down the bot. Only the bot owner can use this.",
 };

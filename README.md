@@ -20,11 +20,10 @@ Example configuration file:
 {
   "id": "1234567890",
   "token": "abc123-abc123-abc123-abc123",
-  "intents": ["Guilds"],
-  "partials": ["Channel"],
+  "intents": ["DirectMessages"],
   "applicationCommands": [
     {
-      "filename": "events/shutdown.mjs",
+      "filename": "imports/shutdown.mjs",
       "guildIds": [],
       "owner": true
     }
@@ -43,8 +42,7 @@ Example configuration file:
 ```
 * **id / token** - *(Both required)* These come from the [Discord developer portal](https://discord.com/developers/applications) for your bot. **id** is the Application ID from the General Information page. **token** comes from the Bot page (but can only be viewed once, so don't miss it).
 * **intents** - Array of strings, each being a member of [GatewayIntentBits](https://discord-api-types.dev/api/discord-api-types-v10/enum/GatewayIntentBits).
-* **partials** - Array of strings, each being a member of [Partials](https://discordjs.guide/popular-topics/partials.html#enabling-partials).
-  * *Note:* Modules can add intents and partials as well from their `index.mjs` files, in which case you don't need to add them here yourself.
+  * *Note:* Modules can add intents as well from their `index.mjs` files, in which case you don't need to add them here yourself.
 * **applicationCommands** - Array of objects, each a definition of an application command. Application command definitions have the following properties:
   * **filename** - File that contains the [properties of the application command](#application-command-file).
   * **guildIds** - Array of guild IDs where this command will be available. Do not include this property for global commands.
@@ -101,12 +99,6 @@ A module is a set of features with a common purpose. Each module should be conta
 export const intents = [];
 
 /**
- * Array of strings, specifying the partials that this module requires. See the
- * partials description in the configuration file section for more info.
- */
-export const partials = [];
-
-/**
  * Function that is called during bot startup, before the bot has logged in.
  * Use it to assign event listeners or other definitions that do not require an
  * active connection to Discord. This function can be async, in which case the
@@ -151,7 +143,6 @@ Requirements:
 Configuration Options (at least one must be provided):
 * **msgLogChannelId** - The snowflake ID of the channel where messages are to be logged.
 * **joinLogChannelId** - The snowflake ID of the channel where member joins and removals are to be logged.
-* **syncRoleId** - The snowflake ID of the role that syncronizes the user's subscription status, e.g via Twitch connection. The bot can use this to determine if the user was removed due to lacking the role, or left of their own accord.
 
 ### modmail
 Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and interact with the user. When a user reports a message or sends a DM to the bot, the bot will create a ticket thread in the modmail channel with that information. If the user already has an open ticket, the new report/DM will be added to the existing ticket.

@@ -4,13 +4,19 @@
  */
 import { updateRole, getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
+import * as Strikes from './strikeManager.mjs';
+import * as Warns from './warnManager.mjs';
 
 export async function guildMemberAdd(member) {
-  // TODO: When someone joins, update their roles.
+  await updateRole.call(this, member.id);
 }
 
 export async function guildMemberUpdate(oldMember, member) {
-  // TODO: When a mod manually manages the pit role, update the database accordingly.
+  let module = this.master.modules.pitbot;
+  if(oldMember?.roles?.cache.has(module.options.pitRoleId) && !member.roles.cache.has(module.options.pitRoleId)) {
+    // TODO: Do an implicit !release, except we can't know who the mod is that did it. Will need to use audit log for that.
+    this.master.logDebug(`${member.user.username}'s pit role manually removed.`);
+  }
 }
 
 /**
@@ -28,30 +34,71 @@ export async function messageCreate(message) {
   if (args[0] === '!bh')
     return await handleBulletHell.call(this, message);
   
-  let isModerator = message.author.id === this.master.config.ownerId || (await getModeratorIds.call(this, message.guild)).includes(message.author.id);
+  let isModerator = (await getModeratorIds.call(this, true)).includes(message.author.id);
   
-  if (args[0] === '!strikes') {
-    if (isModerator)
-      return;
+  if (args[0] === '!timeout') {
+    if (isModerator && args.length > 3) {
+      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
+      let severity = parseInt(args[2]);
+      let comment = args.slice(3).join(' ');
+      return Strikes.add.call(this, user, message.author, severity, comment);
+    }
     return;
   }
   
   if (args[0] === '!release') {
-    if (isModerator)
-      return;
+    if (isModerator && args.length > 1) {
+      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
+      let amend = args.length > 2 && args[2] == 'amend';
+      return Strikes.release.call(this, user, message.author, amend);
+    }
     return;
   }
   
+  if (args[0] === '!strikes') {
+    let user;
+    let mod = isModerator ? message.author : undefined;
+    if (isModerator && args.length > 1)
+      user = (await this.users.fetch(args[1].replace(/[^0-9]/g, ''))) ?? message.author;
+    else
+      user = message.author;
+    return Strikes.list.call(this, user, mod, {message});
+  }
+  
   if (args[0] === '!removestrike') {
-    if (isModerator)
-      return;
+    if (isModerator && args.length > 1) {
+      let strikeId = parseInt(args[1]);
+      return Strikes.remove.call(this, strikeId, {message});
+    }
     return;
   }
   
   if (args[0] === '!editcomment') {
-    if (isModerator)
-      return;
+    if (isModerator && args.length > 2) {
+      let strikeId = parseInt(args[1]);
+      let comment = args.slice(2).join(' ');
+      return Strikes.comment.call(this, strikeId, comment, {message});
+    }
     return;
+  }
+  
+  if (args[0] === '!warn') {
+    if (isModerator && args.length > 2) {
+      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
+      let comment = args.slice(2).join(' ');
+      return Warns.add.call(this, user, message.author, comment);
+    }
+    return;
+  }
+  
+  if (args[0] === '!warns') {
+    let user;
+    let mod = isModerator ? message.author : undefined;
+    if (isModerator && args.length > 1)
+      user = (await this.users.fetch(args[1].replace(/[^0-9]/g, ''))) ?? message.author;
+    else
+      user = message.author;
+    return Warns.list.call(this, user, mod, {message});
   }
 }
 

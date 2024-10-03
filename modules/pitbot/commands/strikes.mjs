@@ -6,15 +6,15 @@ import { getModeratorIds } from '../roles.mjs';
 
 export async function handler(interaction) {
   let user;
-  let fromMod = false;
+  let mod;
   let mods = await getModeratorIds.call(this, true);
   if (mods.includes(interaction.user.id)) {
     user = interaction.options.getUser('user') ?? interaction.user;
-    fromMod = true;
+    mod = interaction.user;
   }
   else
     user = interaction.user;
-  await Strikes.list.call(this, user, fromMod, {interaction});
+  await Strikes.list.call(this, user, mod, {interaction});
 }
 
 export const definition = {

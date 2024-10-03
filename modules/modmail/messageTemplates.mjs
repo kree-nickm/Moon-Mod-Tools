@@ -64,7 +64,7 @@ export async function attachmentToEmbed(attachment, overwrites={}) {
  * @param {discord.js/ThreadChannel} input.ticket - Reference to the ticket channel.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function messageReceived({interaction,message,ticket}={}) {
+export async function messageReceived({interaction, message, ticket, confirmSent}={}) {
   let response = {
     embeds: [{
       title: `Message received`,
@@ -87,7 +87,7 @@ export async function messageReceived({interaction,message,ticket}={}) {
     response.files = [];
     for(let [attachmentId, attachment] of interaction.targetMessage.attachments) {
       response.files.push(attachment);
-      response.embeds.push(await attachmentToEmbed.call(this, attachment));
+      //response.embeds.push(await attachmentToEmbed.call(this, attachment));
     }
   }
   else if (message) {
@@ -101,6 +101,15 @@ export async function messageReceived({interaction,message,ticket}={}) {
       response.files.push(attachment);
       response.embeds.push(await attachmentToEmbed.call(this, attachment));
     }
+  }
+  
+  if (confirmSent === false) {
+    if (!response.embeds[0].fields)
+      response.embeds[0].fields = [];
+    response.embeds[0].fields.push({
+      name: 'Error Encountered',
+      value: 'User was not sent a DM confirmation for this message, likely because their DMs were off. ' + (interaction ? 'They have been informed of this.' : 'They may need to be informed of this.') + ' Bot will react with 🔇 if the problem persists.',
+    });
   }
   
   return response;
@@ -117,7 +126,7 @@ export async function messageReceived({interaction,message,ticket}={}) {
  * @param {boolean} [input.ephemeral=true] - Whether the message should be is ephemeral. DMs should not be ephemeral; other replies should be.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function ticketConfirmation({interaction,message,created=false,ticket,ephemeral=true}={}) {
+export async function ticketConfirmation({interaction,message,created=false,ticket,ephemeral=!!interaction,confirmSent}={}) {
   let response = {
     embeds: [{
       color: 0x00ff00,
@@ -131,16 +140,22 @@ export async function ticketConfirmation({interaction,message,created=false,tick
     ephemeral,
   };
   
+  // Messaging for a newly created ticket.
   if (created) {
-    // Messaging for a newly created ticket.
     response.embeds[0].title = `Ticket Created`;
     response.embeds[0].description = `Your ticket has been created.`;
     if (ephemeral) {
       // When the message is sent in a channel. Should only be a response to an interaction.
-      response.embeds[0].fields.push({
-        name: 'Info',
-        value: `A followup DM has been sent to you.\nPlease send any related attachments and further inquiries through that channel.\n\nIf you didn't receive any DMs please make sure you enable DMs from people in the same server or you will not be able to receive support from the mod team.`,
-      });
+      if (confirmSent === false)
+        response.embeds[0].fields.push({
+          name: 'DM Error',
+          value: `The bot was not able to send a DM to you. Please make sure you enable DMs from people in the same server or you will not be able to receive support from the mod team. `,
+        });
+      else
+        response.embeds[0].fields.push({
+          name: 'Info',
+          value: `A followup DM has been sent to you.\nPlease send any related attachments and further inquiries through that channel.\n\nIf you didn't receive any DMs please make sure you enable DMs from people in the same server or you will not be able to receive support from the mod team.`,
+        });
       if (interaction?.targetMessage?.url)
         response.embeds[0].fields.push({
           name: 'Reported Message',
@@ -156,7 +171,7 @@ export async function ticketConfirmation({interaction,message,created=false,tick
       if (message) {
         response.embeds[0].fields.push({
           name: 'Message Sent',
-          value: message.content,
+          value: message.content.slice(0, 1024),
         });
       }
       else if (interaction?.targetMessage?.url) {
@@ -167,8 +182,9 @@ export async function ticketConfirmation({interaction,message,created=false,tick
       }
     }
   }
+  
+  // Messaging for a updating a ticket.
   else {
-    // Messaging for a updating a ticket.
     if (ephemeral) {
       // When the message is sent in a channel. Should only be a response to an interaction.
       response.embeds[0].title = `Ticket Updated`;

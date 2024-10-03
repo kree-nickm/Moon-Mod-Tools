@@ -14,7 +14,8 @@ export async function handler(interaction) {
   let user = interaction.options.getUser('user');
   let comment = interaction.options.getString('comment');
   await Warns.add.call(this, user, interaction.user, comment);
-  await interaction.reply({ephemeral:true,content:'Check log channel for confirmation.'});
+  if(!interaction.replied)
+    await interaction.reply({ephemeral:true,content:'Check log channel for confirmation.'});
 }
 
 export const definition = {

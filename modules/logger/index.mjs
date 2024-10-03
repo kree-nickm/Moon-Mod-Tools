@@ -10,24 +10,23 @@ import { updateInvites } from './log.mjs';
 export const intents = ["GuildMessages","MessageContent","GuildMembers","GuildInvites","GuildModeration"];
 
 /**
- * GuildMember might be required. Not sure, because I don't know what circumstances would cause a GuildMember to be partial.
- */
-export const partials = ["Message","GuildMember"];
-
-/**
  * Registers the event handlers for edited and deleted messages.
  * @see {@link module:modules/logger/log}
  */
 export async function onStart(module) {
-  await this.registerEventHandlerFile('modules/logger/log.mjs', {
-    messageUpdate: 'messageUpdate',
-    messageDelete: 'messageDelete',
-    guildMemberAdd: 'guildMemberAdd',
-    guildMemberUpdate: 'guildMemberUpdate',
-    guildMemberRemove: 'guildMemberRemove',
-    guildAuditLogEntryCreate: 'guildAuditLogEntryCreate', // Requires VIEW_AUDIT_LOG
-    inviteCreate: 'inviteCreate', // Requires MANAGE_GUILD
-    inviteDelete: 'inviteDelete', // Requires MANAGE_GUILD
+  await this.listenerManager.createFromFile('modules/logger/log.mjs', {
+    eventHandlers: {
+      messageUpdate: 'messageUpdate',
+      messageDelete: 'messageDelete',
+      guildMemberAdd: 'guildMemberAdd',
+      guildMemberUpdate: 'guildMemberUpdate',
+      guildMemberRemove: 'guildMemberRemove',
+      guildAuditLogEntryCreate: 'guildAuditLogEntryCreate', // Requires VIEW_AUDIT_LOG
+      inviteCreate: 'inviteCreate', // Requires MANAGE_GUILD
+      inviteDelete: 'inviteDelete', // Requires MANAGE_GUILD
+    },
+    nocache: true,
+    source: {module:module.name},
   });
   module.memory = {
     pendingMembers: [],
@@ -46,29 +45,24 @@ export async function onReady(module) {
   let msgLogChannel = module.options.msgLogChannelId ? await this.client.channels.fetch(module.options.msgLogChannelId) : null;
   if (msgLogChannel) {
     let channels = await msgLogChannel.guild.channels.fetch();
-    for(let [channelId, channel] of channels) {
-      if (channel.partial)
-        channel = await channel.fetch();
-      if (channel.messages && channel.viewable && channel.isTextBased()) {
-        try {
-          let messages = await channel.messages.fetch();
-          this.logDebug(`Fetched ${messages.size} messages from: #${channel.name}`);
-        }
-        catch(err) {
-          //this.logWarn(`Could not cache messages in channel: ${channel.name}`);
-        }
-      }
-    }
-    
     let threads = await msgLogChannel.guild.channels.fetchActiveThreads();
-    for(let [channelId, channel] of threads.threads) {
+    let allChannels = channels.concat(threads.threads);
+    await Promise.all(allChannels.map(async channel => {
       if (channel.partial)
         channel = await channel.fetch();
       if (channel.messages && channel.viewable) {
-        let messages = await channel.messages.fetch();
-        this.logDebug(`Fetched ${messages.size} messages from: #${channel.parent.name}-->${channel.name}`);
+        try {
+          let messages = await channel.messages.fetch();
+          if (channel.isThread())
+            this.logDebug(`Fetched ${messages.size} messages from: #${channel.parent.name}-->"${channel.name}"`);
+          else
+            this.logDebug(`Fetched ${messages.size} messages from: #${channel.name}`);
+        }
+        catch(err) {
+          this.logWarn(`Could not cache messages in channel: ${channel.name} (${channel.id}):`, err.message);
+        }
       }
-    }
+    }));
   }
   
   let joinLogChannel = module.options.joinLogChannelId ? await this.client.channels.fetch(module.options.joinLogChannelId) : null;
@@ -81,5 +75,9 @@ export async function onReady(module) {
 };
 
 export async function onUnload(module) {
-  // TODO: Unregister event handlers.
+  await module.database?.close();
+  this.listenerManager.listeners
+    .filter(lis => lis.source?.module === module.name)
+    .forEach(lis => lis.delete());
+  module.memory = {};
 }

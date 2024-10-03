@@ -1,0 +1,18 @@
+Make sure all of the following works before committing major updates:
+
+Logging updated message.
+Logging deleted message.
+Logging update/deleted message that is too old.
+Logging update/deleted message involving an attachment.
+Logging a user join.
+Logging a user quit.
+Logging a user kicked.
+
+/modmail command to create/update a ticket.
+Modmail button to create/update a ticket.
+DMing modmail bot to create/update a ticket.
+Reporting a message bot to create/update a ticket.
+Responding to a ticket.
+Locking/unlocking a ticket.
+Closing a ticket.
+Failing to DM a user during some of the above.

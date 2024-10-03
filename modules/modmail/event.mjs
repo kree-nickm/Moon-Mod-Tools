@@ -29,19 +29,22 @@ export async function messageCreate(message) {
     
     // Find the user's active thread, or create a new one.
     let ticket = await getOrCreateThread.call(this, mailChannel, member);
-    //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
     
     // Add the user's message to the thread.
     let created = !ticket.messageCount;
-    await ticket.send(await Messages.messageReceived.call(this, {message, ticket}));
+    
+    // Attempt to send a DM to the user and let mods know if it failed.
+    let confirmSent = false;
+    try {
+      await message.author.send(await Messages.ticketConfirmation.call(this, {message, ticket, created}));
+      confirmSent = true;
+    }
+    catch(err) {
+      this.master.logDebug(`Failed to DM user ${message.author.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+      await message.react('🔇');
+    }
+    await ticket.send(await Messages.messageReceived.call(this, {message, ticket, confirmSent}));
     await message.react('✅');
-    await message.author.send(await Messages.ticketConfirmation.call(this, {
-      message,
-      ephemeral: false,
-      ticket,
-      created,
-    }));
-    //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
   }
 }
 
@@ -64,15 +67,22 @@ async function modMailMessage(message) {
   let user = await getTicketCreator.call(this, ticket);
   if (!user) {
     this.master.logError(`Unable to determine which user created this ticket.`, {message});
-    await message.react('❗');
+    await message.react('💀');
     return;
   }
   
   if (message.content.startsWith('=')) {
     if (message.content === '=close' || message.content.startsWith('=close ') || message.content === '= close' || message.content.startsWith('= close ')) {
       let reason = message.content.length > 7 ? message.content.slice(7) : '';
+      try {
+        await user.send(await Messages.closeConfirmation.call(this, ticket, message.author, reason));
+        await message.react('✅');
+      }
+      catch(err) {
+        this.master.logDebug(`Failed to DM user ${user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+        await message.react('🔇');
+      }
       await closeThread.call(this, ticket, message.author, reason);
-      await user.send(await Messages.closeConfirmation.call(this, ticket, message.author, reason));
     }
     else if (message.content === '=lock' || message.content.startsWith('=lock ') || message.content === '= lock' || message.content.startsWith('= lock ')) {
       let reason = message.content.length > 7 ? message.content.slice(7) : '';
@@ -93,6 +103,12 @@ async function modMailMessage(message) {
     return;
   }
   
-  await user.send(await Messages.newResponse.call(this, message));
-  await message.react('✅');
+  try {
+    await user.send(await Messages.newResponse.call(this, message));
+    await message.react('✅');
+  }
+  catch(err) {
+    this.master.logDebug(`Failed to DM user ${user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+    await message.react('🔇');
+  }
 }

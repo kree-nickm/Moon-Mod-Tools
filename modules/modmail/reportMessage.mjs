@@ -15,29 +15,35 @@ export async function handler(interaction) {
     return;
   }
   
+  // This sometimes takes a while, so let's defer it.
+  await interaction.deferReply({ephemeral:true});
+  
   // Find the user's active thread, or create a new one.
   let ticket = await getOrCreateThread.call(this, mailChannel, interaction.member);
-  //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
+  
+  let created = !ticket.messageCount;
+  
+  // Only send DM for ticket creation.
+  let confirmSent;
+  if (created) {
+    try {
+      await interaction.user.send(await Messages.ticketConfirmation.call(this, {
+        interaction,
+        ephemeral: false,
+        ticket,
+        created,
+      }));
+      confirmSent = true;
+    }
+    catch(err) {
+      this.master.logDebug(`Failed to DM user ${interaction.user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);
+      confirmSent = false;
+    }
+  }
   
   // Add the user's message to the thread.
-  let created = !ticket.messageCount;
-  await ticket.send(await Messages.messageReceived.call(this, {interaction, ticket}));
-  await interaction.reply(await Messages.ticketConfirmation.call(this, {
-    interaction,
-    ephemeral: true,
-    ticket,
-    created,
-  }));
-  // Only send DM for ticket creation.
-  if (created) {
-    await interaction.user.send(await Messages.ticketConfirmation.call(this, {
-      interaction,
-      ephemeral: false,
-      ticket,
-      created,
-    }));
-  }
-  //this.master.logDebug(`Thread msg count:`, ticket.messageCount);
+  await ticket.send(await Messages.messageReceived.call(this, {interaction, ticket, confirmSent}));
+  await interaction.followUp(await Messages.ticketConfirmation.call(this, {interaction, ticket, created, confirmSent}));
 }
 
 export const definition = {

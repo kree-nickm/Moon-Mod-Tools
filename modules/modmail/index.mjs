@@ -13,11 +13,6 @@ import * as ModmailButton from './button.mjs';
 export const intents = ["DirectMessages","GuildMessages","MessageContent"];
 
 /**
- * Requires the Channel partial to recognize when DM channels are created.
- */ 
-export const partials = ["Message","Channel"];
-
-/**
  * Loads the database of tickets, creating and initializing it if necessary.
  */
 export async function onStart(module) {
@@ -38,11 +33,25 @@ export async function onReady(module) {
   }
   
   // Register commands/interactions
-  await this.registerEventHandlerFile('modules/modmail/event.mjs', {
-    messageCreate: 'messageCreate',
+  await this.listenerManager.createFromFile('modules/modmail/event.mjs', {
+    eventHandlers: {
+      messageCreate: 'messageCreate',
+    },
+    nocache: true,
+    source: {module:module.name},
   });
-  await this.registerApplicationCommandFile('modules/modmail/reportMessage.mjs', {guildIds:[mailChannel.guildId]});
-  await this.registerApplicationCommandFile('modules/modmail/command.mjs', {guildIds:[mailChannel.guildId]});
+  await this.listenerManager.createFromFile('modules/modmail/reportMessage.mjs', {
+    cmdDefs: {definition:'definition', handler:'handler'},
+    guildIds: [mailChannel.guildId],
+    nocache: true,
+    source: {module:module.name},
+  });
+  await this.listenerManager.createFromFile('modules/modmail/command.mjs', {
+    cmdDefs: {definition:'definition', handler:'handler'},
+    guildIds: [mailChannel.guildId],
+    nocache: true,
+    source: {module:module.name},
+  });
   
   // Fetch all tickets.
   let activeTickets = await mailChannel.threads.fetchActive();
@@ -79,14 +88,32 @@ export async function onReady(module) {
   await addSmt.finalize();
   
   // Button for submitting modmail.
-  await this.registerApplicationCommand({definition:ModmailButton.definition, handler:ModmailButton.handler, guildIds:[mailChannel.guild.id]});
-  await this.registerComponentInteraction({component:ModmailButton.button, handler:ModmailButton.setup_modmail_button});
-  await this.registerComponentInteraction({component:ModmailButton.modal, handler:ModmailButton.post_modmail});
+  await this.listenerManager.create({
+    definition: ModmailButton.definition,
+    handler: ModmailButton.handler,
+    guildIds: [mailChannel.guildId],
+    nocache: true,
+    source: {module:module.name},
+  });
+  await this.listenerManager.create({
+    component: ModmailButton.button,
+    handler: ModmailButton.setup_modmail_button,
+    nocache: true,
+    source: {module:module.name},
+  });
+  await this.listenerManager.create({
+    component: ModmailButton.modal,
+    handler: ModmailButton.post_modmail,
+    nocache: true,
+    source: {module:module.name},
+  });
   
   return true;
 }
 
 export async function onUnload(module) {
   await module.database?.close();
-  // TODO: Unregister event handlers.
+  this.listenerManager.listeners
+    .filter(lis => lis.source?.module === module.name)
+    .forEach(lis => lis.delete());
 }

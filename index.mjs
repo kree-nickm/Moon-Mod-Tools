@@ -1,23 +1,17 @@
 import Bot from './classes/Bot.mjs';
 //console.log(process);
-Bot.logInfo(`************************************************`);
-Bot.logInfo(`************* Starting Discord Bot *************`);
-Bot.logInfo(`************************************************`);
-  
-Bot.loadOptions({
-  multiples: [],
-  aliases: {
-    '--config': ['-c'],
-  },
-});
+Bot.log('info', `************************************************`);
+Bot.log('info', `************* Starting Discord Bot *************`);
+Bot.log('info', `************************************************`);
 
 (async function() {
   try {
-    await Bot.loadConfigFile(Bot.options['--config'] ?? 'config.json');
+    let options = Bot.parseCmdLine();
+    await Bot.loadConfigFile(options.config ?? options.c ?? 'config.json');
     await Bot.start();
   }
   catch(err) {
-    Bot.logError(`A fatal error occurred:`, err);
+    Bot.log('error', `A fatal error occurred during startup:`, err);
     Bot.client?.destroy();
   }
 })();

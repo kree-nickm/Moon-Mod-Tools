@@ -1,7 +1,8 @@
 /** @module classes/Bot */
-import { Client, Options, GatewayIntentBits, Partials, REST, Routes } from 'discord.js';
+import { Client, Options, GatewayIntentBits, Partials, MessageFlags, REST, Routes } from 'discord.js';
 import Application from './Application.mjs';
 import BotModule from './BotModule.mjs';
+import ListenerManager from './ListenerManager.mjs';
 
 /**
  * Contains methods that pertain to a Discord.js bot.
@@ -33,69 +34,16 @@ export default class Bot extends Application {
    */
   static rest;
   
+  static listenerManager;
+  
   static dmErrors = true;
   static dmWarnings = false;
-  
-  /**
-   * @typedef {Object} ApplicationCommandDef
-   * @property {Object} definition - Application command definition as required by the Discord API.
-   * @property {Function} handler - The function to run when the application command is used.
-   * @property {Object.<string, Object>} api - Dictionary of responses from the API when each command was registered, with the key being the guild ID where it was registered, or '*' for global commands.
-   * @property {Object.<string, *>} options - A copy of the relevant properties in the application command definition in the configuration file.
-   */
-   
-  /**
-   * The currently registered slash commands. The keys are the command names.
-   * @type {Object.<string, ApplicationCommandDef>}
-   */
-  static slashCommands = {};
-  
-  /**
-   * The currently registered User context menu commands. The keys are the command names.
-   * @type {Object.<string, ApplicationCommandDef>}
-   */
-  static userCommands = {};
-  
-  /**
-   * The currently registered Message context menu commands. The keys are the command names.
-   * @type {Object.<string, ApplicationCommandDef>}
-   */
-  static messageCommands = {};
-  
-  /**
-   * The currently registered message component interactions. The keys are the customIds of the components.
-   * @type {Object.<string, *>}
-   */
-  static componentInteractions = {};
   
   /**
    * The modules loaded by {@link Bot#loadModule}. These are bot modules from the modules/ directory, not Node.js modules. Perhaps another name should be used, but oh well. The keys are the module names.
    * @type {Object.<string, BotModule>}
    */
   static modules = {};
-  
-  /**
-   * @typedef {Object} StoredEvent
-   * @property {string} property - The exported property name of the file that contains the event handler.
-   * @property {Function} handler - A references to the function that was assigned to be an event handler.
-   */
-  /**
-   * Stores any files that were used in {@link Bot#registerEventHandlerFile}, so that they can be unregistered or reloaded if necessary. The primary keys are file names; the secondary keys are event names with listeners present in that file.
-   * @type {Object.<string, Object.<string, StoredEvent>>}
-   */
-  static eventFiles = {};
-  
-  /**
-   * A buffer for all interactions being registered by this bot, before sending them to the Discord API with {@link Bot#_sendInteractions}. The keys are guild IDs, or '*' for global interactions.  The values are interaction definitions.
-   * @type {Object.<string, Object>}
-   */
-  static interactionRegistry = {};
-  
-  /**
-   * Whether this bot's interactions have already been send to the Discord API with {@link Bot#_sendInteractions}.
-   * @type {boolean}
-   */
-  static interactionsSent = false;
   
   /**
    * If this application already had interactions registered in the Discord API before this bot was started, they will be collected here by {@link Bot#_fetchInteractions}. The primary keys are either a guild ID or '*' for global; the secondary keys are interaction names. The ultimate values are responses from the Discord API with the defined interaction data.
@@ -124,8 +72,6 @@ export default class Bot extends Application {
     // Set defaults for any other missing properties.
     if (!this.config.intents)
       this.config.intents = [];
-    if (!this.config.partials)
-      this.config.partials = [];
     if (!this.config.applicationCommands)
       this.config.applicationCommands = [];
     if (!this.config.modules)
@@ -144,10 +90,10 @@ export default class Bot extends Application {
    * @returns boolean True if the startup was successful and the bot is logged in. Note that specific errors with modules or event handlers could have occurred, but as long as the bot ultimately logged in as a result of this method call, this will return true.
    */
   static async start() {
-    if (this.client) {
-      this.logError(`Tried to create another Discord.js client when one already exists.`);
-      return false;
-    }
+    if (this.client)
+      throw new Error(`Tried to create another Discord.js client when one already exists.`);
+    
+    this.listenerManager = new ListenerManager(this);
     
     for(let module of this.config.modules) {
       this.modules[module.name] = new BotModule(this, module.name, module.options);
@@ -155,20 +101,18 @@ export default class Bot extends Application {
         delete this.modules[module.name];
     }
     
-    // Add all the intents/partials required by the modules to the initial ones.
+    // Add all the intents required by the modules to the initial ones.
     let intents = this.config.intents;
-    let partials = this.config.partials;
+    intents.push('Guilds');
     for(let name in this.modules) {
       if (Array.isArray(this.modules[name].imports.intents))
         intents = intents.concat(this.modules[name].imports.intents);
-      if (Array.isArray(this.modules[name].imports.partials))
-        partials = partials.concat(this.modules[name].imports.partials);
     }
     intents = [...new Set(intents)];
-    partials = [...new Set(partials)];
+    
     let clientOptions = {
       intents: intents.map(intent => GatewayIntentBits[intent]),
-      partials: partials.map(partial => Partials[partial]),
+      partials: Object.values(Partials).filter(part => !isNaN(part)),
     };
     
     // Set any cache limits.
@@ -181,7 +125,7 @@ export default class Bot extends Application {
     }
     
     // Create the Discord bot.
-    this.logDebug(`Creating Discord.js client. Intents: [${intents.join(', ')}], Partials: [${partials.join(', ')}], Cache:`, cacheOptions);
+    this.logInfo(`Creating Discord.js client. Intents: [${intents.join(', ')}], Cache:`, cacheOptions);
     this.client = new Client(clientOptions);
     this.client.master = this;
     
@@ -192,14 +136,33 @@ export default class Bot extends Application {
     }
     
     // Register the basic event handlers.
-    await this.registerEventHandler('debug', this.logDebug.bind(this, '[Discord.js]'));
-    await this.registerEventHandler('warn', this.logWarn.bind(this, '[Discord.js]'));
-    await this.registerEventHandler('error', this.logError.bind(this, '[Discord.js]'));
-    await this.registerEventHandler('ready', this._onReady.bind(this));
-    await this.registerEventHandler('interactionCreate', this._onInteractionCreate.bind(this));
-    await this.registerEventHandler('messageCreate', message => {
-      if (message.author.id === this.config.ownerId && message.content.startsWith('!'))
-        return this._onOwnerMessage(message);
+    await this.listenerManager.create({
+      eventName: 'debug',
+      handler: this.logDebug.bind(this, '[Discord.js]'),
+    });
+    await this.listenerManager.create({
+      eventName: 'warn',
+      handler: this.logWarn.bind(this, '[Discord.js]'),
+    });
+    await this.listenerManager.create({
+      eventName: 'error',
+      handler: this.logError.bind(this, '[Discord.js]'),
+    });
+    await this.listenerManager.create({
+      eventName: 'ready',
+      handler: this._onReady.bind(this),
+    });
+    await this.listenerManager.create({
+      eventName: 'interactionCreate',
+      handler: this._onInteractionCreate.bind(this),
+    });
+    await this.listenerManager.create({
+      eventName: 'messageCreate',
+      handler: message => {
+        if (message.author.id === this.config.ownerId
+            && message.content.startsWith('!'))
+          return this._onOwnerMessage(message);
+      },
     });
     
     // Log the bot into Discord.
@@ -207,200 +170,6 @@ export default class Bot extends Application {
     this.rest = new REST().setToken(this.config.token);
     await this.client.login(this.config.token);
     
-    return true;
-  }
-  
-  /**
-   * Wrapper for adding an event listener to this Discord.js client, ensuring that the handler is a function.
-   * @param {string} eventName - Name of the Client event to listen for from [those available in Discord.js]{@link https://discord.js.org/docs/packages/discord.js/main/Client:Class}.
-   * @param {Function} handler - Function to run when the event is emitted.
-   * @param {Object.<string, *>} [options]
-   * @param {boolean} [options.once=false] - Whether to call the event handler only once and then remove it.
-   * @param {boolean} [options.suppressError=false] - Whether to suppress any error message generated directly by this method.
-   * @return {boolean} True if the event handler was added to the Client; false otherwise.
-   */
-  static async registerEventHandler(eventName, handler, {once=false, suppressError=false}={}) {
-    if (typeof(handler) === 'function') {
-      if (once)
-        this.client.once(eventName, handler);
-      else
-        this.client.on(eventName, handler);
-      return true;
-    }
-    else {
-      if (!suppressError)
-        this.logError(`Tried to register an invalid handler to event '${eventName}'.`, {handler});
-      return false;
-    }
-  }
-  
-  /**
-   * Wrapper for adding a group of event listeners to the Client that are all exported by a module file.
-   * @param {string} file - The file to import the event handlers from.
-   * @param {Object.<string, string>|string} handlers - An object of key/value pairs, where the key is the event name to listen for, and the value is the name of the associate event handler function exported by the module file. Alternatively, this can be the string `reload` to re-import a file that has already been imported using this method, keeping the same key/value pairs as before.
-   * @returns {boolean} True if the event handler(s) were added or reloaded successfully; false otherwise.
-   */
-  static async registerEventHandlerFile(file, handlers) {
-    let module;
-    if (handlers === 'reload') {
-      if (!this.eventFiles[file]) {
-        this.logWarn(`No event handlers are currently registered from '${file}'.`);
-        return false;
-      }
-      
-      handlers = {};
-      for (let eventName in this.eventFiles[file]) {
-        this.client.off(eventName, this.eventFiles[file][eventName].handler);
-        this.logInfo(`Unregistered previous event handler for event '${eventName}' in '${file}'.`);
-        handlers[eventName] = this.eventFiles[file][eventName].property;
-      }
-      delete this.eventFiles[file];
-      module = await this.safeImport(file, {reload:true});
-    }
-    else
-      module = await this.safeImport(file);
-    
-    if (!module)
-      return false;
-    
-    if (typeof(handlers) !== 'object' || !Object.entries(handlers).length) {
-      this.logError(`No valid list of handlers to load from '${file}' was given.`);
-      return false;
-    }
-    
-    for (let eventName in handlers) {
-      let property = handlers[eventName];
-      if (await this.registerEventHandler(eventName, module[property], {suppressError:true})) {
-        this.logInfo(`Registered event handler for event '${eventName}': ${file}:${property}`);
-        
-        // Remember the assignment, so it can be undone if this file is reloaded.
-        if (!this.eventFiles[file])
-          this.eventFiles[file] = {};
-        if (this.eventFiles[file][eventName]) {
-          this.logWarn(`A handler was already registered for this event from '${file}'; unregistering it and overwriting it.`);
-          this.client.off(eventName, this.eventFiles[file][eventName].handler);
-        }
-        this.eventFiles[file][eventName] = {
-          property,
-          handler: module[property],
-        };
-      }
-      else
-        this.logError(`Tried to register an invalid handler to event '${eventName}'.`, {file, module, handler:module[property]});
-    }
-    return true;
-  }
-  
-  /**
-   * Register an application command. The command definition will be stored in memory, but it will not be sent to the Discord API until {@link Bot#_sendInteractions} is called.
-   * @param {Object.<string, *>} options - Import and definition options. The format of this parameter matches the format of the `modules` array in the application's configuration file, so that elements of that array can be passed directly to this method.
-   * @param {Object} options.definition - The command definition as specified by the Discord API.
-   * @param {Function} options.handler - The function to run when the command is used.
-   * @param {boolean} [options.owner=false] - Whether this command is only usable by the bot owner.
-   * @param {?string[]} [options.guildIds] - For guild-specific commands, the list of guilds to register the command in. Leave undefined or null if this is a global command.
-   * @returns {boolean} True if the command definition was added to the bot's interaction registry.
-   */
-  static async registerApplicationCommand({definition, handler, owner=false, guildIds}) {
-    if (!definition?.name) {
-      this.logError(`Invalid application command definition:`, definition);
-      return false;
-    }
-    
-    if (typeof(handler) !== 'function') {
-      this.logError(`Tried to register a non-function to the application command '${definition.name}'.`);
-      return false;
-    }
-    
-    let commandData = {
-      definition,
-      handler,
-      api: {},
-      options: {
-        owner,
-      },
-    };
-    
-    if (definition.type === 2)
-      this.userCommands[definition.name] = commandData;
-    else if (definition.type === 3)
-      this.messageCommands[definition.name] = commandData;
-    else
-      this.slashCommands[definition.name] = commandData;
-    
-    if (!Array.isArray(guildIds))
-      guildIds = ['*'];
-    for(let guildId of guildIds) {
-      if (!this.interactionRegistry[guildId])
-        this.interactionRegistry[guildId] = [];
-      this.interactionRegistry[guildId].push(definition);
-    }
-    
-    if (this.interactionsSent) {
-      this.logError(`New interaction registered after interactions have already been sent to the Discord API. This is not yet supported. Make sure all interactions are registered during the bot startup process so they can be sent in time.`);
-    }
-    return true;
-  }
-  
-  static async registerComponentInteraction({component, handler}) {
-    if (!component?.custom_id) {
-      this.logError(`Invalid component interaction definition:`, component);
-      return false;
-    }
-    
-    if (typeof(handler) !== 'function') {
-      this.logError(`Tried to register a non-function to the component interaction '${component.custom_id}'.`);
-      return false;
-    }
-    
-    this.componentInteractions[component.custom_id] = {component, handler};
-    
-    return true;
-  }
-  
-  /**
-   * Register an application command based on definitions imported from a file.
-   * @see {@link Bot#registerApplicationCommand}
-   * @param {string} filename - The file that exports the definition of the command, the handler for the command, or both.
-   * @param {Object.<string, *>} options - Import and definition options.
-   * @param {string} [options.defProp='definition'] - The property of the imported module that contains the definition of the application command.
-   * @param {string} [options.handProp='handler'] - The property of the imported module that contains the handler for the application command.
-   * @param {boolean} [options.owner=false] - Whether this command is only usable by the bot owner.
-   * @param {?string[]} [options.guildIds] - For guild-specific commands, the list of guilds to register the command in. Leave undefined or null if this is a global command.
-   * @returns {boolean} True if the command definition was added to the bot's interaction registry.
-   */
-  static async registerApplicationCommandFile(filename, {defProp='definition', handProp='handler', owner=false, guildIds}={}) {
-    let imported = await this.safeImport(filename);
-    let definition = imported[defProp];
-    let handler = imported[handProp];
-    return await this.registerApplicationCommand({definition, handler, owner, guildIds});
-  }
-  
-  /**
-   * Compare two interaction definitions to see if they are identical. This will be needed when reloading application commands to see if the definition has changed. If it has, then the Discord API will need to be sent the updates. Otherwise, that would be a waste of an API call, so don't bother.
-   * @todo Method is not usable yet, so it's just a placeholder for now.
-   */
-  static compareInteractionDefinitions(api, file) {
-    file = Object.assign({
-      default_member_permissions: null,
-      type: 1,
-      description: "",
-      dm_permission: true,
-      contexts: null,
-      integration_types: [],
-      nsfw: false,
-    }, file);
-    if (!api.guild_id)
-      file = Object.assign({
-        dm_permission: true,
-        contexts: null,
-        integration_types: [0],
-      }, file);
-    for(let prop in file) {
-      if(typeof(file[prop]) !== 'object') {
-        if (file[prop] !== api[prop])
-          return false;
-      }
-    }
     return true;
   }
   
@@ -450,10 +219,7 @@ export default class Bot extends Application {
     
     await this.client?.destroy();
     
-    for(let name in this.modules) {
-      if (this.modules[name].database)
-        await this.modules[name].database.close();
-    }
+    await Promise.all(Object.values(this.modules).map(mod => mod.unload().catch(err => this.logError(`Uncaught error while unloading module '${mod.name}':`, err))));
   }
   
   /**
@@ -461,22 +227,20 @@ export default class Bot extends Application {
    */
   static async _fetchInteractions() {
     if (Object.entries(this.existingInteractions).length) {
-      this.logError(`Existing interactions have already been fetched from the Discord API and saved:`, {interactions:this.existingInteractions});
+      this.logWarn(`Existing interactions have already been fetched from the Discord API and saved.`);
       return;
     }
     
     let interactions = await this.rest.get(Routes.applicationCommands(this.config.id));
     if (interactions.length) {
-      this.logWarn(`This application already has global application commands registered:`, interactions.map(inter => inter.name).join(', '), `; They will be removed and replaced by this bot's interactions.`);
-      this.existingInteractions['*'] = {};
+      this.existingInteractions[''] = {};
       for(let interaction of interactions) {
-        this.existingInteractions['*'][interaction.name] = interaction;
+        this.existingInteractions[''][interaction.name] = interaction;
       }
     }
     for (let [guildId, guild] of this.client.guilds.cache) {
       let guildInteractions = await this.rest.get(Routes.applicationGuildCommands(this.config.id, guildId));
       if (guildInteractions.length) {
-        this.logWarn(`This application already has guild application commands registered in ${guild?.name??"<guild name unavailable without Guilds intent>"} (${guildId}):`, guildInteractions.map(inter => inter.name).join(', '), `; They will be removed and replaced by this bot's interactions.`);
         this.existingInteractions[guildId] = {};
         for(let interaction of guildInteractions) {
           this.existingInteractions[guildId][interaction.name] = interaction;
@@ -485,45 +249,6 @@ export default class Bot extends Application {
     }
   }
 
-  /**
-   * Send all of the registered interactions to the Discord API.
-   * @see {@link Bot#registerApplicationCommand}
-   */
-  static async _sendInteractions() {
-    if (this.interactionsSent) {
-      this.logError(`Interactions have already been sent to the Discord API. Further interactions must be sent on an individual basis.`);
-      return;
-    }
-    
-    this.logInfo(`Registering application commands...`);
-    for (let guildId in this.interactionRegistry) {
-      let url = guildId === '*'
-        ? Routes.applicationCommands(this.config.id)
-        : Routes.applicationGuildCommands(this.config.id, guildId);
-      let response = await this.rest.put(url, {body: this.interactionRegistry[guildId]});
-      // Finally, store the responses.
-      for (let definition of response) {
-        if(definition.type === 1) {
-          this.slashCommands[definition.name].api[definition.guild_id??'*'] = definition;
-          this.logInfo(`  /${definition.name} (${definition.guild_id??'*'})`);
-        }
-        else if(definition.type === 2) {
-          this.userCommands[definition.name].api[definition.guild_id??'*'] = definition;
-          this.logInfo(`  User->${definition.name} (${definition.guild_id??'*'})`);
-        }
-        else if(definition.type === 3) {
-          this.messageCommands[definition.name].api[definition.guild_id??'*'] = definition;
-          this.logInfo(`  Message->${definition.name} (${definition.guild_id??'*'})`);
-        }
-        else {
-          this.logWarn(`Invalid application command response received from Discord API.`, {definition});
-        }
-      }
-    }
-    this.interactionsSent = true;
-    this.logInfo(`Done.`);
-  }
-  
   /**
    * Method that is called when the bot is logged in and ready. Calls the onReady method of every loaded module, and calls {@link Bot#_sendInteractions}.
    */
@@ -536,134 +261,169 @@ export default class Bot extends Application {
     }
     
     for(let appCommand of this.config.applicationCommands) {
-      await this.registerApplicationCommandFile(appCommand.filename, appCommand);
+      appCommand.cmdDefs = {definition:'definition', handler:'handler'};
+      await this.listenerManager.createFromFile(appCommand.filename, appCommand);
     }
     
-    await this._sendInteractions();
+    await this.listenerManager.sendApplicationCommands();
     
     if (this.config.ownerId) {
       let owner = await this.client.users.fetch(this.config.ownerId);
-      await owner.send({
-        embeds: [
-          {
-            title: 'Bot Started',
-            description: '```' + process.argv.join(`\n`) + '```',
-            color: 0x0000ff,
-          },
-        ],
-      });
-      await owner.dmChannel.fetch();
+      try {
+        await owner.send({
+          embeds: [
+            {
+              title: 'Bot Started',
+              description: '```' + process.argv.join(`\n`) + '```',
+              fields: [
+                {
+                  name: 'Modules',
+                  value: Object.keys(this.modules).join(', '),
+                },
+              ],
+              color: 0x0000ff,
+            },
+          ],
+        });
+        await owner.dmChannel.fetch();
+      }
+      catch(err) {
+        this.dmErrors = false;
+        this.dmWarnings = false;
+        this.logError(`Bot is unable to send DMs to the owner.`);
+      }
     }
     
     this.logInfo(`Discord bot is ready.`);
   }
-
+  
   /**
    * Method that is called when the bot receives an interaction via the Discord API. Determines which function to pass the interaction to.
    */
   static async _onInteractionCreate(interaction) {
-    //this.logDebug(`Interaction received:`, interaction);
-    let commandList;
-    if (interaction.isChatInputCommand())
-      commandList = this.slashCommands;
-    else if (interaction.isUserContextMenuCommand())
-      commandList = this.userCommands;
-    else if (interaction.isMessageContextMenuCommand())
-      commandList = this.messageCommands;
-    else if (interaction.isMessageComponent() || interaction.isModalSubmit())
-      return await this._onComponentInteraction(interaction);
-    else {
-      this.logError(`Bot received an unknown interaction.`, {interaction});
+    let listener = this.listenerManager.get({interaction});
+    
+    // Make sure the bot knows this interacton.
+    if (!listener) {
+      this.logWarn(`User ${interaction.user?.username} (${interaction.user?.id}) used an unknown interaction (${interaction.constructor.name}):`, ['type','context','commandName','commandType','componentType','customId','channelId','guildId'].map(prop => interaction[prop] ? `(${prop}:${interaction[prop]})` : null).filter().join(' '));
+      interaction.reply({content:`I don't recognize that interaction.`, ephemeral:true});
       return;
     }
     
-    if (!commandList[interaction.commandName]) {
-      this.logError(`Bot received an unknown command '${interaction.commandName}'.`, {knownCommands:commandList});
-      return;
-    }
-    
-    if (commandList[interaction.commandName].options.owner && interaction.user.id !== this.config.ownerId) {
-      this.logInfo(`User ${interaction.user?.username} (${interaction.user?.id}) attempted to use an owner-only application command '${interaction.commandName}'.`);
+    // Check if this is an owner-only command.
+    if (listener.owner && interaction.user.id !== this.config.ownerId) {
+      this.logInfo(`User ${interaction.user?.username} (${interaction.user?.id}) attempted to use an owner-only interaction ${listener}.`);
       interaction.reply({content:`You can't do that.`, ephemeral:true});
       return;
     }
     
     // Handle the interaction.
     try {
-      let result = commandList[interaction.commandName].handler.call(this.client, interaction);
+      let result = listener.handler.call(this.client, interaction);
       if (result && result instanceof Promise)
         result = await result;
     }
     catch(err) {
-      this.logError(`Failed to run command '${interaction.commandName}'.`, err);
+      this.logError(`Uncaught error while handling interaction ${listener} from user ${interaction.user?.username} (${interaction.user?.id}):`, err);
     }
     
-    // Log the interaction to the console.
-    let channel = await this.client.channels.fetch(interaction.channelId);
-    if (channel.isDMBased()) {
-      this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in a DM.`);
+    // Fallback reply, because the bot needs to reply with SOMEthing.
+    let fallbackResponse;
+    if(interaction.isRepliable() && !interaction.replied) {
+      let fallbackMessage = {ephemeral:true, content:'Your command was seen.'};
+      if (interaction.deferred) {
+        let reply = await interaction.fetchReply();
+        if (reply.flags.has(MessageFlags.Loading))
+          fallbackResponse = await interaction.followUp(fallbackMessage);
+      }
+      else
+        fallbackResponse = await interaction.reply(fallbackMessage);
     }
-    else if (interaction.guildId) {
-      let guild = await this.client.guilds.fetch(interaction.guildId);
-      if(channel.isThread()) {
-        let parentChannel = await this.client.channels.fetch(channel.parentId);
-        this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${interaction.guildId}) channel #${parentChannel?.name} (${parentChannel.id}) thread "${channel?.name}" (${channel.id}).`);
+    if (fallbackResponse)
+      this.logWarn(`Interaction ${listener} never gave the user ${interaction.user.username} (${interaction.user.id}) a specific response.`);
+    
+    // Log the interaction to the console.
+    let logMsg = [
+      `Interaction ${listener}`,
+      `used by ${interaction.user?.username} (${interaction.user?.id})`,
+    ];
+    if (interaction.channel?.isDMBased()) {
+      logMsg.push(`in a DM`);
+      if (interaction.channel.name)
+        logMsg.push(`named "${interaction.channel.name}"`);
+    }
+    else if (interaction.guild) {
+      logMsg.push(`in guild "${interaction.guild?.name}" (${interaction.guild?.id})`);
+      if(interaction.channel?.isThread()) {
+        logMsg.push(`in channel #${interaction.channel?.parent?.name} (${interaction.channel?.parent?.id})`);
+        logMsg.push(`thread "${interaction.channel?.name}" (${interaction.channel?.id})`);
       }
       else {
-        this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in guild ${guild?.name??"<guild name unavailable without Guilds intent>"} (${interaction.guildId}) channel #${channel?.name} (${channel.id}).`);
+        logMsg.push(`in channel #${interaction.channel?.name} (${interaction.channel?.id})`);
       }
     }
     else {
-      this.logInfo(`Application command '${interaction.commandName}' used by ${interaction.user?.username} (${interaction.user?.id}) in an unknown location; see channel object:`, channel);
+      this.logInfo(interaction.channel);
+      logMsg.push(`in an unknown location; see channel object above`);
     }
-  }
-  
-  static async _onComponentInteraction(interaction) {
-    if (!this.componentInteractions[interaction.customId]) {
-      this.logError(`Bot received a component interaction '${interaction.customId}'.`, {knownInteractions:this.componentInteractions});
-      return;
-    }
-    
-    // Handle the interaction.
-    try {
-      let result = this.componentInteractions[interaction.customId].handler.call(this.client, interaction);
-      if (result && result instanceof Promise)
-        result = await result;
-    }
-    catch(err) {
-      this.logError(`Failed to run interaction '${interaction.customId}'.`, err);
-    }
-    
-    this.logInfo(`Component interaction '${interaction.customId}' used by ${interaction.user?.username} (${interaction.user?.id})`);
+    this.logInfo(logMsg.join(' ') + '.');
   }
   
   static async _onOwnerMessage(message) {
+    if (message.partial)
+      message = await message.fetch();
+    
     if (message.content === '!crash') {
       throw new Error('Crash command used.');
     }
     else if (message.content === '!debug on') {
-      message.reply({ephemeral:true, content:'Debug mode enabled.'});
+      if (this.debugMode)
+        message.reply({ephemeral:true, content:'Debug mode already enabled.'});
+      else
+        message.reply({ephemeral:true, content:'Debug mode enabled.'});
       this.debugMode = true;
     }
     else if (message.content === '!debug off') {
-      message.reply({ephemeral:true, content:'Debug mode disabled.'});
+      if (!this.debugMode)
+        message.reply({ephemeral:true, content:'Debug mode already disabled.'});
+      else
+        message.reply({ephemeral:true, content:'Debug mode disabled.'});
       this.debugMode = false;
     }
     else if (message.content === '!dmme errors on') {
-      message.reply({ephemeral:true, content:'Errors will now be sent to you.'});
+      if (this.dmErrors)
+        message.reply({ephemeral:true, content:'Errors were already being sent to you.'});
+      else
+        message.reply({ephemeral:true, content:'Errors will now be sent to you.'});
       this.dmErrors = true;
     }
     else if (message.content === '!dmme errors off') {
-      message.reply({ephemeral:true, content:'Errors will no longer be sent to you.'});
+      if (!this.dmErrors)
+        message.reply({ephemeral:true, content:'Errors were already not being sent to you'});
+      else
+        message.reply({ephemeral:true, content:'Errors will no longer be sent to you.'});
       this.dmErrors = false;
     }
     else if (message.content === '!dmme warnings on') {
-      message.reply({ephemeral:true, content:'Warnings will now be sent to you.'});
+      if (this.dmWarnings)
+        message.reply({ephemeral:true, content:'Warnings were already being sent to you.'});
+      else
+        message.reply({ephemeral:true, content:'Warnings will now be sent to you.'});
       this.dmWarnings = true;
     }
     else if (message.content === '!dmme warnings off') {
-      message.reply({ephemeral:true, content:'Warnings will no longer be sent to you.'});
+      if (!this.dmWarnings)
+        message.reply({ephemeral:true, content:'Warnings were already not being sent to you.'});
+      else
+        message.reply({ephemeral:true, content:'Warnings will no longer be sent to you.'});
       this.dmWarnings = false;
+    }
+    else if (message.content.startsWith('!echo')) {
+      let args = message.content.split(' ').slice(1);
+      let obj = this;
+      for(let arg of args)
+        obj = obj?.[arg];
+      this.logInfo(obj);
     }
   }
 }

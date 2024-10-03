@@ -13,7 +13,7 @@ export default class BotModule {
   
   imports;
   database;
-  memory;
+  memory = {};
   
   /**
    * @param {Bot} bot - Reference to the Bot that owns this module.
@@ -31,33 +31,64 @@ export default class BotModule {
   }
   
   /**
-   * Load the module. Can be used to reload a module's code. If used after bot is started/ready, will attempt to call the appropriate module setup methods.
-   * @param {Object} moduleData
-   * @param {Object.<string, *>} [moduleData.options] - Module-specific configuration options that the module requires in order to run. Only needed if you want to load the module with different options than it was constructed with.
-   * @param {boolean} [moduleData.reload=false] - Whether to reload the module's code from the directory after it has already been loaded.
-   * @returns {boolean} True if the module was loaded (or reloaded) and all applicable setup methods succeeded; false otherwise.
+   * Load the module. If used after bot is started/ready, will attempt to call the appropriate module setup methods.
+   * @param {Object.<string, *>} [options] - Module-specific configuration options that the module requires in order to run. Only needed if you want to load the module with different options than it was constructed with.
+   * @returns {boolean} True if the module was loaded and all applicable setup methods succeeded; false otherwise.
    */
-  async load({options, reload=false}={}) {
+  async load(options) {
     if (!this.indexFile) {
       this.bot.logError(`No module name given.`);
       return false;
     }
     
-    if (this.imports && !reload) {
-      this.bot.logError(`Module '${this.name}' was already loaded. Pass 'reload:true' to reload it.`);
+    if (this.imports) {
+      this.bot.logError(`Module '${this.name}' was already loaded.`);
       return false;
     }
     
-    if (reload) {
-      // TODO: Modules might need to implement a method here to release some of their resources that were created during onStart or onReady.
-    }
-    
     try {
-      this.imports = await this.bot.safeImport(this.indexFile, {reload});
+      this.imports = await this.bot.safeImport(this.indexFile);
       this.bot.logInfo(`Module '${this.name}' loaded.`);
     }
     catch(err) {
       this.bot.logError(`Module '${this.name}' failed to load.`, err);
+      return false;
+    }
+    
+    if (options)
+      this.options = Object.assign(this.defaultOptions, options);
+    else
+      this.options = this.defaultOptions;
+    
+    // If module is being loaded after bot startup, we need to call the onStart method now.
+    if (this.bot.client)
+      if(!await this.start())
+        return false;
+    
+    // If module is being loaded after bot is ready, we need to call the onReady method now.
+    if (this.bot.client?.isReady())
+      if(!await this.ready())
+        return false;
+    
+    return true;
+  }
+  
+  /**
+   * Reload the module. Unloads the module and reruns its startup methods, if necessary.
+   * @param {Object.<string, *>} [options] - Module-specific configuration options that the module requires in order to run. Only needed if you want to load the module with different options than it was constructed with.
+   * @returns {boolean} True if the module was reloaded and all applicable setup methods succeeded; false otherwise.
+   */
+  async reload(options) {
+    if (this.imports)
+      if(!await this.unload())
+        return false;
+    
+    try {
+      this.imports = await this.bot.safeImport(this.indexFile, {reload:true});
+      this.bot.logInfo(`Module '${this.name}' reloaded.`);
+    }
+    catch(err) {
+      this.bot.logError(`Module '${this.name}' failed to reload.`, err);
       return false;
     }
     
@@ -89,19 +120,12 @@ export default class BotModule {
       return false;
     }
     
-    // Verify the bot has the correct intents and partials that the module needs.
+    // Verify the bot has the correct intents that the module needs.
     let error = false;
     this.imports.intents?.forEach(intent => {
       if(!this.bot.client.options.intents.has(GatewayIntentBits[intent])) {
         error = true;
         this.bot.logError(`Bot module '${this.name}' requires the ${intent} intent, but the client was not constructed with that intent, so features that rely on it will not work.`);
-      }
-    });
-    // TODO: I'm sure it's possible to just enable new partials here, since it's an internal Discord.js thing.
-    this.imports.partials?.forEach(partial => {
-      if(!this.bot.client.options.partials.includes(Partials[partial])) {
-        error = true;
-        this.bot.logError(`Bot module '${this.name}' requires the ${partial} partial, but the client was not constructed with that partial, so features that rely on it will not work.`);
       }
     });
     if (error)
@@ -149,6 +173,35 @@ export default class BotModule {
     }
     else
       this.bot.logInfo(`Module '${this.name}' ready.`);
+    return true;
+  }
+  
+  /**
+   * Calls the module's onUnload method, if it exists.
+   * @returns {boolean} False if errors were encountered; true otherwise.
+   */
+  async unload() {
+    if(!this.imports) {
+      this.bot.logError(`Module '${this.name}' failed to unload because it was not loaded.`);
+      return false;
+    }
+    
+    if (typeof(this.imports.onUnload) === 'function') {
+      try {
+        let unload = this.imports.onUnload.call(this.bot, this);
+        if (unload && unload instanceof Promise)
+          unload = await unload;
+        this.bot.logInfo(`Module '${this.name}' unloaded.`);
+      }
+      catch(err) {
+        this.bot.logError(`Module '${this.name}' failed to unload.`, err);
+        return false;
+      }
+    }
+    else
+      this.bot.logInfo(`Module '${this.name}' unloaded.`);
+    
+    this.imports = null;
     return true;
   }
 }
