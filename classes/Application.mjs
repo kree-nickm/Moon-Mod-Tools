@@ -20,7 +20,7 @@ export default class Application {
       }
       else {
         if (lastArgs)
-          lastArgs.forEach(a => options[a] = options[a] ?? arg);
+          lastArgs.forEach(a => options[a] = arg);
         else
           options[arg] = true;
       }
