@@ -1,9 +1,10 @@
-Make sure all of the following works before committing major updates:
+Make sure all of the following works before pushing major updates:
+--config command line arg
 
 Logging updated message.
 Logging deleted message.
-Logging update/deleted message that is too old.
-Logging update/deleted message involving an attachment.
+Logging updated/deleted message that is too old.
+Logging updated/deleted message involving an attachment.
 Logging a user join.
 Logging a user quit.
 Logging a user kicked.
@@ -14,5 +15,25 @@ DMing modmail bot to create/update a ticket.
 Reporting a message bot to create/update a ticket.
 Responding to a ticket.
 Locking/unlocking a ticket.
+Sending/receiving a ticket message with attachment(s).
 Closing a ticket.
 Failing to DM a user during some of the above.
+
+/release and !release someone who is not timed out.
+!bh (delay, multiple times, pull shooter from moderator list)
+/release and !release from pit.
+/timeout and !timeout a user until 5 strikes.
+/release and !release with amend option.
+/removestrike and !removestrike another one of them.
+/strikes and !strikes for a user.
+The buttons to see more strikes.
+/editcomment and !editcomment one of them.
+Timed-out user rejoining server and staying pitted. *With messaging.
+Release by removing role manually.
+User /strikes and !strikes for themselves.
+Wait for strike expiration notification.
+/strikes and !strikes for a user again after expiration.
+/warn and !warn a user.
+/warns and !warns for a user.
+User /warns and !warns themselves.
+?? Strike someone while they are !bh'd?

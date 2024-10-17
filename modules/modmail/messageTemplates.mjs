@@ -64,42 +64,73 @@ export async function attachmentToEmbed(attachment, overwrites={}) {
  * @param {discord.js/ThreadChannel} input.ticket - Reference to the ticket channel.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function messageReceived({interaction, message, ticket, confirmSent}={}) {
+export async function messageReceived({interaction, message, ticket, confirmSent, forwarded}={}) {
   let response = {
     embeds: [{
-      title: `Message received`,
+      title: forwarded ? `Forwarded message` : `Message received`,
       color: 0x00ff00,
-      footer: {
+      footer: ticket ? {
         text: `Mod Team • Ticket: ${ticket.name}`,
         icon_url: ticket.guild.iconURL(),
-      },
+      } : undefined,
       timestamp: new Date().toISOString(),
     }],
   };
   
   if (interaction?.targetMessage) {
-    response.embeds[0].url = interaction.targetMessage.url;
-    response.embeds[0].description = interaction.targetMessage.content;
+    let targetMessage = await interaction.targetMessage.fetch();
+    response.embeds[0].url = targetMessage.url;
+    response.embeds[0].description = targetMessage.content;
     response.embeds[0].footer = {
-      text: `${interaction.targetMessage.author.username}`,
-      icon_url: interaction.targetMessage.author.avatarURL(),
+      text: `${targetMessage.author.username}`,
+      icon_url: targetMessage.author.avatarURL(),
     };
     response.files = [];
-    for(let [attachmentId, attachment] of interaction.targetMessage.attachments) {
+    for(let [attachmentId, attachment] of targetMessage.attachments) {
       response.files.push(attachment);
       //response.embeds.push(await attachmentToEmbed.call(this, attachment));
+    }
+  
+    // Check for forwards, etc.
+    if (targetMessage.messageSnapshots?.size > 0)
+    {
+      this.master.logDebug('Message snapshots found.');
+      if (!response.embeds[0].fields)
+        response.embeds[0].fields = [];
+      response.embeds[0].fields.push({
+        name: 'Forwarded Messages',
+        value: `The reported message contains ${targetMessage.messageSnapshots.size} forwarded message(s). The original message(s) are included below.`,
+      });
+      for (let [fwMessageId, fwMessage] of targetMessage.messageSnapshots) {
+        let copy = await messageReceived({message,forwarded:true});
+        response.embeds = response.embeds.concat(copy.embeds);
+      }
+    }
+  
+    // Check for embeds.
+    if (targetMessage.embeds?.length > 0)
+    {
+      if (!response.embeds[0].fields)
+        response.embeds[0].fields = [];
+      response.embeds[0].fields.push({
+        name: 'Embeds',
+        value: `Message has ${targetMessage.embeds.length} embed(s), see below.`,
+      });
+      for (let embed of targetMessage.embeds) {
+        response.embeds.push(embed.data);
+      }
     }
   }
   else if (message) {
     response.embeds[0].description = message.content;
-    response.embeds[0].footer = {
+    response.embeds[0].footer = message.author ? {
       text: `${message.author.username}`,
       icon_url: message.author.avatarURL(),
-    };
+    } : undefined;
     response.files = [];
-    for(let [attachmentId, attachment] of message.attachments) {
+    for(let [attachmentId, attachment] of message.attachments??[]) {
       response.files.push(attachment);
-      response.embeds.push(await attachmentToEmbed.call(this, attachment));
+      //response.embeds.push(await attachmentToEmbed.call(this, attachment));
     }
   }
   

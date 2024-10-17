@@ -18,8 +18,8 @@ export const intents = ["GuildMembers","DirectMessages","GuildMessages","Message
 export async function onStart(module) {
   module.database = new Database();
   await module.database.connect(`storage/${module.options.databaseFile??'pitbot.sqlite'}`);
-  await module.database.run('CREATE TABLE IF NOT EXISTS bullethell (userId TEXT, date NUMBER, duration NUMBER);');
-  await module.database.run('CREATE TABLE IF NOT EXISTS strikes (userId TEXT, modId TEXT, comment TEXT, severity NUMBER, date NUMBER UNIQUE ON CONFLICT IGNORE);');
+  await module.database.run('CREATE TABLE IF NOT EXISTS bullethell (userId TEXT, date NUMBER, duration NUMBER, messageLink TEXT);');
+  await module.database.run('CREATE TABLE IF NOT EXISTS strikes (userId TEXT, modId TEXT, comment TEXT, severity NUMBER, date NUMBER UNIQUE ON CONFLICT IGNORE, expired BOOLEAN NOT NULL DEFAULT 0);');
   await module.database.run('CREATE TABLE IF NOT EXISTS warnings (userId TEXT, modId TEXT, comment TEXT, date NUMBER UNIQUE ON CONFLICT IGNORE);');
 }
 
@@ -31,7 +31,7 @@ export async function onReady(module) {
     eventHandlers: {
       messageCreate: 'messageCreate',
       guildMemberAdd: 'guildMemberAdd',
-      guildMemberUpdate: 'guildMemberUpdate',
+      guildAuditLogEntryCreate: 'guildAuditLogEntryCreate', // Requires VIEW_AUDIT_LOG
     },
     nocache: true,
   });

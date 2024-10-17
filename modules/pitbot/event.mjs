@@ -8,14 +8,29 @@ import * as Strikes from './strikeManager.mjs';
 import * as Warns from './warnManager.mjs';
 
 export async function guildMemberAdd(member) {
-  await updateRole.call(this, member.id);
+  await updateRole.call(this, member.id, 'guildMemberAdd');
 }
 
-export async function guildMemberUpdate(oldMember, member) {
+export async function guildAuditLogEntryCreate(entry, guild) {
   let module = this.master.modules.pitbot;
-  if(oldMember?.roles?.cache.has(module.options.pitRoleId) && !member.roles.cache.has(module.options.pitRoleId)) {
-    // TODO: Do an implicit !release, except we can't know who the mod is that did it. Will need to use audit log for that.
-    this.master.logDebug(`${member.user.username}'s pit role manually removed.`);
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
+  if (entry.action === 25 && entry.target && entry.executor && !entry.executor.bot) {
+    let role = await guild.roles.fetch(module.options.pitRoleId);
+    if (entry.changes?.[0]?.key === '$add') {
+      if (entry.changes[0].new.find(cng => cng.id === role.id)) {
+        // Implicit strike? But what severity?
+        this.master.logWarn(`Moderator ${entry.executor.username} (${entry.executor.id}) added pit role to ${entry.target.username} (${entry.target.id}) manually, which is not yet supported.`);
+      }
+    }
+    else if (entry.changes?.[0]?.key === '$remove') {
+      if (entry.changes[0].new.find(cng => cng.id === role.id)) {
+        // Implicit release.
+        this.master.logDebug(`Moderator ${entry.executor.username} (${entry.executor.id}) removed pit role from ${entry.target.username} (${entry.target.id}) manually; implicitly calling /release for them.`);
+        await Strikes.release.call(this, entry.target, entry.executor);
+        if (true) // No message sent yet.
+          await logChannel.send(await Messages.pitNotice.call(this, entry.target, false, `Pit role removed by <@${entry.executorId}>`));
+      }
+    }
   }
 }
 
@@ -50,7 +65,7 @@ export async function messageCreate(message) {
     if (isModerator && args.length > 1) {
       let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
       let amend = args.length > 2 && args[2] == 'amend';
-      return Strikes.release.call(this, user, message.author, amend);
+      return Strikes.release.call(this, user, message.author, amend, {message});
     }
     return;
   }
@@ -133,8 +148,12 @@ async function handleBulletHell(message) {
     else if(roll < 0.51)
       duration = 3600000 * 16;
     
-    await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date) VALUES (?, ?, ?)', message.author.id, duration, Date.now());
+    if (this.master.config.id === '1040775664539807804')
+      duration = duration / 3600;
+    
     await message.reply(await Messages.bulletHell.call(this, message, moderator, {prefix, suffix, duration}));
-    await updateRole.call(this, message.author.id);
+    await new Promise((resolve, reject) => setTimeout(() => resolve(), 5000));
+    await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date, messageLink) VALUES (?, ?, ?, ?)', message.author.id, duration, Date.now(), message.url);
+    await updateRole.call(this, message.author.id, 'handleBulletHell');
   }
 }

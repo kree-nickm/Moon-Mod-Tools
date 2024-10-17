@@ -33,7 +33,7 @@ export async function bulletHell(message, moderator=null, {prefix='tarnished',su
   return response;
 }
 
-export async function pitNotice(user, added, reason) {
+export async function pitNotice(user, added, reason, release) {
   let response = {
     embeds: [],
   };
@@ -44,6 +44,7 @@ export async function pitNotice(user, added, reason) {
       color: 0xff0000,
       description: `User ${user} was just sent to the pit.`,
       timestamp: new Date().toISOString(),
+      fields: [],
     });
   }
   else {
@@ -52,27 +53,33 @@ export async function pitNotice(user, added, reason) {
       color: 0x00ff00,
       description: `User ${user} was just released from the pit.`,
       timestamp: new Date().toISOString(),
+      fields: [],
     });
   }
   
   if (reason) {
-    response.embeds[0].fields = [
-      {
-        name: 'Reason',
-        value: reason,
-      },
-    ];
+    response.embeds[0].fields.push({
+      name: 'Reason',
+      value: reason,
+    });
+  }
+  
+  if (release) {
+    response.embeds[0].fields.push({
+      name: 'Pitted Until',
+      value: `<t:${Math.floor(release/1000)}:f>`,
+    });
   }
   
   return response;
 }
 
-export async function maximumStrikes(userId) {
+export async function maximumStrikes(user) {
   let response = {
     embeds: [{
       title: `User With 5 Strikes`,
       color: 0xff0000,
-      description: `<@${userId}> has reached the 5 active strike limit.`,
+      description: `${user} has reached the 5 active strike limit.`,
       timestamp: new Date().toISOString(),
     }],
   };
@@ -80,7 +87,7 @@ export async function maximumStrikes(userId) {
   return response;
 }
 
-export async function strikeConfirmation(user, mod, severity, comment, strikeReport) {
+export async function strikeConfirmation(user, mod, severity, comment, strikeReport, notifSent) {
   let response = {
     embeds: [{
       title: 'Strike Issued',
@@ -97,7 +104,7 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
         },
         {
           name: 'Pitted Until',
-          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:R>`,
+          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:f>`,
           inline: true,
         },
         {
@@ -109,6 +116,13 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
       timestamp: new Date().toISOString(),
     }],
   };
+  
+  if (notifSent === false) {
+    response.embeds[0].fields.push({
+      name: `DM Error`,
+      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+    });
+  }
   
   return response;
 }
@@ -126,7 +140,7 @@ export async function strikeNotification(guild, severity, comment, strikeReport)
         },
         {
           name: 'Pitted Until',
-          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:R>`,
+          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:f>`,
           inline: true,
         },
         {
@@ -146,10 +160,10 @@ export async function strikeNotification(guild, severity, comment, strikeReport)
   return response;
 }
 
-export async function releaseConfirmation(user, mod, amend, strikeReport) {
+export async function releaseConfirmation(user, mod, amend, strikeReport, notifSent) {
   let response = {
     embeds: [{
-      title: 'User Released',
+      title: 'User Released By Command',
       description: `${mod} released ${user} from the pit.` + (amend ? ' Their most recent strike was also removed.' : ''),
       fields: [
         {
@@ -161,6 +175,13 @@ export async function releaseConfirmation(user, mod, amend, strikeReport) {
       timestamp: new Date().toISOString(),
     }],
   };
+  
+  if (notifSent === false) {
+    response.embeds[0].fields.push({
+      name: `DM Error`,
+      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+    });
+  }
   
   return response;
 }
@@ -202,7 +223,7 @@ export async function removeFailed(strikeId, strike) {
   return response;
 }
 
-export async function removeConfirmation(user, mod, strike, strikeReport) {
+export async function removeConfirmation(user, mod, strike, strikeReport, notifSent) {
   let response = {
     embeds: [{
       title: 'Strike Removed',
@@ -235,6 +256,13 @@ export async function removeConfirmation(user, mod, strike, strikeReport) {
       timestamp: new Date().toISOString(),
     }],
   };
+  
+  if (notifSent === false) {
+    response.embeds[0].fields.push({
+      name: `DM Error`,
+      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+    });
+  }
   
   return response;
 }
@@ -289,7 +317,7 @@ export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={})
         },
         {
           name: 'Last Timeout',
-          value: strikeReport.releaseTime ? `<t:${Math.floor(strikeReport.releaseTime/1000)}:R>` : 'Never',
+          value: strikeReport.releaseTime ? `<t:${Math.floor(strikeReport.releaseTime/1000)}:f>` : 'Never',
           inline: true,
         },
       ],
@@ -301,19 +329,46 @@ export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={})
     }],
   };
   
+  let componentRow = {
+    type: 1,
+    components: [],
+  };
   let strikeToString = strike => `ID:\`${strike.strikeId}\` Lvl ${strike.severity} on <t:${Math.floor(strike.date/1000)}:d>` + (mod?` by <@${strike.modId}>`:'') + `\n> ${strike.comment}`;
   if (strikeReport.active.length) {
+    let content = strikeReport.active.map(strikeToString).join(`\n`);
     response.embeds[0].fields.push({
-      name: 'Active Strike List',
-      value: strikeReport.active.map(strikeToString).join(`\n`).slice(0, 1024),
+      name: 'Active Strike List' + (content.length > 1024 ? ' (Shortened)' : ''),
+      value: content.slice(0, 1024),
+      inline: true,
     });
+    if (content.length > 1024) {
+      componentRow.components.push({
+        type: 2,
+        label: 'View All Active',
+        style: 2,
+        custom_id: 'view_active_strikes',
+      });
+    }
   }
   if (strikeReport.expired.length) {
+    let content = strikeReport.expired.map(strikeToString).join(`\n`);
     response.embeds[0].fields.push({
-      name: 'Expired Strike List',
-      value: strikeReport.expired.map(strikeToString).join(`\n`).slice(0, 1024),
+      name: 'Expired Strike List' + (content.length > 1024 ? ' (Shortened)' : ''),
+      value: content.slice(0, 1024),
+      inline: true,
     });
+    if (content.length > 1024) {
+      componentRow.components.push({
+        type: 2,
+        label: 'View All Expired',
+        style: 2,
+        custom_id: 'view_expired_strikes',
+      });
+    }
   }
+  
+  if (componentRow.components.length)
+    response.components = [componentRow];
   
   return response;
 }
@@ -366,14 +421,22 @@ export async function commentConfirmation(mod, strike, comment) {
   return response;
 }
 
-export async function warnConfirmation(user, mod, comment, warnings) {
+export async function warnConfirmation(user, mod, comment, warnings, notifSent) {
   let response = {
     embeds: [{
       title: 'Warning Issued',
       description: `${mod} issued a warning to ${user}. They now have ${warnings.length} warnings.\n> ${comment}`,
+      fields: [],
       timestamp: new Date().toISOString(),
     }],
   };
+  
+  if (notifSent === false) {
+    response.embeds[0].fields.push({
+      name: `DM Error`,
+      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+    });
+  }
   
   return response;
 }
@@ -400,22 +463,54 @@ export async function listWarnings(guild, user, warnings, {ephemeral,mod}={}) {
     embeds: [{
       title: 'Warning Info',
       description: `List of ${warnings.length} warnings for ${user}.`,
+      fields: [],
       footer: {
         text: 'Mod Team',
         icon_url: guild.iconURL(),
       },
-      fields: [],
       timestamp: new Date().toISOString(),
     }],
   };
   
+  let componentRow = {
+    type: 1,
+    components: [],
+  };
   let warningToString = warn => `ID:\`${warn.warnId}\` on <t:${Math.floor(warn.date/1000)}:d>` + (mod?` by <@${warn.modId}>`:'') + `\n> ${warn.comment}`;
   if (warnings.length) {
+    let content = warnings.map(warningToString).join(`\n`);
     response.embeds[0].fields.push({
-      name: 'Warnings List',
-      value: warnings.map(warningToString).join(`\n`).slice(0, 1024),
+      name: 'Warnings List' + (content.length > 1024 ? ' (Shortened)' : ''),
+      value: content.slice(0, 1024),
     });
+    if (content.length > 1024) {
+      componentRow.components.push({
+        type: 2,
+        label: 'View All',
+        style: 2,
+        custom_id: 'view_warnings',
+      });
+    }
   }
+  
+  if (componentRow.components.length)
+    response.components = [componentRow];
+  
+  return response;
+}
+
+export async function strikesExpired({expiredStrikes}) {
+  let userIds = expiredStrikes.map(strike => strike.userId);
+  let users = [...new Set(userIds)].map(userId => `<@${userId}>`).join(' ');
+  
+  let response = {
+    embeds: [{
+      title: 'Strikes Expired',
+      description: `Total ${expiredStrikes.length} strikes expired for ${users}`,
+      fields: [],
+      timestamp: new Date().toISOString(),
+    }],
+  };
   
   return response;
 }

@@ -43,6 +43,7 @@ export async function handler(interaction) {
   
   // Add the user's message to the thread.
   await ticket.send(await Messages.messageReceived.call(this, {interaction, ticket, confirmSent}));
+  //this.master.logDebug(interaction.targetMessage);
   await interaction.followUp(await Messages.ticketConfirmation.call(this, {interaction, ticket, created, confirmSent}));
 }
 

@@ -1,5 +1,5 @@
 /** @module classes/Bot */
-import { Client, Options, GatewayIntentBits, Partials, MessageFlags, REST, Routes } from 'discord.js';
+import { Client, Options, GatewayIntentBits, Partials, MessageFlags, REST, Routes, version } from 'discord.js';
 import Application from './Application.mjs';
 import BotModule from './BotModule.mjs';
 import ListenerManager from './ListenerManager.mjs';
@@ -104,6 +104,8 @@ export default class Bot extends Application {
     // Add all the intents required by the modules to the initial ones.
     let intents = this.config.intents;
     intents.push('Guilds');
+    if (this.config.ownerId)
+      intents.push('DirectMessages');
     for(let name in this.modules) {
       if (Array.isArray(this.modules[name].imports.intents))
         intents = intents.concat(this.modules[name].imports.intents);
@@ -125,6 +127,7 @@ export default class Bot extends Application {
     }
     
     // Create the Discord bot.
+    this.logInfo(`Discord.js Version: ${version}`);
     this.logInfo(`Creating Discord.js client. Intents: [${intents.join(', ')}], Cache:`, cacheOptions);
     this.client = new Client(clientOptions);
     this.client.master = this;
@@ -305,7 +308,7 @@ export default class Bot extends Application {
     
     // Make sure the bot knows this interacton.
     if (!listener) {
-      this.logWarn(`User ${interaction.user?.username} (${interaction.user?.id}) used an unknown interaction (${interaction.constructor.name}):`, ['type','context','commandName','commandType','componentType','customId','channelId','guildId'].map(prop => interaction[prop] ? `(${prop}:${interaction[prop]})` : null).filter().join(' '));
+      this.logWarn(`User ${interaction.user?.username} (${interaction.user?.id}) used an unknown interaction (${interaction.constructor.name}):`, ['type','context','commandName','commandType','componentType','customId','channelId','guildId'].map(prop => interaction[prop] ? `(${prop}:${interaction[prop]})` : null).filter(i=>i).join(' '));
       interaction.reply({content:`I don't recognize that interaction.`, ephemeral:true});
       return;
     }

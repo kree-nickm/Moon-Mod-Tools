@@ -10,7 +10,7 @@ export async function add(user, mod, severity, comment) {
   let logChannel = await this.channels.fetch(module.options.logChannelId);
   
   await module.database.run('INSERT INTO strikes (userId, modId, comment, severity, date) VALUES (?, ?, ?, ?, ?)', user.id, mod.id, comment, severity, Date.now());
-  let pitData = await updateRole.call(this, user.id);
+  let pitData = await updateRole.call(this, user.id, 'add');
   
   let notifSent = false;
   try {
@@ -27,9 +27,16 @@ export async function add(user, mod, severity, comment) {
   }
 }
 
-export async function release(user, mod, amend) {
+export async function release(user, mod, amend, {message, interaction}={}) {
   let module = this.master.modules.pitbot;
   let logChannel = await this.channels.fetch(module.options.logChannelId);
+  let pitData = await updateRole.call(this, user.id, 'list');
+  if (pitData.strikes.releaseTime < Date.now() && (pitData.bullethell?.releaseTime??0) < Date.now()) {
+    let replyTo = interaction ?? message;
+    if (replyTo)
+      await replyTo.reply({content:`${user} is not in the pit.`,ephemeral:true});
+    return;
+  }
   
   if (amend) {
     let strikes = await getStrikes.call(this, user.id);
@@ -38,7 +45,7 @@ export async function release(user, mod, amend) {
   }
   else
     await module.database.run('INSERT INTO strikes (userId, modId, severity, date) VALUES (?, ?, ?, ?)', user.id, mod.id, -1, Date.now());
-  let pitData = await updateRole.call(this, user.id);
+  pitData = await updateRole.call(this, user.id, 'release');
   
   let notifSent = false;
   try {
@@ -65,7 +72,7 @@ export async function remove(strikeId, {message, interaction}={}) {
   
   await module.database.run('UPDATE strikes SET severity=0 WHERE rowId=?', strikeId);
   let user = await this.users.fetch(strike.userId);
-  let pitData = await updateRole.call(this, user.id);
+  let pitData = await updateRole.call(this, user.id, 'remove');
   
   let notifSent = false;
   try {

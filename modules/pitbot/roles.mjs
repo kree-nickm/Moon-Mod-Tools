@@ -56,6 +56,11 @@ export async function getStrikes(userId) {
   let expired = [];
   let removed = [];
   let releases = [];
+  let newlyExpired = [];
+  
+  let expirationDuration = this.master.config.id === '1040775664539807804'
+   ? 120000
+   : 2592000000;
   
   let strikes = await module.database.all('SELECT rowId AS strikeId,* FROM strikes WHERE userId=? ORDER BY date DESC', userId);
   for(let strike of strikes) {
@@ -71,14 +76,17 @@ export async function getStrikes(userId) {
       continue;
     }
     
-    // A strike is active if it was issued in the last month, or if it was issued less than a month before the next most recent active strike. (2592000000 milliseconds in a month)
-    let isActive = (strike.date > (Date.now() - 2592000000))
-      || active.length && (strike.date > (active[active.length-1].date - 2592000000));
+    // A strike is active if it was issued in the last month, or if it was issued less than a month before the next most recent active strike.
+    let isActive = (strike.date > (Date.now() - expirationDuration))
+      || active.length && (strike.date > (active[active.length-1].date - expirationDuration));
     
     if(isActive)
       active.push(strike);
-    else
+    else {
       expired.push(strike);
+      if (!strike.expired)
+        newlyExpired.push(strike);
+    }
   }
   
   let releaseTime = 0;
@@ -91,33 +99,63 @@ export async function getStrikes(userId) {
         duration += previousSeverityDuration[strike.severity];
     }
     duration *= activeStrikeFactor[Math.min(active.length, 5)];
+    if (this.master.config.id === '1040775664539807804')
+      duration = duration / 3600;
     releaseTime = active[0].date + duration;
   }
   
-  return {active, expired, removed, releases, releaseTime};
+  
+  if (newlyExpired.length) {
+    let addSmt = await module.database.prepare('UPDATE strikes SET expired=1 WHERE rowId=?');
+    for (let strike of newlyExpired) {
+      await addSmt.run(strike.strikeId);
+      strike.expired = 1;
+    }
+    await addSmt.finalize();
+  }
+  
+  return {active, expired, removed, releases, releaseTime, newlyExpired};
 }
 
 /**
  * @this discord.js/Client
  */
-export async function updateRole(userId) {
+export async function updateRole(userId, source) {
   let module = this.master.modules.pitbot;
   let strikes = await getStrikes.call(this, userId);
+  strikes.lastRelease = strikes.releases[0]?.date ?? 0;
+  strikes.lastStrike = strikes.active[0]?.date ?? 0;
+  strikes.shouldBePitted = strikes.releaseTime > Date.now() && strikes.lastRelease < strikes.lastStrike;
   
   // Check if they are currently pitted from bullet hell, taking into account if a mod released them as above.
-  await module.database.run('DELETE FROM bullethell WHERE userId=? AND date+duration<?', userId, Date.now());
-  let bullethell = await module.database.all('SELECT * FROM bullethell WHERE userId=? AND date>?', userId, strikes.releaseTime);
+  let bullethell = await module.database.get('SELECT * FROM bullethell WHERE userId=? ORDER BY date DESC LIMIT 1', userId);
+  if (bullethell) {
+    await module.database.run('DELETE FROM bullethell WHERE userId=? AND date+duration<?', userId, Date.now());
+    bullethell.releaseTime = bullethell.date + bullethell.duration;
+    bullethell.shouldBePitted = bullethell.releaseTime > Date.now() && strikes.lastRelease < bullethell.date;
+  }
   
   // Apply any suspension that we determined.
-  if (strikes.releaseTime > Date.now()) {
+  if (strikes.shouldBePitted) {
     let strike = strikes.active[0];
-    await setPitRole.call(this, userId, true, `Strike ID:\`${strike.strikeId}\` Lvl ${strike.severity} issued by <@${strike.modId}>\n> ${strike.comment}`);
+    let reason = `Strike ID:\`${strike.strikeId}\` Lvl ${strike.severity} issued by <@${strike.modId}>\n> ${strike.comment}`;
+    if (source === 'guildMemberAdd')
+      reason = `User rejoined server while pitted. Original reason:\n` + reason;
+    await setPitRole.call(this, userId, true, reason, strikes.releaseTime);
   }
-  else if (bullethell.length) {
-    await setPitRole.call(this, userId, true, 'Bullet Hell');
+  else if (bullethell?.shouldBePitted) {
+    let reason = `Bullet Hell: ${bullethell.messageLink}`;
+    if (source === 'guildMemberAdd')
+      reason = `User rejoined server while pitted. Original reason:\n` + reason;
+    await setPitRole.call(this, userId, true, reason, bullethell.releaseTime);
   }
   else {
-    await setPitRole.call(this, userId, false);
+    let reason = (strikes.lastRelease > (bullethell?.date??0) && strikes.lastRelease > strikes.lastStrike)
+      ? `Released by <@${strikes.releases[0].modId}>`
+      : (bullethell?.releaseTime > strikes.releaseTime && strikes.lastRelease < bullethell?.date)
+      ? 'Bullet Hell expired.'
+      : 'Timeout expired.';
+    await setPitRole.call(this, userId, false, reason);
   }
   return { strikes, bullethell };
 }
@@ -125,17 +163,21 @@ export async function updateRole(userId) {
 /**
  * @this discord.js/Client
  */
-async function setPitRole(userId, add=true, reason='') {
+async function setPitRole(userId, add=true, reason='', release=null) {
   let module = this.master.modules.pitbot;
   let user = await this.users.fetch(userId);
   let logChannel = await this.channels.fetch(module.options.logChannelId);
-  let member = await logChannel.guild.members.fetch(user);
+  let member = await logChannel.guild.members.fetch(user).catch(err => this.logWarn(`Tried to update pit role on a non-member ${userId}.`, err));
+  if (!member?.id) {
+    return;
+  }
+  
   let role = await logChannel.guild.roles.fetch(module.options.pitRoleId);
   
   if (add && !role.members.has(member.id)) {
     try {
       await member.roles.add(role);
-      await logChannel.send(await Messages.pitNotice.call(this, user, true, reason));
+      await logChannel.send(await Messages.pitNotice.call(this, user, true, reason, release));
     }
     catch(err) {
       this.master.logError(`Failed to add '${role.name}' to ${user.username}:`, err);
@@ -146,7 +188,7 @@ async function setPitRole(userId, add=true, reason='') {
   if (!add && role.members.has(member.id)) {
     try {
       await member.roles.remove(role);
-      await logChannel.send(await Messages.pitNotice.call(this, user, false, reason));
+      await logChannel.send(await Messages.pitNotice.call(this, user, false, reason, release));
     }
     catch(err) {
       this.master.logError(`Failed to remove '${role.name}' from ${user.username}:`, err);
@@ -160,21 +202,33 @@ async function setPitRole(userId, add=true, reason='') {
  */
 export async function updateAllRoles() {
   let module = this.master.modules.pitbot;
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
   let userIds = [];
   
   let bullethell = await module.database.all('SELECT userId FROM bullethell');
-  for(let row of bullethell)
-    if(!userIds.includes(row.userId))
-      userIds.push(row.userId);
-  await module.database.run('DELETE FROM bullethell WHERE date+duration<?', Date.now());
-    
-  let strikes = await module.database.all('SELECT userId FROM strikes');
-  for(let row of strikes)
-    if(!userIds.includes(row.userId))
-      userIds.push(row.userId);
+  for(let row of bullethell) {
+    userIds.push(row.userId);
+  }
   
-  for(let userId of userIds)
-    await updateRole.call(this, userId);
+  let strikes = await module.database.all('SELECT userId FROM strikes WHERE expired=0');
+  for(let row of strikes) {
+    userIds.push(row.userId);
+  }
+  
+  let role = await logChannel.guild.roles.fetch(module.options.pitRoleId);
+  for(let [memberId, member] of role.members) {
+    userIds.push(memberId);
+  }
+  
+  userIds = [...new Set(userIds)];
+  this.master.logDebug(`Checking roles for ${userIds.length} users: ${bullethell.length} from !bh, ${strikes.length} from strikes, ${role.members.size} from role.`);
+  let results = await Promise.all(userIds.map(userId => updateRole.call(this, userId, 'updateAllRoles')));
+  let expiredStrikes = [];
+  for (let userTimeouts of results)
+    expiredStrikes = expiredStrikes.concat(userTimeouts.strikes.newlyExpired);
+  if (expiredStrikes.length) {
+    await logChannel.send(await Messages.strikesExpired.call(this, {expiredStrikes}));
+  }
 }
 
 export async function getModeratorIds(includeOwner=false) {

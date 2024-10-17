@@ -151,6 +151,20 @@ export async function messageDelete(message) {
     });
     //this.master.logDebug(`Too-old message:`, message);
   }
+  
+  // Check for embeds.
+  if (message && message.embeds?.length > 0)
+  {
+    mainFields.push({
+      name: 'Embeds',
+      value: `Message had ${message.embeds.length} embed(s), see below.`,
+    });
+    for (let embed of message.embeds) {
+      embeds.push(embed.data);
+    }
+  }
+  
+  // Data to help mods find when/where this message was.
   if (message && !isNaN(message.url?.length))
   {
     mainFields.push({
@@ -315,9 +329,7 @@ export async function guildMemberRemove(member) {
     return;
   
   // Give the audit log time to update so we can see if the removal reason is in it.
-  await new Promise((resolve, reject) => {
-    setTimeout(() => resolve(), 500);
-  });
+  await new Promise((resolve, reject) => setTimeout(() => resolve(), 500));
   
   let reason = 'User left the server.';
   let auditLog = module.memory.removedMembers.findLast(audit => audit.targetId === user.id);

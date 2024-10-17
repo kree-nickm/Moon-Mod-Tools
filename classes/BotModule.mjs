@@ -10,6 +10,7 @@ export default class BotModule {
   indexFile;
   defaultOptions;
   options;
+  isReady;
   
   imports;
   database;
@@ -28,6 +29,7 @@ export default class BotModule {
     this.name = name;
     this.indexFile = indexFile ?? `modules/${directory??name}/index.mjs`;
     this.defaultOptions = options;
+    this.isReady = false;
   }
   
   /**
@@ -36,6 +38,7 @@ export default class BotModule {
    * @returns {boolean} True if the module was loaded and all applicable setup methods succeeded; false otherwise.
    */
   async load(options) {
+    this.isReady = false;
     if (!this.indexFile) {
       this.bot.logError(`No module name given.`);
       return false;
@@ -79,6 +82,7 @@ export default class BotModule {
    * @returns {boolean} True if the module was reloaded and all applicable setup methods succeeded; false otherwise.
    */
   async reload(options) {
+    this.isReady = false;
     if (this.imports)
       if(!await this.unload())
         return false;
@@ -115,6 +119,7 @@ export default class BotModule {
    * @returns {boolean} False if errors were encountered; true otherwise.
    */
   async start() {
+    this.isReady = false;
     if(!this.imports) {
       this.bot.logError(`Module '${this.name}' failed to ready because it was not loaded.`);
       return false;
@@ -173,6 +178,7 @@ export default class BotModule {
     }
     else
       this.bot.logInfo(`Module '${this.name}' ready.`);
+    this.isReady = true;
     return true;
   }
   
@@ -181,6 +187,7 @@ export default class BotModule {
    * @returns {boolean} False if errors were encountered; true otherwise.
    */
   async unload() {
+    this.isReady = false;
     if(!this.imports) {
       this.bot.logError(`Module '${this.name}' failed to unload because it was not loaded.`);
       return false;
