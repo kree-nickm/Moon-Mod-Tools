@@ -91,7 +91,7 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
   let response = {
     embeds: [{
       title: 'Strike Issued',
-      description: `${mod} issued a strike to ${user}.`,
+      description: `${mod} issued a strike to ${user}. Timed out for ${strikeReport.durationString}.`,
       fields: [
         {
           name: 'Reason',
@@ -127,20 +127,24 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
   return response;
 }
 
-export async function strikeNotification(guild, severity, comment, strikeReport) {
+export async function strikeNotification(guild, severity='', comment='', strikeReport) {
   let response = {
     embeds: [{
-      title: 'You have received a strike.',
-      description: comment,
+      title: `You have received a strike.`,
+      //description: comment,
       fields: [
         {
-          name: 'Severity',
-          value: severity,
+          name: 'Reason',
+          value: comment,
+        },
+        {
+          name: 'Duration',
+          value: `${strikeReport.durationString}`,
           inline: true,
         },
         {
-          name: 'Pitted Until',
-          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:f>`,
+          name: 'Release (Appx)',
+          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:R>`,
           inline: true,
         },
         {

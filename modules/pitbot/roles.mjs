@@ -28,6 +28,21 @@ let activeStrikeFactor = {
   '5': 10,
 };
 
+function durationString(ms) {
+  if (ms > (86400000 * 365) * 2)
+    return `${(ms/(86400000 * 365)).toFixed(1)} years`;
+  else if (ms > (86400000 * 30) * 3)
+    return `${Math.round(ms/(86400000 * 30))} months`;
+  else if (ms > 86400000 * 2)
+    return `${Math.round(ms/86400000)} days`;
+  else if (ms > 3600000 * 3)
+    return `${Math.round(ms/3600000)} hours`;
+  else if (ms > 60000 * 3)
+    return `${Math.round(ms/60000)} minutes`;
+  else
+    return `${Math.round(ms/1000)} seconds`;
+}
+
 /**
  * @typedef {Object} Strike
  * @property {number} strikeId - ID of the strike, which corresponds to the database row ID.
@@ -89,9 +104,9 @@ export async function getStrikes(userId) {
     }
   }
   
+  let duration = 0;
   let releaseTime = 0;
   if (active.length) {
-    let duration = 0;
     for(let strike of active) {
       if (!duration)
         duration = severityDuration[strike.severity];
@@ -104,7 +119,6 @@ export async function getStrikes(userId) {
     releaseTime = active[0].date + duration;
   }
   
-  
   if (newlyExpired.length) {
     let addSmt = await module.database.prepare('UPDATE strikes SET expired=1 WHERE rowId=?');
     for (let strike of newlyExpired) {
@@ -114,7 +128,7 @@ export async function getStrikes(userId) {
     await addSmt.finalize();
   }
   
-  return {active, expired, removed, releases, releaseTime, newlyExpired};
+  return {active, expired, removed, releases, releaseTime, newlyExpired, durationString:durationString(duration)};
 }
 
 /**
@@ -147,7 +161,7 @@ export async function updateRole(userId, source) {
     let reason = `Bullet Hell: ${bullethell.messageLink}`;
     if (source === 'guildMemberAdd')
       reason = `User rejoined server while pitted. Original reason:\n` + reason;
-    await setPitRole.call(this, userId, true, reason, bullethell.releaseTime);
+    await setPitRole.call(this, userId, true, '', bullethell.releaseTime);
   }
   else {
     let reason = (strikes.lastRelease > (bullethell?.date??0) && strikes.lastRelease > strikes.lastStrike)
@@ -167,7 +181,7 @@ async function setPitRole(userId, add=true, reason='', release=null) {
   let module = this.master.modules.pitbot;
   let user = await this.users.fetch(userId);
   let logChannel = await this.channels.fetch(module.options.logChannelId);
-  let member = await logChannel.guild.members.fetch(user).catch(err => this.logWarn(`Tried to update pit role on a non-member ${userId}.`, err));
+  let member = await logChannel.guild.members.fetch(user).catch(err => null/*this.master.logWarn(`Tried to update pit role on a non-member ${userId}.`, err)*/);
   if (!member?.id) {
     return;
   }
@@ -177,7 +191,8 @@ async function setPitRole(userId, add=true, reason='', release=null) {
   if (add && !role.members.has(member.id)) {
     try {
       await member.roles.add(role);
-      await logChannel.send(await Messages.pitNotice.call(this, user, true, reason, release));
+      if (reason)
+        await logChannel.send(await Messages.pitNotice.call(this, user, true, reason, release));
     }
     catch(err) {
       this.master.logError(`Failed to add '${role.name}' to ${user.username}:`, err);
@@ -188,7 +203,8 @@ async function setPitRole(userId, add=true, reason='', release=null) {
   if (!add && role.members.has(member.id)) {
     try {
       await member.roles.remove(role);
-      await logChannel.send(await Messages.pitNotice.call(this, user, false, reason, release));
+      if (reason)
+        await logChannel.send(await Messages.pitNotice.call(this, user, false, reason, release));
     }
     catch(err) {
       this.master.logError(`Failed to remove '${role.name}' from ${user.username}:`, err);
