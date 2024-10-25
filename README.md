@@ -178,6 +178,8 @@ Configuration Options:
 ### pitbot
 Manages the role that marks users as suspended, and logs disciplinary actions to allow moderators to better manage punishments against users who break the server rules.
 
+For end user documentation, see the [pitbot module readme](modules/pitbot/README.md).
+
 Configuration Options:
 * **logChannelId** - The snowflake ID of the channel where pitbot will report all disciplinary actions that it takes.
 * **spamChannelId** - The snowflake ID of the channel where pitbot will report certain actions that tend to cause spam, such as users being pitted by bullet hell.
