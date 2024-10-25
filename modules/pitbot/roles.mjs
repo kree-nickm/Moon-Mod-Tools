@@ -265,7 +265,7 @@ export async function getModeratorIds(includeOwner=false) {
     roleIds = [roleIds];
   for(let roleId of roleIds) {
     let role = await logChannel.guild.roles.fetch(roleId);
-    for(let [moderatorId, moderator] of role.members) {
+    for(let [moderatorId, moderator] of (role?.members??[])) {
       //this.master.logDebug(`Moderator:`, moderator.user.username);
       if (!moderatorIds.includes(moderator.user.id))
         moderatorIds.push(moderator.user.id);
