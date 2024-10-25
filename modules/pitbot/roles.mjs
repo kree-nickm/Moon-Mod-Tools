@@ -3,6 +3,7 @@
  * @module modules/pitbot/roles
  */
 import * as Messages from './messageTemplates.mjs';
+import * as Util from '../../imports/util.mjs';
 
 let severityDuration = {
   '1': 3600000*4,
@@ -28,22 +29,8 @@ let activeStrikeFactor = {
   '5': 10,
 };
 
-function durationString(ms) {
-  if (ms > (86400000 * 365) * 2)
-    return `${(ms/(86400000 * 365)).toFixed(1)} years`;
-  else if (ms > (86400000 * 30) * 3)
-    return `${Math.round(ms/(86400000 * 30))} months`;
-  else if (ms > 86400000 * 2)
-    return `${Math.round(ms/86400000)} days`;
-  else if (ms > 3600000 * 3)
-    return `${Math.round(ms/3600000)} hours`;
-  else if (ms > 60000 * 3)
-    return `${Math.round(ms/60000)} minutes`;
-  else
-    return `${Math.round(ms/1000)} seconds`;
-}
-
 /**
+ * Database row for a strike.
  * @typedef {Object} Strike
  * @property {number} strikeId - ID of the strike, which corresponds to the database row ID.
  * @property {string} userId - Snowflake ID of the user who was struck.
@@ -51,7 +38,9 @@ function durationString(ms) {
  * @property {number} severity - Severity of the strike.
  * @property {string} comment - Reason for the strike.
  * @property {number} date - Unix timestamp of the strike in milliseconds.
+ * @property {boolean} expired - Whether the strike has expired and been marked as such.
  */
+ 
 /**
  * @typedef {Object} StrikeReport
  * @property {Strike[]} active - List of active strikes, most recent first.
@@ -59,7 +48,10 @@ function durationString(ms) {
  * @property {Strike[]} removed - List of removed strikes, most recent first.
  * @property {Strike[]} releases - List of releases, most recent first.
  * @property {number} releaseTime - Unix timestamp (milliseconds) of when the user was or will be freed from the pit due to their most recent active strike, or 0 if they have no active strikes.
+ * @property {Strike[]} newlyExpired - List of strikes that just expired.
+ * @property {string} durationString - The duration of the strike as a readable string, e.g. '8 hours'
  */
+ 
 /**
  * @param {string} userId - Snowflake ID of the user whose strike data to fetch.
  * @this discord.js/Client
@@ -128,7 +120,7 @@ export async function getStrikes(userId) {
     await addSmt.finalize();
   }
   
-  return {active, expired, removed, releases, releaseTime, newlyExpired, durationString:durationString(duration)};
+  return {active, expired, removed, releases, releaseTime, newlyExpired, durationString:Util.durationString(duration)};
 }
 
 /**
@@ -150,26 +142,39 @@ export async function updateRole(userId, source) {
   }
   
   // Apply any suspension that we determined.
+  let reason = '';
   if (strikes.shouldBePitted) {
     let strike = strikes.active[0];
-    let reason = `Strike ID:\`${strike.strikeId}\` Lvl ${strike.severity} issued by <@${strike.modId}>\n> ${strike.comment}`;
-    if (source === 'guildMemberAdd')
-      reason = `User rejoined server while pitted. Original reason:\n` + reason;
-    await setPitRole.call(this, userId, true, reason, strikes.releaseTime);
+    if (!['add','release'].includes(source)) {
+      reason = `Strike ID:\`${strike.strikeId}\` Lvl ${strike.severity} issued by <@${strike.modId}>\n> ${strike.comment}`;
+      if (source === 'guildMemberAdd')
+        reason = `User rejoined server while pitted. Original reason:\n` + reason;
+    }
+    await setPitRole.call(this, userId, true, {reason, release:strikes.releaseTime});
   }
   else if (bullethell?.shouldBePitted) {
-    let reason = `Bullet Hell: ${bullethell.messageLink}`;
+    reason = `Bullet Hell: ${bullethell.messageLink}`;
     if (source === 'guildMemberAdd')
-      reason = `User rejoined server while pitted. Original reason:\n` + reason;
-    await setPitRole.call(this, userId, true, '', bullethell.releaseTime);
+      reason = `User rejoined server while pitted. Original reason:\n${reason}`;
+    await setPitRole.call(this, userId, true, {reason, release:bullethell.releaseTime, channelId:module.options.spamChannelId});
   }
   else {
-    let reason = (strikes.lastRelease > (bullethell?.date??0) && strikes.lastRelease > strikes.lastStrike)
-      ? `Released by <@${strikes.releases[0].modId}>`
-      : (bullethell?.releaseTime > strikes.releaseTime && strikes.lastRelease < bullethell?.date)
-      ? 'Bullet Hell expired.'
-      : 'Timeout expired.';
-    await setPitRole.call(this, userId, false, reason);
+    let channelId;
+    if (!['add','release'].includes(source)) {
+      if (strikes.lastRelease > (bullethell?.date??0) && strikes.lastRelease > strikes.lastStrike) {
+        reason = `Released by <@${strikes.releases[0].modId}>`;
+        channelId = module.options.logChannelId;
+      }
+      else if (bullethell?.releaseTime > strikes.releaseTime && strikes.lastRelease < bullethell?.date) {
+        reason = 'Bullet Hell expired.';
+        channelId = module.options.spamChannelId;
+      }
+      else {
+        reason = 'Timeout expired.';
+        channelId = module.options.logChannelId;
+      }
+    }
+    await setPitRole.call(this, userId, false, {reason, channelId});
   }
   return { strikes, bullethell };
 }
@@ -177,10 +182,10 @@ export async function updateRole(userId, source) {
 /**
  * @this discord.js/Client
  */
-async function setPitRole(userId, add=true, reason='', release=null) {
+async function setPitRole(userId, add=true, {reason='', release, channelId}={}) {
   let module = this.master.modules.pitbot;
   let user = await this.users.fetch(userId);
-  let logChannel = await this.channels.fetch(module.options.logChannelId);
+  let logChannel = await this.channels.fetch(channelId ?? module.options.logChannelId);
   let member = await logChannel.guild.members.fetch(user).catch(err => null/*this.master.logWarn(`Tried to update pit role on a non-member ${userId}.`, err)*/);
   if (!member?.id) {
     return;
@@ -261,7 +266,7 @@ export async function getModeratorIds(includeOwner=false) {
   for(let roleId of roleIds) {
     let role = await logChannel.guild.roles.fetch(roleId);
     for(let [moderatorId, moderator] of role.members) {
-      this.master.logDebug(`Moderator:`, moderator.user.username);
+      //this.master.logDebug(`Moderator:`, moderator.user.username);
       if (!moderatorIds.includes(moderator.user.id))
         moderatorIds.push(moderator.user.id);
     }

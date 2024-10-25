@@ -36,7 +36,7 @@ export async function list(user, mod, {message, interaction}={}) {
       await message.reply(await Messages.listWarnings.call(this, logChannel.guild, user, warnings, {mod}));
     else {
       try {
-        await user.send(await Messages.listWarnings.call(this, logChannel.guild, user, warnings, {mod}));
+        await (mod??user).send(await Messages.listWarnings.call(this, logChannel.guild, user, warnings, {mod}));
       }
       catch(err) {
         this.master.logDebug(`Failed to DM user ${user.username}: (class:${err.constructor.name}) (code:${err.code}) (name:${err.name}) (status:${err.status}) (url:${err.url}) Message: ${err.message}`);

@@ -2,12 +2,12 @@
 Code base for all of the bots that provide moderator tools in moonmoon's subscriber Discord.
 
 ## Installation
-1. Checkout this repository onto your server.
-2. Obtain or create a [configuration file](#configuration-file) with the bot's ID and token, among other settings described below.
-3. Run `npm install` to install all of the dependencies.
+1. Checkout this repository onto your server into a directory of your choice. The directory with `package.json` will be referred to as the app directory.
+2. Obtain or create a [configuration file](#configuration-file) with the bot's ID and token, among other settings described below, and put it in the app directory.
+3. Run command `npm install` in the app directory to install all of the dependencies.
 
 ## Running the Bot
-Start the bot with `node .` to use default options.
+Start the bot with the command `node .` in the app directory to use default options.
 * If your configuration file is not `config.json` in the app directory, you can instead run `node . --config <filename>` to load your configuration file.
 
 To use PM2, you instead run `pm2 start --name="<bot name>" "node ."` or `pm2 start --name="<bot name>" node -- .`
@@ -20,7 +20,7 @@ Example configuration file:
 {
   "id": "1234567890",
   "token": "abc123-abc123-abc123-abc123",
-  "intents": ["DirectMessages"],
+  "intents": ["GuildMessages","MessageContent"],
   "applicationCommands": [
     {
       "filename": "imports/shutdown.mjs",
@@ -125,13 +125,27 @@ export function onStart(module) {
 export function onReady(module) {
   // Code.
 };
+
+/**
+ * Function to call if the module needs to be unloaded. It should close any
+ * database connections, unregister any event handlers, etc.
+ * @this Bot
+ * @param {Object} module - The stored data of the loaded module.
+ */
+export function onUnload(module) {
+  // Code.
+};
 ```
 Modules included with this bot are below:
 
 ### logger
 If `msgLogChannelId` option is provided, the bot logs the updating or deleting of messages to that channel for that server. Retains any attachments that are deleted with the message as well. Note that Discord does not allow you to fetch the original message once it has been updated or deleted, so the only messages that can be reported are those that have been cached in the bot's memory. The bot will try to cache as many messages as it can upon startup, but there will be a limit.
 
-If `joinLogChannelId` option is provided, the bot logs information about users who join and leave the server. If the bot has appropriate permissions, it will also log when invites are created and used.
+If `joinLogChannelId` option is provided, the bot logs information about users who join and leave the server to this channel. If the bot has appropriate permissions, it will also log when invites are created and used.
+
+If `alertLogChannelId` option is provided, then when the bot detects any message or user change that needs to be emphasized, it will be logged to this channel. *Note: Doesn't currently do anything.*
+
+**Note:** As of this writing, Discord.js does not support message forwarding in any way, so edits or deletion of forwarded messages will not be logged correctly. This will be fixed eventually.
 
 Requirements:
 * **Message Content Intent** for the bot in the [Discord Dev Portal](https://discord.com/developers/applications).
@@ -143,6 +157,7 @@ Requirements:
 Configuration Options (at least one must be provided):
 * **msgLogChannelId** - The snowflake ID of the channel where messages are to be logged.
 * **joinLogChannelId** - The snowflake ID of the channel where member joins and removals are to be logged.
+* **alertLogChannelId** - The snowflake ID of the channel where important messages or join/leave events need to be logged for extra visibility.
 
 ### modmail
 Allows users to send reports to the moderation team as a whole, and allows the moderation team to discuss their reports and interact with the user. When a user reports a message or sends a DM to the bot, the bot will create a ticket thread in the modmail channel with that information. If the user already has an open ticket, the new report/DM will be added to the existing ticket.
@@ -165,6 +180,7 @@ Manages the role that marks users as suspended, and logs disciplinary actions to
 
 Configuration Options:
 * **logChannelId** - The snowflake ID of the channel where pitbot will report all disciplinary actions that it takes.
+* **spamChannelId** - The snowflake ID of the channel where pitbot will report certain actions that tend to cause spam, such as users being pitted by bullet hell.
 * **pitRoleId** - The snowflake ID of the role to give to users who are currently suspended.
 * **modRoleId** - A string or array of strings. Each string is a snowflake ID of a moderator role, so the bot knows who the moderators are.
 * **databaseFile** - Filename of the SQLite database file within the `storage/` directory that stores all current and past disciplinary actions. *Default:* `pitbot.sqlite`

@@ -1,5 +1,5 @@
 /** @module classes/BotModule */
-import { GatewayIntentBits, Partials } from 'discord.js';
+import { GatewayIntentBits } from 'discord.js';
 
 /**
  * Encapsulates all of the methods for loading and running bot modules.
@@ -126,15 +126,11 @@ export default class BotModule {
     }
     
     // Verify the bot has the correct intents that the module needs.
-    let error = false;
-    this.imports.intents?.forEach(intent => {
+    for(let intent of this.imports.intents) {
       if(!this.bot.client.options.intents.has(GatewayIntentBits[intent])) {
-        error = true;
         this.bot.logError(`Bot module '${this.name}' requires the ${intent} intent, but the client was not constructed with that intent, so features that rely on it will not work.`);
       }
-    });
-    if (error)
-      return false;
+    }
     
     // Run the module's start method.
     if (typeof(this.imports.onStart) === 'function') {
@@ -146,6 +142,7 @@ export default class BotModule {
       }
       catch(err) {
         this.bot.logError(`Module '${this.name}' failed to start.`, err);
+        await this.unload().catch(err => null);
         return false;
       }
     }
@@ -173,6 +170,7 @@ export default class BotModule {
       }
       catch(err) {
         this.bot.logError(`Module '${this.name}' failed to ready.`, err);
+        await this.unload().catch(err => null);
         return false;
       }
     }

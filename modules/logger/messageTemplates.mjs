@@ -2,6 +2,7 @@
  * All of the templates for messages sent by the logger module.
  * @module modules/logger/messageTemplates
  */
+import * as Util from '../../imports/util.mjs';
 
 /**
  * Convert an Attachment into an embed object.
@@ -54,21 +55,6 @@ export async function attachmentToEmbed(attachment, overwrites={}) {
   return Object.assign(embed, overwrites);
 }
 
-function durationString(ms) {
-  if (ms > (86400000 * 365) * 2)
-    return `${(ms/(86400000 * 365)).toFixed(1)} years`;
-  else if (ms > (86400000 * 30) * 3)
-    return `${Math.round(ms/(86400000 * 30))} months`;
-  else if (ms > 86400000 * 2)
-    return `${Math.round(ms/86400000)} days`;
-  else if (ms > 3600000 * 3)
-    return `${Math.round(ms/3600000)} hours`;
-  else if (ms > 60000 * 3)
-    return `${Math.round(ms/60000)} minutes`;
-  else
-    return `${Math.round(ms/1000)} seconds`;
-}
-
 export async function inviteCreated(invite) {
   let response = {
     embeds: [{
@@ -106,7 +92,7 @@ export async function inviteCreated(invite) {
         },
         {
           name: 'Max Age',
-          value: durationString(invite.maxAge*1000),
+          value: Util.durationString(invite.maxAge*1000),
           inline: true,
         },
       ],
@@ -118,7 +104,7 @@ export async function inviteCreated(invite) {
 }
 
 export async function memberAdded(member, invite) {
-  let age = durationString(member.joinedTimestamp - member.user.createdTimestamp);
+  let age = Util.durationString(member.joinedTimestamp - member.user.createdTimestamp);
   let isNewAcct = member.joinedTimestamp - member.user.createdTimestamp < 86400000 * 7;
   let response = {
     embeds: [{
@@ -178,7 +164,7 @@ export async function memberAdded(member, invite) {
       });
       response.embeds[0].fields.push({
         name: 'Invite Lifetime',
-        value: durationString(invite.maxAge*1000),
+        value: Util.durationString(invite.maxAge*1000),
         inline: true,
       });
     }
@@ -188,7 +174,7 @@ export async function memberAdded(member, invite) {
 }
 
 export async function memberRemoved({user, member, reason}) {
-  let duration = member.joinedTimestamp ? durationString(Date.now() - member.joinedTimestamp) : 'unknown';
+  let duration = member.joinedTimestamp ? Util.durationString(Date.now() - member.joinedTimestamp) : 'unknown';
   let response = {
     embeds: [{
       title: `Member Removed`,

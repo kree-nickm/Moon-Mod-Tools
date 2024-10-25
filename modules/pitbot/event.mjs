@@ -45,6 +45,9 @@ export async function messageCreate(message) {
   if (message.author.bot)
     return;
   
+  if (!message.content?.startsWith('!'))
+    return;
+  
   let args = message.content.split(/\s+/g);
   if (args[0] === '!bh')
     return await handleBulletHell.call(this, message);
@@ -56,7 +59,7 @@ export async function messageCreate(message) {
       let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
       let severity = parseInt(args[2]);
       let comment = args.slice(3).join(' ');
-      return Strikes.add.call(this, user, message.author, severity, comment);
+      await Strikes.add.call(this, user, message.author, severity, comment);
     }
     return;
   }
@@ -65,7 +68,7 @@ export async function messageCreate(message) {
     if (isModerator && args.length > 1) {
       let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
       let amend = args.length > 2 && args[2] == 'amend';
-      return Strikes.release.call(this, user, message.author, amend, {message});
+      await Strikes.release.call(this, user, message.author, amend, {message});
     }
     return;
   }
@@ -77,13 +80,14 @@ export async function messageCreate(message) {
       user = (await this.users.fetch(args[1].replace(/[^0-9]/g, ''))) ?? message.author;
     else
       user = message.author;
-    return Strikes.list.call(this, user, mod, {message});
+    await Strikes.list.call(this, user, mod, {message});
+    return;
   }
   
   if (args[0] === '!removestrike') {
     if (isModerator && args.length > 1) {
       let strikeId = parseInt(args[1]);
-      return Strikes.remove.call(this, strikeId, {message});
+      await Strikes.remove.call(this, strikeId, {message});
     }
     return;
   }
@@ -92,7 +96,7 @@ export async function messageCreate(message) {
     if (isModerator && args.length > 2) {
       let strikeId = parseInt(args[1]);
       let comment = args.slice(2).join(' ');
-      return Strikes.comment.call(this, strikeId, comment, {message});
+      await Strikes.comment.call(this, strikeId, comment, {message});
     }
     return;
   }
@@ -101,7 +105,7 @@ export async function messageCreate(message) {
     if (isModerator && args.length > 2) {
       let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
       let comment = args.slice(2).join(' ');
-      return Warns.add.call(this, user, message.author, comment);
+      await Warns.add.call(this, user, message.author, comment);
     }
     return;
   }
@@ -113,7 +117,8 @@ export async function messageCreate(message) {
       user = (await this.users.fetch(args[1].replace(/[^0-9]/g, ''))) ?? message.author;
     else
       user = message.author;
-    return Warns.list.call(this, user, mod, {message});
+    await Warns.list.call(this, user, mod, {message});
+    return;
   }
 }
 
@@ -123,11 +128,12 @@ export async function messageCreate(message) {
  */
 async function handleBulletHell(message) {
   if (Math.random() >= 0.5) {
-    message.reply(await Messages.bulletHell.call(this, message));
+    await message.reply(await Messages.bulletHell.call(this, message));
+    await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date, messageLink) VALUES (?, ?, ?, ?)', message.author.id, 0, Date.now(), message.url);
   }
   else {
     let moderatorIds = await getModeratorIds.call(this);
-    this.master.logDebug(`BH Shooters:`, moderatorIds);
+    //this.master.logDebug(`BH Shooters:`, moderatorIds);
     let moderatorId = moderatorIds[Math.floor(Math.random()*moderatorIds.length)];
     let moderator = await this.users.fetch(moderatorId);
     

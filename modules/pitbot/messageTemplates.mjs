@@ -4,12 +4,13 @@
  */
 
 /**
- * Message sent to the channel when a user survives bullet hell.
+ * Message sent to the channel when a user triggers bullet hell.
  * @this discord.js/Client
  * @param {discord.js/Message} message - The `!bh` message the user typed.
- * @param {?discord.js/User} [moderator] - The moderator credited for the bullet, or null if the bullets all missed.
+ * @param {?discord.js/User} [moderator] - The moderator credited for the bullet, or null if the user was not hit.
  * @param {Object} [options] - Options for the message and timeout.
- * @param {string} [options.bullet='bullet'] - Custom name of the bullet that hit.
+ * @param {string} [options.prefix='tarnished'] - Bullet name prefix.
+ * @param {string} [options.suffix='of no renown'] - Bullet name suffix.
  * @param {number} [options.duration=3600000] - Duration of the timeout in milliseconds.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
@@ -33,6 +34,12 @@ export async function bulletHell(message, moderator=null, {prefix='tarnished',su
   return response;
 }
 
+/**
+ * Automated message for when a user was released from or sent to the pit.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user being released from or sent to the pit.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function pitNotice(user, added, reason, release) {
   let response = {
     embeds: [],
@@ -74,6 +81,12 @@ export async function pitNotice(user, added, reason, release) {
   return response;
 }
 
+/**
+ * Automated message for when a user has reached the maximum number of strikes.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user who has reached maximum strikes.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function maximumStrikes(user) {
   let response = {
     embeds: [{
@@ -87,19 +100,26 @@ export async function maximumStrikes(user) {
   return response;
 }
 
+/**
+ * Message sent to the log channel when a user receives a strike.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user who received a strike.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function strikeConfirmation(user, mod, severity, comment, strikeReport, notifSent) {
   let response = {
     embeds: [{
       title: 'Strike Issued',
-      description: `${mod} issued a strike to ${user}. Timed out for ${strikeReport.durationString}.`,
+      color: 0xff0000,
+      description: `${mod} issued a level ${severity} strike to ${user}.\nTimed out for ${strikeReport.durationString}.`,
       fields: [
         {
           name: 'Reason',
           value: comment,
         },
         {
-          name: 'Severity',
-          value: severity,
+          name: 'Strike ID',
+          value: strikeReport.active[0]?.strikeId ?? '???',
           inline: true,
         },
         {
@@ -120,17 +140,23 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
   if (notifSent === false) {
     response.embeds[0].fields.push({
       name: `DM Error`,
-      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+      value: `Could not notify ${user} about this strike. They may need to open their DMs from users from the same server.`,
     });
   }
   
   return response;
 }
 
+/**
+ * Message sent to a user when they have received a strike.
+ * @this discord.js/Client
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function strikeNotification(guild, severity='', comment='', strikeReport) {
   let response = {
     embeds: [{
       title: `You have received a strike.`,
+      color: 0xff0000,
       //description: comment,
       fields: [
         {
@@ -164,11 +190,18 @@ export async function strikeNotification(guild, severity='', comment='', strikeR
   return response;
 }
 
+/**
+ * Message sent to the log channel when a user gets released by a moderator.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user being released from the pit.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function releaseConfirmation(user, mod, amend, strikeReport, notifSent) {
   let response = {
     embeds: [{
       title: 'User Released By Command',
-      description: `${mod} released ${user} from the pit.` + (amend ? ' Their most recent strike was also removed.' : ''),
+      color: 0x00ff00,
+      description: `${mod} released ${user} from the pit.` + (amend ? `\nTheir most recent strike was also removed.` : ''),
       fields: [
         {
           name: 'Active Strikes',
@@ -183,17 +216,23 @@ export async function releaseConfirmation(user, mod, amend, strikeReport, notifS
   if (notifSent === false) {
     response.embeds[0].fields.push({
       name: `DM Error`,
-      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+      value: `Could not notify ${user} about their release. They may need to open their DMs from users from the same server.`,
     });
   }
   
   return response;
 }
 
+/**
+ * Message sent to a user when they are released by a moderator.
+ * @this discord.js/Client
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function releaseNotification(guild, amend, strikeReport) {
   let response = {
     embeds: [{
       title: 'You have been released from the pit.',
+      color: 0x00ff00,
       description: amend ? 'Your most recent strike was also removed.' : undefined,
       fields: [
         {
@@ -213,6 +252,11 @@ export async function releaseNotification(guild, amend, strikeReport) {
   return response;
 }
 
+/**
+ * Reply that is sent if a moderator tries to remove an invalid strike.
+ * @this discord.js/Client
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function removeFailed(strikeId, strike) {
   let response = {
     ephemeral: true,
@@ -227,6 +271,12 @@ export async function removeFailed(strikeId, strike) {
   return response;
 }
 
+/**
+ * Message sent to the log channel when one of a user's strike has been removed.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user whose strike is being removed.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function removeConfirmation(user, mod, strike, strikeReport, notifSent) {
   let response = {
     embeds: [{
@@ -264,13 +314,18 @@ export async function removeConfirmation(user, mod, strike, strikeReport, notifS
   if (notifSent === false) {
     response.embeds[0].fields.push({
       name: `DM Error`,
-      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+      value: `Could not notify ${user} about this strike removal. They may need to open their DMs from users from the same server.`,
     });
   }
   
   return response;
 }
 
+/**
+ * Message sent to a user when one of their strikes has been removed.
+ * @this discord.js/Client
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function removeNotification(guild, strike, strikeReport) {
   let response = {
     embeds: [{
@@ -302,6 +357,12 @@ export async function removeNotification(guild, strike, strikeReport) {
   return response;
 }
 
+/**
+ * Message sent when a user's strike list is requested.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user whose strikes to list.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={}) {
   let response = {
     ephemeral,
@@ -377,6 +438,11 @@ export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={})
   return response;
 }
 
+/**
+ * Reply that is sent if a moderator tries to edit the comment of an invalid strike.
+ * @this discord.js/Client
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function commentFailed(strikeId) {
   let response = {
     ephemeral: true,
@@ -389,6 +455,11 @@ export async function commentFailed(strikeId) {
   return response;
 }
 
+/**
+ * Message sent to the log channel when a moderator edits a strike comment.
+ * @this discord.js/Client
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function commentConfirmation(mod, strike, comment) {
   let response = {
     embeds: [{
@@ -425,6 +496,12 @@ export async function commentConfirmation(mod, strike, comment) {
   return response;
 }
 
+/**
+ * Message sent to the log channel when a user receives a warning.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user being warned.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function warnConfirmation(user, mod, comment, warnings, notifSent) {
   let response = {
     embeds: [{
@@ -438,13 +515,18 @@ export async function warnConfirmation(user, mod, comment, warnings, notifSent) 
   if (notifSent === false) {
     response.embeds[0].fields.push({
       name: `DM Error`,
-      value: `Could not notify ${user} of this change. They may need to open their DMs from users from the same server.`,
+      value: `Could not notify ${user} about this warning. They may need to open their DMs from users from the same server.`,
     });
   }
   
   return response;
 }
 
+/**
+ * Message sent to a user when they have received a warning.
+ * @this discord.js/Client
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function warnNotification(guild, comment, warnings) {
   let response = {
     embeds: [{
@@ -461,6 +543,12 @@ export async function warnNotification(guild, comment, warnings) {
   return response;
 }
 
+/**
+ * Message sent when a user's warning list is requested.
+ * @this discord.js/Client
+ * @param {discord.js/User} user - The user whose warnings to list.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function listWarnings(guild, user, warnings, {ephemeral,mod}={}) {
   let response = {
     ephemeral,
@@ -503,6 +591,13 @@ export async function listWarnings(guild, user, warnings, {ephemeral,mod}={}) {
   return response;
 }
 
+/**
+ * Message sent to the log channel upon strike(s) expiration.
+ * @this discord.js/Client
+ * @param {Object} options - Message options.
+ * @param {Strike[]} options.expiredStrikes - Array of strike records from the database.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
 export async function strikesExpired({expiredStrikes}) {
   let userIds = expiredStrikes.map(strike => strike.userId);
   let users = [...new Set(userIds)].map(userId => `<@${userId}>`).join(' ');
