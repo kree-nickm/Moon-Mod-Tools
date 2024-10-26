@@ -40,7 +40,7 @@ let activeStrikeFactor = {
  * @property {number} date - Unix timestamp of the strike in milliseconds.
  * @property {boolean} expired - Whether the strike has expired and been marked as such.
  */
- 
+
 /**
  * @typedef {Object} StrikeReport
  * @property {Strike[]} active - List of active strikes, most recent first.
@@ -51,7 +51,7 @@ let activeStrikeFactor = {
  * @property {Strike[]} newlyExpired - List of strikes that just expired.
  * @property {string} durationString - The duration of the strike as a readable string, e.g. '8 hours'
  */
- 
+
 /**
  * @param {string} userId - Snowflake ID of the user whose strike data to fetch.
  * @this discord.js/Client

@@ -5,6 +5,16 @@
 import { getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 
+/**
+ * Database row for a warning.
+ * @typedef {Object} Warning
+ * @property {number} warnId - ID of the warning, which corresponds to the database row ID.
+ * @property {string} userId - Snowflake ID of the user who was warned.
+ * @property {string} modId - Snowflake ID of the mod who issued the warning.
+ * @property {string} comment - Reason for the warning.
+ * @property {number} date - Unix timestamp of the warning in milliseconds.
+ */
+
 export async function add(user, mod, comment) {
   let module = this.master.modules.pitbot;
   let logChannel = await this.channels.fetch(module.options.logChannelId);

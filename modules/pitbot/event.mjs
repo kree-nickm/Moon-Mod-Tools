@@ -123,10 +123,19 @@ export async function messageCreate(message) {
 }
 
 /**
+ * Handles the 'bullet hell' feature of the bot.
  * @this discord.js/Client
  * @param {discord.js/Message} message - The `!bh` message the user typed.
  */
 async function handleBulletHell(message) {
+  let module = this.master.modules.pitbot;
+  let bhCD = this.master.config.id === '1040775664539807804' ? 30000 : 86400000;
+  let bullethell = await module.database.get('SELECT * FROM bullethell WHERE userId=? ORDER BY date DESC LIMIT 1', message.author.id);
+  if (bullethell && Date.now() - bullethell.date < bhCD) {
+    await message.react('⏲');
+    return;
+  }
+  
   if (Math.random() >= 0.5) {
     await message.reply(await Messages.bulletHell.call(this, message));
     await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date, messageLink) VALUES (?, ?, ?, ?)', message.author.id, 0, Date.now(), message.url);
@@ -158,8 +167,11 @@ async function handleBulletHell(message) {
       duration = duration / 3600;
     
     await message.reply(await Messages.bulletHell.call(this, message, moderator, {prefix, suffix, duration}));
+    
     await new Promise((resolve, reject) => setTimeout(() => resolve(), 5000));
+    
     await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date, messageLink) VALUES (?, ?, ?, ?)', message.author.id, duration, Date.now(), message.url);
-    await updateRole.call(this, message.author.id, 'handleBulletHell');
+    let roleData = await updateRole.call(this, message.author.id, 'handleBulletHell');
+    await message.author.send(await Messages.bulletHellNotification.call(this, roleData.bullethell));
   }
 }

@@ -2,6 +2,7 @@
  * All of the templates for messages sent by the pitbot module.
  * @module modules/pitbot/messageTemplates
  */
+import * as Util from '../../imports/util.mjs';
 
 /**
  * Message sent to the channel when a user triggers bullet hell.
@@ -35,9 +36,38 @@ export async function bulletHell(message, moderator=null, {prefix='tarnished',su
 }
 
 /**
+ * Message sent to the user when they are pitted in bullet hell.
+ * @this discord.js/Client
+ * @param {Object} bulletHell - Database row of the bullet hell timeout.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
+export async function bulletHellNotification(bulletHell) {
+  let response = {
+    embeds: [{
+      color: 0x00ff00,
+      timestamp: new Date().toISOString(),
+      fields: [],
+    }],
+  };
+  
+  response.embeds[0].title = `Bullet Hell Winner`;
+  response.embeds[0].description = `You've been pitted for ${Util.durationString(bulletHell.duration)} for losing the Bullet Hell.\nThis timeout doesn't add any strikes to your account.\n\n... loser.`;
+  
+  response.embeds[0].fields.push({
+    name: 'Release (Appx)',
+    value: `<t:${Math.floor((bulletHell.date+bulletHell.duration)/1000)}:R>`,
+  });
+  
+  return response;
+}
+
+/**
  * Automated message for when a user was released from or sent to the pit.
  * @this discord.js/Client
  * @param {discord.js/User} user - The user being released from or sent to the pit.
+ * @param {boolean} added - Whether the user is being added to the pit role.
+ * @param {string} [reason] - The determined reason for their pit status change.
+ * @param {number} [release] - Unix timestamp of their release, in milliseconds.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function pitNotice(user, added, reason, release) {
@@ -103,7 +133,12 @@ export async function maximumStrikes(user) {
 /**
  * Message sent to the log channel when a user receives a strike.
  * @this discord.js/Client
- * @param {discord.js/User} user - The user who received a strike.
+ * @param {discord.js/User} user - The user who received the strike.
+ * @param {discord.js/User} mod - The mod who issued the strike.
+ * @param {number} severity - The severity of the strike.
+ * @param {string} comment - The reason for the strike.
+ * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {?boolean} [notifSent] - True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function strikeConfirmation(user, mod, severity, comment, strikeReport, notifSent) {
@@ -150,6 +185,10 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
 /**
  * Message sent to a user when they have received a strike.
  * @this discord.js/Client
+ * @param {discord.js/Guild} guild - The guild where the strike took place.
+ * @param {number} [severity=''] - The severity of the strike.
+ * @param {string} [comment=''] - The reason for the strike.
+ * @param {StrikeReport} strikeReport - All of the user's strike data.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function strikeNotification(guild, severity='', comment='', strikeReport) {
@@ -194,6 +233,10 @@ export async function strikeNotification(guild, severity='', comment='', strikeR
  * Message sent to the log channel when a user gets released by a moderator.
  * @this discord.js/Client
  * @param {discord.js/User} user - The user being released from the pit.
+ * @param {discord.js/User} mod - The mod who released the user.
+ * @param {boolean} amend - Whether the most recent strike was also removed.
+ * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {?boolean} [notifSent] - True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function releaseConfirmation(user, mod, amend, strikeReport, notifSent) {
@@ -226,6 +269,9 @@ export async function releaseConfirmation(user, mod, amend, strikeReport, notifS
 /**
  * Message sent to a user when they are released by a moderator.
  * @this discord.js/Client
+ * @param {discord.js/Guild} guild - The guild where the strike took place.
+ * @param {boolean} amend - Whether the most recent strike was also removed.
+ * @param {StrikeReport} strikeReport - All of the user's strike data.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function releaseNotification(guild, amend, strikeReport) {
@@ -255,6 +301,8 @@ export async function releaseNotification(guild, amend, strikeReport) {
 /**
  * Reply that is sent if a moderator tries to remove an invalid strike.
  * @this discord.js/Client
+ * @param {number} strikeId - The strike ID that failed to be removed.
+ * @param {Strike} [strike] - The strike, if it could be fetched.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function removeFailed(strikeId, strike) {
@@ -275,6 +323,10 @@ export async function removeFailed(strikeId, strike) {
  * Message sent to the log channel when one of a user's strike has been removed.
  * @this discord.js/Client
  * @param {discord.js/User} user - The user whose strike is being removed.
+ * @param {discord.js/User} mod - The mod who removed the strike.
+ * @param {Strike} strike - The strike that was removed.
+ * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {?boolean} [notifSent] - True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function removeConfirmation(user, mod, strike, strikeReport, notifSent) {
@@ -324,6 +376,9 @@ export async function removeConfirmation(user, mod, strike, strikeReport, notifS
 /**
  * Message sent to a user when one of their strikes has been removed.
  * @this discord.js/Client
+ * @param {discord.js/Guild} guild - The guild where the strike took place.
+ * @param {Strike} strike - The strike that was removed.
+ * @param {StrikeReport} strikeReport - All of the user's strike data.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function removeNotification(guild, strike, strikeReport) {
@@ -360,7 +415,12 @@ export async function removeNotification(guild, strike, strikeReport) {
 /**
  * Message sent when a user's strike list is requested.
  * @this discord.js/Client
+ * @param {discord.js/Guild} guild - The guild where the strikes took place.
  * @param {discord.js/User} user - The user whose strikes to list.
+ * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {Object} options - Additional information for the message.
+ * @param {boolean} [options.ephemeral] - Whether the message should be ephemeral.
+ * @param {discord.js/User} [options.mod] - The moderator requesting the strikes, if any.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={}) {
@@ -441,6 +501,7 @@ export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={})
 /**
  * Reply that is sent if a moderator tries to edit the comment of an invalid strike.
  * @this discord.js/Client
+ * @param {number} strikeId - The strike ID that failed to be edited.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function commentFailed(strikeId) {
@@ -458,6 +519,9 @@ export async function commentFailed(strikeId) {
 /**
  * Message sent to the log channel when a moderator edits a strike comment.
  * @this discord.js/Client
+ * @param {discord.js/User} mod - The mod who edited the strike.
+ * @param {Strike} strike - The strike that was edited.
+ * @param {string} comment - The new reason for the strike.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function commentConfirmation(mod, strike, comment) {
@@ -500,6 +564,10 @@ export async function commentConfirmation(mod, strike, comment) {
  * Message sent to the log channel when a user receives a warning.
  * @this discord.js/Client
  * @param {discord.js/User} user - The user being warned.
+ * @param {discord.js/User} mod - The mod who issued the warning.
+ * @param {string} comment - The reason for the warning.
+ * @param {Warning[]} warnings - Array of the users warnings.
+ * @param {?boolean} [notifSent] - True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function warnConfirmation(user, mod, comment, warnings, notifSent) {
@@ -525,6 +593,9 @@ export async function warnConfirmation(user, mod, comment, warnings, notifSent) 
 /**
  * Message sent to a user when they have received a warning.
  * @this discord.js/Client
+ * @param {discord.js/Guild} guild - The guild where the warning took place.
+ * @param {string} comment - The reason for the warning.
+ * @param {Warning[]} warnings - Array of the users warnings.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function warnNotification(guild, comment, warnings) {
@@ -546,7 +617,12 @@ export async function warnNotification(guild, comment, warnings) {
 /**
  * Message sent when a user's warning list is requested.
  * @this discord.js/Client
+ * @param {discord.js/Guild} guild - The guild where the warnings took place.
  * @param {discord.js/User} user - The user whose warnings to list.
+ * @param {Warning[]} warnings - Array of the users warnings.
+ * @param {Object} options - Additional information for the message.
+ * @param {boolean} [options.ephemeral] - Whether the message should be ephemeral.
+ * @param {discord.js/User} [options.mod] - The moderator requesting the warnings, if any.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
 export async function listWarnings(guild, user, warnings, {ephemeral,mod}={}) {

@@ -548,7 +548,7 @@
 
     
 
-    <h4 class="name" id=".commentConfirmation"><span class="type-signature type-signature-static">(static) </span>commentConfirmation<span class="signature">()</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".commentConfirmation"><span class="type-signature type-signature-static">(static) </span>commentConfirmation<span class="signature">(mod, strike, comment)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -609,6 +609,104 @@
 
 
 
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>mod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The mod who edited the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strike</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Strike</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The strike that was edited.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>comment</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The new reason for the strike.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
 
 
 
@@ -654,7 +752,7 @@
 
     
 
-    <h4 class="name" id=".commentFailed"><span class="type-signature type-signature-static">(static) </span>commentFailed<span class="signature">()</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".commentFailed"><span class="type-signature type-signature-static">(static) </span>commentFailed<span class="signature">(strikeId)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -715,6 +813,56 @@
 
 
 
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The strike ID that failed to be edited.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
 
 
 
@@ -760,7 +908,7 @@
 
     
 
-    <h4 class="name" id=".listStrikes"><span class="type-signature type-signature-static">(static) </span>listStrikes<span class="signature">(user)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".listStrikes"><span class="type-signature type-signature-static">(static) </span>listStrikes<span class="signature">(guild, user, strikeReport, options)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -846,6 +994,30 @@
 
         <tr>
             
+                <td class="name"><code>guild</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/Guild</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The guild where the strikes took place.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
                 <td class="name"><code>user</code></td>
             
 
@@ -864,6 +1036,150 @@
             
 
             <td class="description last"><p>The user whose strikes to list.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeReport</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">StrikeReport</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>All of the user's strike data.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Additional information for the message.</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>ephemeral</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Whether the message should be ephemeral.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The moderator requesting the strikes, if any.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -916,7 +1232,7 @@
 
     
 
-    <h4 class="name" id=".listWarnings"><span class="type-signature type-signature-static">(static) </span>listWarnings<span class="signature">(user)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".listWarnings"><span class="type-signature type-signature-static">(static) </span>listWarnings<span class="signature">(guild, user, warnings, options)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -1002,6 +1318,30 @@
 
         <tr>
             
+                <td class="name"><code>guild</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/Guild</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The guild where the warnings took place.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
                 <td class="name"><code>user</code></td>
             
 
@@ -1020,6 +1360,150 @@
             
 
             <td class="description last"><p>The user whose warnings to list.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>warnings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Warning></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Array of the users warnings.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Object</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Additional information for the message.</p>
+                <h6>Properties</h6>
+                
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>ephemeral</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Whether the message should be ephemeral.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The moderator requesting the warnings, if any.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -1228,7 +1712,7 @@
 
     
 
-    <h4 class="name" id=".pitNotice"><span class="type-signature type-signature-static">(static) </span>pitNotice<span class="signature">(user)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".pitNotice"><span class="type-signature type-signature-static">(static) </span>pitNotice<span class="signature">(user, added, reason<span class="signature-attributes">opt</span>, release<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -1302,6 +1786,8 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -1328,10 +1814,118 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last"><p>The user being released from or sent to the pit.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>added</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Whether the user is being added to the pit role.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>reason</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The determined reason for their pit status change.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>release</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Unix timestamp of their release, in milliseconds.</p></td>
         </tr>
 
     
@@ -1384,7 +1978,7 @@
 
     
 
-    <h4 class="name" id=".releaseConfirmation"><span class="type-signature type-signature-static">(static) </span>releaseConfirmation<span class="signature">(user)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".releaseConfirmation"><span class="type-signature type-signature-static">(static) </span>releaseConfirmation<span class="signature">(user, mod, amend, strikeReport, notifSent<span class="signature-attributes">opt, nullable</span>)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -1458,6 +2052,8 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -1484,10 +2080,150 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last"><p>The user being released from the pit.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The mod who released the user.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>amend</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Whether the most recent strike was also removed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeReport</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">StrikeReport</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>All of the user's strike data.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>notifSent</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.</p></td>
         </tr>
 
     
@@ -1540,7 +2276,7 @@
 
     
 
-    <h4 class="name" id=".releaseNotification"><span class="type-signature type-signature-static">(static) </span>releaseNotification<span class="signature">()</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".releaseNotification"><span class="type-signature type-signature-static">(static) </span>releaseNotification<span class="signature">(guild, amend, strikeReport)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -1601,6 +2337,104 @@
 
 
 
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>guild</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/Guild</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The guild where the strike took place.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>amend</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Whether the most recent strike was also removed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeReport</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">StrikeReport</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>All of the user's strike data.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
 
 
 
@@ -1646,7 +2480,7 @@
 
     
 
-    <h4 class="name" id=".removeConfirmation"><span class="type-signature type-signature-static">(static) </span>removeConfirmation<span class="signature">(user)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".removeConfirmation"><span class="type-signature type-signature-static">(static) </span>removeConfirmation<span class="signature">(user, mod, strike, strikeReport, notifSent<span class="signature-attributes">opt, nullable</span>)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -1720,6 +2554,8 @@
         <th>Type</th>
 
         
+        <th>Attributes</th>
+        
 
         
 
@@ -1746,10 +2582,150 @@
             </td>
 
             
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
 
             
 
             <td class="description last"><p>The user whose strike is being removed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The mod who removed the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strike</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Strike</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The strike that was removed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeReport</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">StrikeReport</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>All of the user's strike data.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>notifSent</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.</p></td>
         </tr>
 
     
@@ -1802,7 +2778,7 @@
 
     
 
-    <h4 class="name" id=".removeFailed"><span class="type-signature type-signature-static">(static) </span>removeFailed<span class="signature">()</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".removeFailed"><span class="type-signature type-signature-static">(static) </span>removeFailed<span class="signature">(strikeId, strike<span class="signature-attributes">opt</span>)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -1863,6 +2839,100 @@
 
 
 
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeId</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The strike ID that failed to be removed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strike</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Strike</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The strike, if it could be fetched.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
 
 
 
@@ -1908,7 +2978,7 @@
 
     
 
-    <h4 class="name" id=".removeNotification"><span class="type-signature type-signature-static">(static) </span>removeNotification<span class="signature">()</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".removeNotification"><span class="type-signature type-signature-static">(static) </span>removeNotification<span class="signature">(guild, strike, strikeReport)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -1919,112 +2989,6 @@
     
     <dt class="tag-description">Description:</dt>
     <dd class="tag-description"><ul class="dummy"><li><p>Message sent to a user when one of their strikes has been removed.</p></li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-    <h5 class="h5-this">This:</h5>
-    <ul><li>discord.js/Client</li></ul>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5 class="h5-returns">Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>The options for creating and sending the message.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">discord.js/BaseMessageOptions</span>
-
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".strikeConfirmation"><span class="type-signature type-signature-static">(static) </span>strikeConfirmation<span class="signature">(user)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
-
-    
-
-
-
-
-<dl class="details">
-    
-    <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>Message sent to the log channel when a user receives a strike.</p></li></ul></dd>
     
 
     
@@ -2100,13 +3064,13 @@
 
         <tr>
             
-                <td class="name"><code>user</code></td>
+                <td class="name"><code>guild</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">discord.js/User</span>
+<span class="param-type">discord.js/Guild</span>
 
 
 
@@ -2117,7 +3081,55 @@
 
             
 
-            <td class="description last"><p>The user who received a strike.</p></td>
+            <td class="description last"><p>The guild where the strike took place.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strike</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Strike</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The strike that was removed.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeReport</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">StrikeReport</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>All of the user's strike data.</p></td>
         </tr>
 
     
@@ -2170,7 +3182,337 @@
 
     
 
-    <h4 class="name" id=".strikeNotification"><span class="type-signature type-signature-static">(static) </span>strikeNotification<span class="signature">()</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".strikeConfirmation"><span class="type-signature type-signature-static">(static) </span>strikeConfirmation<span class="signature">(user, mod, severity, comment, strikeReport, notifSent<span class="signature-attributes">opt, nullable</span>)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Message sent to the log channel when a user receives a strike.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-this">This:</h5>
+    <ul><li>discord.js/Client</li></ul>
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>user</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The user who received the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The mod who issued the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>severity</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The severity of the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>comment</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The reason for the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeReport</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">StrikeReport</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>All of the user's strike data.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>notifSent</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The options for creating and sending the message.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">discord.js/BaseMessageOptions</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".strikeNotification"><span class="type-signature type-signature-static">(static) </span>strikeNotification<span class="signature">(guild, severity<span class="signature-attributes">opt</span>, comment<span class="signature-attributes">opt</span>, strikeReport)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -2229,6 +3571,188 @@
 
 
 
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+        <th>Default</th>
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>guild</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/Guild</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>The guild where the strike took place.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>severity</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>''</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>The severity of the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>comment</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                    <code>''</code>
+                
+                </td>
+            
+
+            <td class="description last"><p>The reason for the strike.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>strikeReport</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">StrikeReport</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+                <td class="default">
+                
+                </td>
+            
+
+            <td class="description last"><p>All of the user's strike data.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
 
 
 
@@ -2482,7 +4006,7 @@
 
     
 
-    <h4 class="name" id=".warnConfirmation"><span class="type-signature type-signature-static">(static) </span>warnConfirmation<span class="signature">(user)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+    <h4 class="name" id=".warnConfirmation"><span class="type-signature type-signature-static">(static) </span>warnConfirmation<span class="signature">(user, mod, comment, warnings, notifSent<span class="signature-attributes">opt, nullable</span>)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
 
     
 
@@ -2493,6 +4017,304 @@
     
     <dt class="tag-description">Description:</dt>
     <dd class="tag-description"><ul class="dummy"><li><p>Message sent to the log channel when a user receives a warning.</p></li></ul></dd>
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+    <h5 class="h5-this">This:</h5>
+    <ul><li>discord.js/Client</li></ul>
+
+
+
+
+
+    <h5 class="h5-parameters">Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Attributes</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>user</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The user being warned.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>mod</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">discord.js/User</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The mod who issued the warning.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>comment</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>The reason for the warning.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>warnings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Warning></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Array of the users warnings.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>notifSent</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">boolean</span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+                    &lt;nullable><br>
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5 class="h5-returns">Returns:</h5>
+
+        
+<div class="param-desc">
+    <p>The options for creating and sending the message.</p>
+</div>
+
+
+
+<dl class="param-type">
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">discord.js/BaseMessageOptions</span>
+
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".warnNotification"><span class="type-signature type-signature-static">(static) </span>warnNotification<span class="signature">(guild, comment, warnings)</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
+
+    
+
+
+
+
+<dl class="details">
+    
+    <dt class="tag-description">Description:</dt>
+    <dd class="tag-description"><ul class="dummy"><li><p>Message sent to a user when they have received a warning.</p></li></ul></dd>
     
 
     
@@ -2568,13 +4390,13 @@
 
         <tr>
             
-                <td class="name"><code>user</code></td>
+                <td class="name"><code>guild</code></td>
             
 
             <td class="type">
             
                 
-<span class="param-type">discord.js/User</span>
+<span class="param-type">discord.js/Guild</span>
 
 
 
@@ -2585,118 +4407,60 @@
 
             
 
-            <td class="description last"><p>The user being warned.</p></td>
+            <td class="description last"><p>The guild where the warning took place.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>comment</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The reason for the warning.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>warnings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;Warning></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Array of the users warnings.</p></td>
         </tr>
 
     
     </tbody>
 </table>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5 class="h5-returns">Returns:</h5>
-
-        
-<div class="param-desc">
-    <p>The options for creating and sending the message.</p>
-</div>
-
-
-
-<dl class="param-type">
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">discord.js/BaseMessageOptions</span>
-
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-        
-            
-
-    
-
-    <h4 class="name" id=".warnNotification"><span class="type-signature type-signature-static">(static) </span>warnNotification<span class="signature">()</span><span class="type-signature"> &rarr; {discord.js/BaseMessageOptions}</span></h4>
-
-    
-
-
-
-
-<dl class="details">
-    
-    <dt class="tag-description">Description:</dt>
-    <dd class="tag-description"><ul class="dummy"><li><p>Message sent to a user when they have received a warning.</p></li></ul></dd>
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-    <h5 class="h5-this">This:</h5>
-    <ul><li>discord.js/Client</li></ul>
-
-
-
 
 
 
@@ -2759,7 +4523,7 @@
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Thu Oct 24 2024 22:09:04 GMT-0500 (Central Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 4.0.3</a> on Fri Oct 25 2024 13:53:08 GMT-0500 (Central Daylight Time) using the <a href="https://github.com/clenemt/docdash">docdash</a> theme.
 </footer>
 
 <script>prettyPrint();</script>

@@ -105,7 +105,7 @@ export async function inviteCreated(invite) {
 
 export async function memberAdded(member, invite) {
   let age = Util.durationString(member.joinedTimestamp - member.user.createdTimestamp);
-  let isNewAcct = member.joinedTimestamp - member.user.createdTimestamp < 86400000 * 7;
+  let isNewAcct = member.joinedTimestamp - member.user.createdTimestamp < 86400000 * 14;
   let response = {
     embeds: [{
       title: `Member Added`,
@@ -147,7 +147,9 @@ export async function memberAdded(member, invite) {
       });
       response.embeds[0].fields.push({
         name: 'Invite Date',
-        value: `<t:${Math.round(invite.createdTimestamp/1000)}:f>`,
+        value: invite.createdTimestamp
+          ? `<t:${Math.round(invite.createdTimestamp/1000)}:f>`
+          : 'unknown',
         inline: true,
       });
     }
@@ -174,7 +176,9 @@ export async function memberAdded(member, invite) {
 }
 
 export async function memberRemoved({user, member, reason}) {
-  let duration = member.joinedTimestamp ? Util.durationString(Date.now() - member.joinedTimestamp) : 'unknown';
+  let duration = member?.joinedTimestamp
+    ? Util.durationString(Date.now() - member.joinedTimestamp)
+    : 'unknown';
   let response = {
     embeds: [{
       title: `Member Removed`,
