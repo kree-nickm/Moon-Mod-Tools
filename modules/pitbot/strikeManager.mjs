@@ -5,10 +5,21 @@
 import { updateRole, getStrikes, getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 
-export async function add(user, mod, severity, comment) {
+export async function add(user, mod, severity, comment='*No reason given.*') {
   let module = this.master.modules.pitbot;
-  let logChannel = await this.channels.fetch(module.options.logChannelId);
   
+  // Validate input.
+  if (!user)
+    throw new Error(`Invalid user.`);
+  
+  if (!mod)
+    throw new Error(`Invalid moderator.`);
+  
+  if (isNaN(severity) || severity < 1 || severity > 5)
+    throw new Error(`Invalid severity. Must be a number from 1 to 5.`);
+  
+  // Do the add.
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
   await module.database.run('INSERT INTO strikes (userId, modId, comment, severity, date) VALUES (?, ?, ?, ?, ?)', user.id, mod.id, comment, severity, Date.now());
   let pitData = await updateRole.call(this, user.id, 'add');
   
@@ -27,8 +38,16 @@ export async function add(user, mod, severity, comment) {
   }
 }
 
-export async function release(user, mod, amend, {message, interaction}={}) {
+export async function release(user, mod, amend=false, {message, interaction}={}) {
   let module = this.master.modules.pitbot;
+  
+  // Validate input.
+  if (!user)
+    throw new Error(`Invalid user.`);
+  
+  if (!mod)
+    throw new Error(`Invalid moderator.`);
+  
   let logChannel = await this.channels.fetch(module.options.logChannelId);
   let pitData = await updateRole.call(this, user.id, 'list');
   if (pitData.strikes.releaseTime < Date.now() && (pitData.bullethell?.releaseTime??0) < Date.now()) {
@@ -60,6 +79,11 @@ export async function release(user, mod, amend, {message, interaction}={}) {
 
 export async function remove(strikeId, {message, interaction}={}) {
   let module = this.master.modules.pitbot;
+  
+  // Validate input.
+  if (isNaN(strikeId))
+    throw new Error(`Invalid strikeId. Must be a number.`);
+  
   let logChannel = await this.channels.fetch(module.options.logChannelId);
   let replyTo = interaction ?? message;
   let mod = interaction?.user ?? message?.author;
@@ -87,8 +111,15 @@ export async function remove(strikeId, {message, interaction}={}) {
 
 export async function list(user, mod, {message, interaction}={}) {
   let module = this.master.modules.pitbot;
-  let logChannel = await this.channels.fetch(module.options.logChannelId);
   
+  // Validate input.
+  if (!user)
+    throw new Error(`Invalid user.`);
+  
+  if (!mod)
+    throw new Error(`Invalid moderator.`);
+  
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
   let strikeReport = await getStrikes.call(this, user.id);
   
   if (interaction)
@@ -108,8 +139,13 @@ export async function list(user, mod, {message, interaction}={}) {
   }
 }
 
-export async function comment(strikeId, comment, {message, interaction}={}) {
+export async function comment(strikeId, comment='*No reason given.*', {message, interaction}={}) {
   let module = this.master.modules.pitbot;
+  
+  // Validate input.
+  if (isNaN(strikeId))
+    throw new Error(`Invalid strikeId. Must be a number.`);
+  
   let logChannel = await this.channels.fetch(module.options.logChannelId);
   let replyTo = interaction ?? message;
   let mod = interaction?.user ?? message?.author;

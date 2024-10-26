@@ -55,20 +55,34 @@ export async function messageCreate(message) {
   let isModerator = (await getModeratorIds.call(this, true)).includes(message.author.id);
   
   if (args[0] === '!timeout') {
-    if (isModerator && args.length > 3) {
-      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
-      let severity = parseInt(args[2]);
-      let comment = args.slice(3).join(' ');
-      await Strikes.add.call(this, user, message.author, severity, comment);
+    if (isModerator) {
+      if (args.length > 2) {
+        let user = await this.users.fetch(args[1].replace(/[^0-9]/g, '')).catch(err => null);
+        let severity = parseInt(args[2]);
+        let comment = args.slice(3).join(' ');
+        
+        if (!user)
+          await message.react('👻');
+        else if (isNaN(severity) || severity < 1 || severity > 5)
+          await message.react('🔢');
+        else if (!comment)
+          await message.react('🗨');
+        else
+          await Strikes.add.call(this, user, message.author, severity, comment);
+      }
     }
     return;
   }
   
   if (args[0] === '!release') {
     if (isModerator && args.length > 1) {
-      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
+      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, '')).catch(err => null);
       let amend = args.length > 2 && args[2] == 'amend';
-      await Strikes.release.call(this, user, message.author, amend, {message});
+      
+      if (!user)
+        await message.react('👻');
+      else
+        await Strikes.release.call(this, user, message.author, amend, {message});
     }
     return;
   }
@@ -77,33 +91,47 @@ export async function messageCreate(message) {
     let user;
     let mod = isModerator ? message.author : undefined;
     if (isModerator && args.length > 1)
-      user = (await this.users.fetch(args[1].replace(/[^0-9]/g, ''))) ?? message.author;
+      user = await this.users.fetch(args[1].replace(/[^0-9]/g, '')).catch(err => null);
     else
       user = message.author;
-    await Strikes.list.call(this, user, mod, {message});
+    
+    if (!user)
+      await message.react('👻');
+    else
+      await Strikes.list.call(this, user, mod, {message});
     return;
   }
   
   if (args[0] === '!removestrike') {
     if (isModerator && args.length > 1) {
       let strikeId = parseInt(args[1]);
-      await Strikes.remove.call(this, strikeId, {message});
+      
+      if (isNaN(strikeId))
+        await message.react('🔢');
+      else
+        await Strikes.remove.call(this, strikeId, {message});
     }
     return;
   }
   
   if (args[0] === '!editcomment') {
-    if (isModerator && args.length > 2) {
+    if (isModerator && args.length > 1) {
       let strikeId = parseInt(args[1]);
       let comment = args.slice(2).join(' ');
-      await Strikes.comment.call(this, strikeId, comment, {message});
+      
+      if (isNaN(strikeId))
+        await message.react('🔢');
+      else if (!comment)
+        await message.react('🗨');
+      else
+        await Strikes.comment.call(this, strikeId, comment, {message});
     }
     return;
   }
   
   if (args[0] === '!warn') {
     if (isModerator && args.length > 2) {
-      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, ''));
+      let user = await this.users.fetch(args[1].replace(/[^0-9]/g, '')).catch(err => null);
       let comment = args.slice(2).join(' ');
       await Warns.add.call(this, user, message.author, comment);
     }
@@ -114,10 +142,14 @@ export async function messageCreate(message) {
     let user;
     let mod = isModerator ? message.author : undefined;
     if (isModerator && args.length > 1)
-      user = (await this.users.fetch(args[1].replace(/[^0-9]/g, ''))) ?? message.author;
+      user = await this.users.fetch(args[1].replace(/[^0-9]/g, '')).catch(err => null);
     else
       user = message.author;
-    await Warns.list.call(this, user, mod, {message});
+    
+    if (!user)
+      await message.react('👻');
+    else
+      await Warns.list.call(this, user, mod, {message});
     return;
   }
 }
