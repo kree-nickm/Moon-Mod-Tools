@@ -37,3 +37,5 @@ Wait for strike expiration notification.
 /warns and !warns for a user.
 User /warns and !warns themselves.
 ?? Strike someone while they are !bh'd?
+/timeoutns and !timeoutns a user.
+User /selfpit and !selfpit themselves.

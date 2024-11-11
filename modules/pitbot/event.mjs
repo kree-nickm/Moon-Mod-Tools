@@ -6,6 +6,7 @@ import { updateRole, getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 import * as Strikes from './strikeManager.mjs';
 import * as Warns from './warnManager.mjs';
+import * as Pits from './pitManager.mjs';
 
 export async function guildMemberAdd(member) {
   await updateRole.call(this, member.id, 'guildMemberAdd');
@@ -107,7 +108,7 @@ export async function messageCreate(message) {
       let strikeId = parseInt(args[1]);
       
       if (isNaN(strikeId))
-        await message.react('🔢');
+        await message.react('#');
       else
         await Strikes.remove.call(this, strikeId, {message});
     }
@@ -120,11 +121,26 @@ export async function messageCreate(message) {
       let comment = args.slice(2).join(' ');
       
       if (isNaN(strikeId))
-        await message.react('🔢');
+        await message.react('#');
       else if (!comment)
         await message.react('🗨');
       else
         await Strikes.comment.call(this, strikeId, comment, {message});
+    }
+    return;
+  }
+  
+  if (args[0] === '!editseverity') {
+    if (isModerator && args.length > 1) {
+      let strikeId = parseInt(args[1]);
+      let severity = parseInt(args[2]);
+      
+      if (isNaN(strikeId))
+        await message.react('#');
+      else if (isNaN(severity) || severity < 1 || severity > 5)
+        await message.react('🔢');
+      else
+        await Strikes.severity.call(this, strikeId, severity, {message});
     }
     return;
   }
@@ -150,6 +166,45 @@ export async function messageCreate(message) {
       await message.react('👻');
     else
       await Warns.list.call(this, user, mod, {message});
+    return;
+  }
+  
+  if (args[0] === '!selfpit') {
+    let hours = 0;
+    if (args.length > 1) {
+      if (args[1].slice(-1) === 'h')
+        hours = parseInt(args[1].slice(0, -1));
+    }
+    else
+      hours = 24;
+    
+    if (!hours || hours > 72)
+      await message.react('🕗');
+    else
+      await Pits.pit.call(this, message.author, hours*(this.master.config.id === '1040775664539807804' ? 1000 : 3600000));
+    return;
+  }
+  
+  if (args[0] === '!timeoutns') {
+    if (isModerator) {
+      if (args.length > 2) {
+        let user = await this.users.fetch(args[1].replace(/[^0-9]/g, '')).catch(err => null);
+        let hours = 0;
+        let comment = args.slice(3).join(' ');
+        
+        if (args[2].slice(-1) === 'h')
+          hours = parseInt(args[2].slice(0, -1));
+        
+        if (!user)
+          await message.react('👻');
+        else if (!hours)
+          await message.react('🕗');
+        else if (!comment)
+          await message.react('🗨');
+        else
+          await Pits.pit.call(this, user, hours*(this.master.config.id === '1040775664539807804' ? 1000 : 3600000), message.author, comment);
+      }
+    }
     return;
   }
 }

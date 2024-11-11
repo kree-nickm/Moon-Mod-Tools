@@ -561,6 +561,68 @@ export async function commentConfirmation(mod, strike, comment) {
 }
 
 /**
+ * Reply that is sent if a moderator tries to edit the severity of an invalid strike.
+ * @this discord.js/Client
+ * @param {number} strikeId - The strike ID that failed to be edited.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
+export async function severityFailed(strikeId) {
+  let response = {
+    ephemeral: true,
+    embeds: [{
+      title: 'Failed to Edit Severity',
+      description: `No strike found with ID \`${strikeId}\`.`,
+    }],
+  };
+  
+  return response;
+}
+
+/**
+ * Message sent to the log channel when a moderator edits a strike severity.
+ * @this discord.js/Client
+ * @param {discord.js/User} mod - The mod who edited the strike.
+ * @param {Strike} strike - The strike that was edited.
+ * @param {string} severity - The new severity for the strike.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
+export async function severityConfirmation(mod, strike, severity) {
+  let response = {
+    embeds: [{
+      title: 'Strike Severity Edited',
+      description: `${mod} edited the severity for <@${strike.userId}>'s strike.`,
+      fields: [
+        {
+          name: 'New Severity',
+          value: severity ?? '*None given.*',
+        },
+        {
+          name: 'Old severity',
+          value: strike.severity ?? '*None given.*',
+        },
+        {
+          name: 'Strike ID',
+          value: strike.strikeId,
+          inline: true,
+        },
+        {
+          name: 'Issuer',
+          value: `<@${strike.modId}>`,
+          inline: true,
+        },
+        {
+          name: 'Strike Date',
+          value: `<t:${Math.floor(strike.date/1000)}:f>`,
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    }],
+  };
+  
+  return response;
+}
+
+/**
  * Message sent to the log channel when a user receives a warning.
  * @this discord.js/Client
  * @param {discord.js/User} user - The user being warned.
@@ -686,6 +748,80 @@ export async function strikesExpired({expiredStrikes}) {
       timestamp: new Date().toISOString(),
     }],
   };
+  
+  return response;
+}
+
+export async function pitConfirmation({user, mod, duration, comment, notifSent}) {
+  let release = Date.now() + duration;
+  let response = {
+    embeds: [{
+      title: 'User Timed Out',
+      color: 0xff0000,
+      fields: [
+        {
+          name: 'Pitted Until',
+          value: `<t:${Math.floor(release/1000)}:f>`,
+          inline: true,
+        },
+      ],
+      timestamp: new Date().toISOString(),
+    }],
+  };
+  
+  if (mod) {
+    response.description = `${mod} timed out ${user} for ${Util.durationString(duration)} with no strike.`;
+    response.embeds[0].fields.unshift({
+      name: 'Reason',
+      value: comment ?? '*No reason given.*',
+    });
+  }
+  else
+    response.description = `${user} used selfpit for ${Util.durationString(duration)}.`;
+  
+  if (notifSent === false) {
+    response.embeds[0].fields.push({
+      name: `DM Error`,
+      value: `Could not notify ${user} about this timeout. They may need to open their DMs from users from the same server.`,
+    });
+  }
+  
+  return response;
+}
+
+export async function pitNotification({guild, duration, comment}) {
+  let release = Date.now() + duration;
+  let response = {
+    embeds: [{
+      title: `You have been timed out.`,
+      color: 0xff0000,
+      description: `This timeout did not add a strike to your record.`,
+      fields: [
+        {
+          name: 'Duration',
+          value: `${Util.durationString(duration)}`,
+          inline: true,
+        },
+        {
+          name: 'Release (Appx)',
+          value: `<t:${Math.floor(release/1000)}:R>`,
+          inline: true,
+        },
+      ],
+      footer: {
+        text: 'Mod Team',
+        icon_url: guild.iconURL(),
+      },
+      timestamp: new Date().toISOString(),
+    }],
+  };
+  
+  if (typeof(comment) === "string") {
+    response.embeds[0].fields.unshift({
+      name: 'Reason',
+      value: comment,
+    });
+  }
   
   return response;
 }

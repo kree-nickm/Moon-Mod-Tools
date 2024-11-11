@@ -128,6 +128,8 @@ export async function getStrikes(userId) {
  */
 export async function updateRole(userId, source) {
   let module = this.master.modules.pitbot;
+  
+  // Load the user's strikes.
   let strikes = await getStrikes.call(this, userId);
   strikes.lastRelease = strikes.releases[0]?.date ?? 0;
   strikes.lastStrike = strikes.active[0]?.date ?? 0;
@@ -141,7 +143,15 @@ export async function updateRole(userId, source) {
     bullethell.shouldBePitted = bullethell.releaseTime > Date.now() && strikes.lastRelease < bullethell.date;
   }
   
+  // Load the user's other duration-based pits.
+  let timeout = await module.database.get('SELECT * FROM pits WHERE userId=? ORDER BY date+duration DESC LIMIT 1', userId);
+  if (timeout) {
+    timeout.releaseTime = timeout.date + timeout.duration;
+    timeout.shouldBePitted = timeout.releaseTime > Date.now() && strikes.lastRelease < timeout.date;
+  }
+  
   // Apply any suspension that we determined.
+  // TODO: If source=='severity', might need to inform the user if this change results in a change to their timeout.
   let reason = '';
   if (strikes.shouldBePitted) {
     let strike = strikes.active[0];
@@ -158,14 +168,22 @@ export async function updateRole(userId, source) {
       reason = `User rejoined server while pitted. Original reason:\n${reason}`;
     await setPitRole.call(this, userId, true, {reason, release:bullethell.releaseTime, channelId:module.options.spamChannelId});
   }
+  else if (timeout?.shouldBePitted) {
+    if (!['pit'].includes(source)) {
+      reason = timeout.comment ?? (timeout.modId ? '*No reason given.*' : 'selfpit');
+      if (source === 'guildMemberAdd')
+        reason = `User rejoined server while pitted. Original reason:\n${reason}`;
+    }
+    await setPitRole.call(this, userId, true, {reason, release:timeout.releaseTime, channelId:module.options.logChannelId});
+  }
   else {
     let channelId;
-    if (!['add','release'].includes(source)) {
-      if (strikes.lastRelease > (bullethell?.date??0) && strikes.lastRelease > strikes.lastStrike) {
+    if (!['add','release','pit'].includes(source)) {
+      if (strikes.lastRelease > (bullethell?.date??0) && strikes.lastRelease > (timeout?.date??0) && strikes.lastRelease > strikes.lastStrike) {
         reason = `Released by <@${strikes.releases[0].modId}>`;
         channelId = module.options.logChannelId;
       }
-      else if (bullethell?.releaseTime > strikes.releaseTime && strikes.lastRelease < bullethell?.date) {
+      else if (bullethell?.releaseTime > strikes.releaseTime && bullethell?.releaseTime > (timeout?.releaseTime??0) && strikes.lastRelease < bullethell?.date) {
         reason = 'Bullet Hell expired.';
         channelId = module.options.spamChannelId;
       }
@@ -176,7 +194,7 @@ export async function updateRole(userId, source) {
     }
     await setPitRole.call(this, userId, false, {reason, channelId});
   }
-  return { strikes, bullethell };
+  return { strikes, bullethell, timeout };
 }
 
 /**

@@ -2,7 +2,7 @@
  * Functions for managing a user's strikes.
  * @module modules/pitbot/strikeManager
  */
-import { updateRole, getStrikes, getModeratorIds } from './roles.mjs';
+import { updateRole, getStrikes } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 
 export async function add(user, mod, severity, comment='*No reason given.*') {
@@ -159,4 +159,30 @@ export async function comment(strikeId, comment='*No reason given.*', {message, 
   await module.database.run('UPDATE strikes SET comment=? WHERE rowId=?', comment, strikeId);
   
   await logChannel.send(await Messages.commentConfirmation.call(this, mod, strike, comment));
+}
+
+export async function severity(strikeId, severity, {message, interaction}={}) {
+  let module = this.master.modules.pitbot;
+  
+  // Validate input.
+  if (isNaN(strikeId))
+    throw new Error(`Invalid strikeId. Must be a number.`);
+  
+  if (isNaN(severity) || severity < 1 || severity > 5)
+    throw new Error(`Invalid severity. Must be a number from 1 to 5.`);
+  
+  let logChannel = await this.channels.fetch(module.options.logChannelId);
+  let replyTo = interaction ?? message;
+  let mod = interaction?.user ?? message?.author;
+  
+  let strike = await module.database.get('SELECT rowId AS strikeId,* FROM strikes WHERE rowId=?', strikeId);
+  if (replyTo && !strike) {
+    await replyTo.reply(await Messages.severityFailed.call(this, strikeId));
+    return;
+  }
+  
+  await module.database.run('UPDATE strikes SET severity=? WHERE rowId=?', severity, strikeId);
+  
+  await logChannel.send(await Messages.severityConfirmation.call(this, mod, strike, severity));
+  let pitData = await updateRole.call(this, strike.userId, 'severity');
 }

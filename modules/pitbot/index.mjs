@@ -20,7 +20,9 @@ export async function onStart(module) {
   await module.database.connect(`storage/${module.options.databaseFile??'pitbot.sqlite'}`);
   await module.database.run('CREATE TABLE IF NOT EXISTS bullethell (userId TEXT, date NUMBER, duration NUMBER, messageLink TEXT);');
   await module.database.run('CREATE TABLE IF NOT EXISTS strikes (userId TEXT, modId TEXT, comment TEXT, severity NUMBER, date NUMBER UNIQUE ON CONFLICT IGNORE, expired BOOLEAN NOT NULL DEFAULT 0);');
-  await module.database.run('CREATE TABLE IF NOT EXISTS warnings (userId TEXT, modId TEXT, comment TEXT, date NUMBER UNIQUE ON CONFLICT IGNORE);');
+  await module.database.run('CREATE TABLE IF NOT EXISTS warnings (userId TEXT, modId TEXT, comment TEXT, date NUMBER UNIQUE ON CONFLICT IGNORE, carlId NUMBER);');
+  await module.database.run('CREATE TABLE IF NOT EXISTS pits (userId TEXT, modId TEXT, comment TEXT, duration NUMBER, date NUMBER UNIQUE ON CONFLICT IGNORE);');
+  // NOTE: pits and bullethell probably could be combined into a single "duration-based timeouts" table, but bullet hell was added first before I knew these other timeouts were a thing, so rather than trying to change it, I just added another table.
 }
 
 /**
@@ -46,10 +48,13 @@ export async function onReady(module) {
     source: {module:module.name},
   };
   await this.listenerManager.createFromFile('modules/pitbot/commands/timeout.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/timeoutns.mjs', options);
   await this.listenerManager.createFromFile('modules/pitbot/commands/release.mjs', options);
   await this.listenerManager.createFromFile('modules/pitbot/commands/strikes.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/selfpit.mjs', options);
   await this.listenerManager.createFromFile('modules/pitbot/commands/removestrike.mjs', options);
   await this.listenerManager.createFromFile('modules/pitbot/commands/editcomment.mjs', options);
+  await this.listenerManager.createFromFile('modules/pitbot/commands/editseverity.mjs', options);
   await this.listenerManager.createFromFile('modules/pitbot/commands/warn.mjs', options);
   await this.listenerManager.createFromFile('modules/pitbot/commands/warns.mjs', options);
   
