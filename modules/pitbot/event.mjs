@@ -19,17 +19,16 @@ export async function guildAuditLogEntryCreate(entry, guild) {
     let role = await guild.roles.fetch(module.options.pitRoleId);
     if (entry.changes?.[0]?.key === '$add') {
       if (entry.changes[0].new.find(cng => cng.id === role.id)) {
-        // Implicit strike? But what severity?
-        this.master.logWarn(`Moderator ${entry.executor.username} (${entry.executor.id}) added pit role to ${entry.target.username} (${entry.target.id}) manually, which is not yet supported.`);
+        // Implicit timeout.
+        this.master.logWarn(`Moderator ${entry.executor.username} (${entry.executor.id}) added pit role to ${entry.target.username} (${entry.target.id}) manually; implictly calling /timeoutns for them.`);
+        await Pits.pit.call(this, entry.target, 3600000, entry.executor, `*Moderator manually added pit role.*`, {source:'guildAuditLogEntryCreate'});
       }
     }
     else if (entry.changes?.[0]?.key === '$remove') {
       if (entry.changes[0].new.find(cng => cng.id === role.id)) {
         // Implicit release.
         this.master.logDebug(`Moderator ${entry.executor.username} (${entry.executor.id}) removed pit role from ${entry.target.username} (${entry.target.id}) manually; implicitly calling /release for them.`);
-        await Strikes.release.call(this, entry.target, entry.executor);
-        if (true) // No message sent yet.
-          await logChannel.send(await Messages.pitNotice.call(this, entry.target, false, `Pit role removed by <@${entry.executorId}>`));
+        await Strikes.release.call(this, entry.target, entry.executor, false, {source:'guildAuditLogEntryCreate'});
       }
     }
   }
@@ -179,7 +178,7 @@ export async function messageCreate(message) {
       hours = 24;
     
     if (!hours || hours > 72)
-      await message.react('🕗');
+      await message.react('🇭');
     else
       await Pits.pit.call(this, message.author, hours*(this.master.config.id === '1040775664539807804' ? 1000 : 3600000));
     return;
@@ -198,7 +197,7 @@ export async function messageCreate(message) {
         if (!user)
           await message.react('👻');
         else if (!hours)
-          await message.react('🕗');
+          await message.react('🇭');
         else if (!comment)
           await message.react('🗨');
         else
@@ -258,7 +257,12 @@ async function handleBulletHell(message) {
     await new Promise((resolve, reject) => setTimeout(() => resolve(), 5000));
     
     await this.master.modules.pitbot.database.run('INSERT INTO bullethell (userId, duration, date, messageLink) VALUES (?, ?, ?, ?)', message.author.id, duration, Date.now(), message.url);
-    let roleData = await updateRole.call(this, message.author.id, 'handleBulletHell');
-    await message.author.send(await Messages.bulletHellNotification.call(this, roleData.bullethell));
+    let report = await updateRole.call(this, message.author.id, 'handleBulletHell');
+    try {
+      await message.author.send(await Messages.bulletHellNotification.call(this, report.bullethells[0]));
+    }
+    catch(err) {
+      // User has DMs off; probably don't need to care about it.
+    }
   }
 }

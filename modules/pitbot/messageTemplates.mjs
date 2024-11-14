@@ -55,7 +55,7 @@ export async function bulletHellNotification(bulletHell) {
   
   response.embeds[0].fields.push({
     name: 'Release (Appx)',
-    value: `<t:${Math.floor((bulletHell.date+bulletHell.duration)/1000)}:R>`,
+    value: `<t:${Math.floor((bulletHell.releaseTime)/1000)}:R>`,
   });
   
   return response;
@@ -137,16 +137,16 @@ export async function maximumStrikes(user) {
  * @param {discord.js/User} mod - The mod who issued the strike.
  * @param {number} severity - The severity of the strike.
  * @param {string} comment - The reason for the strike.
- * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {PitReport} report - All of the user's strike data.
  * @param {?boolean} [notifSent] - True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function strikeConfirmation(user, mod, severity, comment, strikeReport, notifSent) {
+export async function strikeConfirmation(user, mod, severity, comment, report, notifSent) {
   let response = {
     embeds: [{
       title: 'Strike Issued',
       color: 0xff0000,
-      description: `${mod} issued a level ${severity} strike to ${user}.\nTimed out for ${strikeReport.durationString}.`,
+      description: `${mod} issued a level ${severity} strike to ${user}.\nTimed out for ${Util.durationString(report.getStrikeDuration())}.`,
       fields: [
         {
           name: 'Reason',
@@ -154,17 +154,17 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
         },
         {
           name: 'Strike ID',
-          value: strikeReport.active[0]?.strikeId ?? '???',
+          value: report.activeStrikes[0]?.strikeId ?? '???',
           inline: true,
         },
         {
           name: 'Pitted Until',
-          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:f>`,
+          value: `<t:${Math.floor(report.getStrikeRelease()/1000)}:f>`,
           inline: true,
         },
         {
           name: 'Active Strikes',
-          value: strikeReport.active.length,
+          value: report.activeStrikes.length,
           inline: true,
         },
       ],
@@ -188,10 +188,10 @@ export async function strikeConfirmation(user, mod, severity, comment, strikeRep
  * @param {discord.js/Guild} guild - The guild where the strike took place.
  * @param {number} [severity=''] - The severity of the strike.
  * @param {string} [comment=''] - The reason for the strike.
- * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {PitReport} report - All of the user's strike data.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function strikeNotification(guild, severity='', comment='', strikeReport) {
+export async function strikeNotification(guild, severity='', comment='', report) {
   let response = {
     embeds: [{
       title: `You have received a strike.`,
@@ -204,17 +204,17 @@ export async function strikeNotification(guild, severity='', comment='', strikeR
         },
         {
           name: 'Duration',
-          value: `${strikeReport.durationString}`,
+          value: `${Util.durationString(report.getStrikeDuration())}`,
           inline: true,
         },
         {
           name: 'Release (Appx)',
-          value: `<t:${Math.floor(strikeReport.releaseTime/1000)}:R>`,
+          value: `<t:${Math.floor(report.getStrikeRelease()/1000)}:R>`,
           inline: true,
         },
         {
           name: 'Active Strikes',
-          value: strikeReport.active.length,
+          value: report.activeStrikes.length,
           inline: true,
         },
       ],
@@ -235,20 +235,20 @@ export async function strikeNotification(guild, severity='', comment='', strikeR
  * @param {discord.js/User} user - The user being released from the pit.
  * @param {discord.js/User} mod - The mod who released the user.
  * @param {boolean} amend - Whether the most recent strike was also removed.
- * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {PitReport} report - All of the user's strike data.
  * @param {?boolean} [notifSent] - True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function releaseConfirmation(user, mod, amend, strikeReport, notifSent) {
+export async function releaseConfirmation({user, mod, amend, report, notifSent, source}) {
   let response = {
     embeds: [{
-      title: 'User Released By Command',
+      title: source === 'guildAuditLogEntryCreate' ? 'User Released By Role' : 'User Released By Command',
       color: 0x00ff00,
       description: `${mod} released ${user} from the pit.` + (amend ? `\nTheir most recent strike was also removed.` : ''),
       fields: [
         {
           name: 'Active Strikes',
-          value: strikeReport.active.length,
+          value: report?.activeStrikes.length ?? '0?',
           inline: true,
         },
       ],
@@ -271,10 +271,10 @@ export async function releaseConfirmation(user, mod, amend, strikeReport, notifS
  * @this discord.js/Client
  * @param {discord.js/Guild} guild - The guild where the strike took place.
  * @param {boolean} amend - Whether the most recent strike was also removed.
- * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {PitReport} report - All of the user's strike data.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function releaseNotification(guild, amend, strikeReport) {
+export async function releaseNotification(guild, amend, report) {
   let response = {
     embeds: [{
       title: 'You have been released from the pit.',
@@ -283,7 +283,7 @@ export async function releaseNotification(guild, amend, strikeReport) {
       fields: [
         {
           name: 'Active Strikes',
-          value: strikeReport.active.length,
+          value: report.activeStrikes.length,
           inline: true,
         },
       ],
@@ -325,11 +325,11 @@ export async function removeFailed(strikeId, strike) {
  * @param {discord.js/User} user - The user whose strike is being removed.
  * @param {discord.js/User} mod - The mod who removed the strike.
  * @param {Strike} strike - The strike that was removed.
- * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {PitReport} report - All of the user's timeout data.
  * @param {?boolean} [notifSent] - True if the user was sent a DM, false if the DM failed, or undefined if no DM was attempted.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function removeConfirmation(user, mod, strike, strikeReport, notifSent) {
+export async function removeConfirmation(user, mod, strike, report, notifSent) {
   let response = {
     embeds: [{
       title: 'Strike Removed',
@@ -351,7 +351,7 @@ export async function removeConfirmation(user, mod, strike, strikeReport, notifS
         },
         {
           name: 'Active Strikes',
-          value: strikeReport.active.length,
+          value: report.activeStrikes.length,
           inline: true,
         },
         {
@@ -378,10 +378,10 @@ export async function removeConfirmation(user, mod, strike, strikeReport, notifS
  * @this discord.js/Client
  * @param {discord.js/Guild} guild - The guild where the strike took place.
  * @param {Strike} strike - The strike that was removed.
- * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {PitReport} report - All of the user's timeout data.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function removeNotification(guild, strike, strikeReport) {
+export async function removeNotification(guild, strike, report) {
   let response = {
     embeds: [{
       title: 'A strike was removed.',
@@ -397,7 +397,7 @@ export async function removeNotification(guild, strike, strikeReport) {
         },
         {
           name: 'Active Strikes',
-          value: strikeReport.active.length,
+          value: report.activeStrikes.length,
           inline: true,
         },
       ],
@@ -417,32 +417,33 @@ export async function removeNotification(guild, strike, strikeReport) {
  * @this discord.js/Client
  * @param {discord.js/Guild} guild - The guild where the strikes took place.
  * @param {discord.js/User} user - The user whose strikes to list.
- * @param {StrikeReport} strikeReport - All of the user's strike data.
+ * @param {PitReport} report - All of the user's timeout data.
  * @param {Object} options - Additional information for the message.
  * @param {boolean} [options.ephemeral] - Whether the message should be ephemeral.
  * @param {discord.js/User} [options.mod] - The moderator requesting the strikes, if any.
  * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
  */
-export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={}) {
+export async function listStrikes(guild, user, report, {ephemeral,mod}={}) {
+  let lastPit = report.getCurrentPit();
   let response = {
     ephemeral,
     embeds: [{
       title: 'Strikes Info',
-      description: `List of ${strikeReport.active.length+strikeReport.expired.length} total strikes for ${user}.`,
+      description: `List of ${report.activeStrikes.length+report.expiredStrikes.length} total strikes for ${user}.`,
       fields: [
         {
           name: 'Active Strikes',
-          value: strikeReport.active.length,
+          value: report.activeStrikes.length,
           inline: true,
         },
         {
           name: 'Expired Strikes',
-          value: strikeReport.expired.length,
+          value: report.expiredStrikes.length,
           inline: true,
         },
         {
           name: 'Last Timeout',
-          value: strikeReport.releaseTime ? `<t:${Math.floor(strikeReport.releaseTime/1000)}:f>` : 'Never',
+          value: lastPit?.releaseTime ? `<t:${Math.floor(lastPit.releaseTime/1000)}:f>` : 'Never',
           inline: true,
         },
       ],
@@ -459,8 +460,8 @@ export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={})
     components: [],
   };
   let strikeToString = strike => `ID:\`${strike.strikeId}\` Lvl ${strike.severity} on <t:${Math.floor(strike.date/1000)}:d>` + (mod?` by <@${strike.modId}>`:'') + `\n> ${strike.comment}`;
-  if (strikeReport.active.length) {
-    let content = strikeReport.active.map(strikeToString).join(`\n`);
+  if (report.activeStrikes.length) {
+    let content = report.activeStrikes.map(strikeToString).join(`\n`);
     response.embeds[0].fields.push({
       name: 'Active Strike List' + (content.length > 1024 ? ' (Shortened)' : ''),
       value: content.slice(0, 1024),
@@ -475,8 +476,8 @@ export async function listStrikes(guild, user, strikeReport, {ephemeral,mod}={})
       });
     }
   }
-  if (strikeReport.expired.length) {
-    let content = strikeReport.expired.map(strikeToString).join(`\n`);
+  if (report.expiredStrikes.length) {
+    let content = report.expiredStrikes.map(strikeToString).join(`\n`);
     response.embeds[0].fields.push({
       name: 'Expired Strike List' + (content.length > 1024 ? ' (Shortened)' : ''),
       value: content.slice(0, 1024),
@@ -770,14 +771,14 @@ export async function pitConfirmation({user, mod, duration, comment, notifSent})
   };
   
   if (mod) {
-    response.description = `${mod} timed out ${user} for ${Util.durationString(duration)} with no strike.`;
+    response.embeds[0].description = `${mod} timed out ${user} for ${Util.durationString(duration)} with no strike.`;
     response.embeds[0].fields.unshift({
       name: 'Reason',
       value: comment ?? '*No reason given.*',
     });
   }
   else
-    response.description = `${user} used selfpit for ${Util.durationString(duration)}.`;
+    response.embeds[0].description = `${user} used selfpit for ${Util.durationString(duration)}.`;
   
   if (notifSent === false) {
     response.embeds[0].fields.push({

@@ -2,32 +2,9 @@
  * Functions for managing the pit role and fetching moderators.
  * @module modules/pitbot/roles
  */
+import PitReport from './PitReport.mjs';
 import * as Messages from './messageTemplates.mjs';
 import * as Util from '../../imports/util.mjs';
-
-let severityDuration = {
-  '1': 3600000*4,
-  '2': 3600000*8,
-  '3': 3600000*12,
-  '4': 3600000*24,
-  '5': 3600000*48,
-};
-
-let previousSeverityDuration = {
-  '1': 3600000*1,
-  '2': 3600000*4,
-  '3': 3600000*9,
-  '4': 3600000*24,
-  '5': 3600000*48,
-};
-
-let activeStrikeFactor = {
-  '1': 1,
-  '2': 1.05,
-  '3': 1.1,
-  '4': 1.3,
-  '5': 10,
-};
 
 /**
  * Database row for a strike.
@@ -53,148 +30,54 @@ let activeStrikeFactor = {
  */
 
 /**
- * @param {string} userId - Snowflake ID of the user whose strike data to fetch.
- * @this discord.js/Client
- * @returns {StrikeReport} A report of all of the users strikes and releases.
- */
-export async function getStrikes(userId) {
-  let module = this.master.modules.pitbot;
-  let active = [];
-  let expired = [];
-  let removed = [];
-  let releases = [];
-  let newlyExpired = [];
-  
-  let expirationDuration = this.master.config.id === '1040775664539807804'
-   ? 120000
-   : 2592000000;
-  
-  let strikes = await module.database.all('SELECT rowId AS strikeId,* FROM strikes WHERE userId=? ORDER BY date DESC', userId);
-  for(let strike of strikes) {
-    // Severity < 0 means it's a mod explicitly releasing a user from the pit, regardless of their previous strikes.
-    if (strike.severity < 0) {
-      releases.push(strike);
-      continue;
-    }
-    
-    // Severity = 0 means the strike was removed. It could be deleted from the database entirely in the future.
-    if (strike.severity === 0) {
-      removed.push(strike);
-      continue;
-    }
-    
-    // A strike is active if it was issued in the last month, or if it was issued less than a month before the next most recent active strike.
-    let isActive = (strike.date > (Date.now() - expirationDuration))
-      || active.length && (strike.date > (active[active.length-1].date - expirationDuration));
-    
-    if(isActive)
-      active.push(strike);
-    else {
-      expired.push(strike);
-      if (!strike.expired)
-        newlyExpired.push(strike);
-    }
-  }
-  
-  let duration = 0;
-  let releaseTime = 0;
-  if (active.length) {
-    for(let strike of active) {
-      if (!duration)
-        duration = severityDuration[strike.severity];
-      else
-        duration += previousSeverityDuration[strike.severity];
-    }
-    duration *= activeStrikeFactor[Math.min(active.length, 5)];
-    if (this.master.config.id === '1040775664539807804')
-      duration = duration / 3600;
-    releaseTime = active[0].date + duration;
-  }
-  
-  if (newlyExpired.length) {
-    let addSmt = await module.database.prepare('UPDATE strikes SET expired=1 WHERE rowId=?');
-    for (let strike of newlyExpired) {
-      await addSmt.run(strike.strikeId);
-      strike.expired = 1;
-    }
-    await addSmt.finalize();
-  }
-  
-  return {active, expired, removed, releases, releaseTime, newlyExpired, durationString:Util.durationString(duration)};
-}
-
-/**
  * @this discord.js/Client
  */
 export async function updateRole(userId, source) {
   let module = this.master.modules.pitbot;
   
-  // Load the user's strikes.
-  let strikes = await getStrikes.call(this, userId);
-  strikes.lastRelease = strikes.releases[0]?.date ?? 0;
-  strikes.lastStrike = strikes.active[0]?.date ?? 0;
-  strikes.shouldBePitted = strikes.releaseTime > Date.now() && strikes.lastRelease < strikes.lastStrike;
-  
-  // Check if they are currently pitted from bullet hell, taking into account if a mod released them as above.
-  let bullethell = await module.database.get('SELECT * FROM bullethell WHERE userId=? ORDER BY date DESC LIMIT 1', userId);
-  if (bullethell) {
-    await module.database.run('DELETE FROM bullethell WHERE userId=? AND date+duration<?', userId, Date.now());
-    bullethell.releaseTime = bullethell.date + bullethell.duration;
-    bullethell.shouldBePitted = bullethell.releaseTime > Date.now() && strikes.lastRelease < bullethell.date;
-  }
-  
-  // Load the user's other duration-based pits.
-  let timeout = await module.database.get('SELECT * FROM pits WHERE userId=? ORDER BY date+duration DESC LIMIT 1', userId);
-  if (timeout) {
-    timeout.releaseTime = timeout.date + timeout.duration;
-    timeout.shouldBePitted = timeout.releaseTime > Date.now() && strikes.lastRelease < timeout.date;
-  }
-  
-  // Apply any suspension that we determined.
+  let report = await PitReport.create(userId, {module});
+  let lastPit = report.getCurrentPit();
   // TODO: If source=='severity', might need to inform the user if this change results in a change to their timeout.
+  
+  // Create the reason string. Leave blank for sources that have already sent a message.
   let reason = '';
-  if (strikes.shouldBePitted) {
-    let strike = strikes.active[0];
-    if (!['add','release'].includes(source)) {
-      reason = `Strike ID:\`${strike.strikeId}\` Lvl ${strike.severity} issued by <@${strike.modId}>\n> ${strike.comment}`;
-      if (source === 'guildMemberAdd')
-        reason = `User rejoined server while pitted. Original reason:\n` + reason;
-    }
-    await setPitRole.call(this, userId, true, {reason, release:strikes.releaseTime});
-  }
-  else if (bullethell?.shouldBePitted) {
-    reason = `Bullet Hell: ${bullethell.messageLink}`;
+  if (lastPit?.pitted) {
+    if (!['add','release','pit'].includes(source))
+      reason = lastPit.type === 'strike'
+        ? `Strike ID:\`${lastPit.entry.strikeId}\` Lvl ${lastPit.entry.severity} issued by <@${lastPit.entry.modId}>\n> ${lastPit.entry.comment}`
+        : lastPit.type === 'bullethell'
+        ? `Bullet Hell: ${lastPit.entry.messageLink}`
+        : lastPit.type === 'selfpit'
+        ? `Self pit`
+        : `Timeout issued by <@${lastPit.entry.modId}>\n> ${lastPit.entry.comment??'*No reason given.*'}`;
+    
+    // Alter the reason string for new joins.
     if (source === 'guildMemberAdd')
       reason = `User rejoined server while pitted. Original reason:\n${reason}`;
-    await setPitRole.call(this, userId, true, {reason, release:bullethell.releaseTime, channelId:module.options.spamChannelId});
-  }
-  else if (timeout?.shouldBePitted) {
-    if (!['pit'].includes(source)) {
-      reason = timeout.comment ?? (timeout.modId ? '*No reason given.*' : 'selfpit');
-      if (source === 'guildMemberAdd')
-        reason = `User rejoined server while pitted. Original reason:\n${reason}`;
-    }
-    await setPitRole.call(this, userId, true, {reason, release:timeout.releaseTime, channelId:module.options.logChannelId});
   }
   else {
-    let channelId;
-    if (!['add','release','pit'].includes(source)) {
-      if (strikes.lastRelease > (bullethell?.date??0) && strikes.lastRelease > (timeout?.date??0) && strikes.lastRelease > strikes.lastStrike) {
-        reason = `Released by <@${strikes.releases[0].modId}>`;
-        channelId = module.options.logChannelId;
-      }
-      else if (bullethell?.releaseTime > strikes.releaseTime && bullethell?.releaseTime > (timeout?.releaseTime??0) && strikes.lastRelease < bullethell?.date) {
-        reason = 'Bullet Hell expired.';
-        channelId = module.options.spamChannelId;
-      }
-      else {
-        reason = 'Timeout expired.';
-        channelId = module.options.logChannelId;
-      }
-    }
-    await setPitRole.call(this, userId, false, {reason, channelId});
+    if (!['add','release','pit'].includes(source))
+      reason = !lastPit
+        ? `Pit reason unknown`
+        : lastPit.type === 'strike'
+        ? `Strike time served`
+        : lastPit.type === 'release'
+        ? `Released by <@${lastPit.entry.modId}>`
+        : lastPit.type === 'bullethell'
+        ? `Bullet Hell expired`
+        : lastPit.type === 'selfpit'
+        ? `Self pit expired`
+        : `Timeout expired`;
   }
-  return { strikes, bullethell, timeout };
+  
+  // Set role, which will send a message if reason is not blank.
+  await setPitRole.call(this, userId, lastPit?.pitted, {
+    reason,
+    channelId: lastPit?.type === 'bullethell'
+      ? module.options.spamChannelId
+      : module.options.logChannelId,
+  });
+  return report;
 }
 
 /**
@@ -261,10 +144,10 @@ export async function updateAllRoles() {
   
   userIds = [...new Set(userIds)];
   this.master.logDebug(`Checking roles for ${userIds.length} users: ${bullethell.length} from !bh, ${strikes.length} from strikes, ${role.members.size} from role.`);
-  let results = await Promise.all(userIds.map(userId => updateRole.call(this, userId, 'updateAllRoles')));
+  let reports = await Promise.all(userIds.map(userId => updateRole.call(this, userId, 'updateAllRoles')));
   let expiredStrikes = [];
-  for (let userTimeouts of results)
-    expiredStrikes = expiredStrikes.concat(userTimeouts.strikes.newlyExpired);
+  for (let report of reports)
+    expiredStrikes = expiredStrikes.concat(await report.getNewlyExpired());
   if (expiredStrikes.length) {
     await logChannel.send(await Messages.strikesExpired.call(this, {expiredStrikes}));
   }

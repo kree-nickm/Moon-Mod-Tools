@@ -2,7 +2,6 @@
  * Functions for managing a user's warnings.
  * @module modules/pitbot/warnManager
  */
-import { getModeratorIds } from './roles.mjs';
 import * as Messages from './messageTemplates.mjs';
 
 /**

@@ -26,9 +26,10 @@ Failing to DM a user during some of the above.
 /release and !release with amend option.
 /removestrike and !removestrike another one of them.
 /strikes and !strikes for a user.
-The buttons to see more strikes.
+** The buttons to see more strikes.
 /editcomment and !editcomment one of them.
-Timed-out user rejoining server and staying pitted. *With messaging.
+Timed-out user rejoining server and staying pitted.
+Timeout by adding role manually.
 Release by removing role manually.
 User /strikes and !strikes for themselves.
 Wait for strike expiration notification.
@@ -36,6 +37,8 @@ Wait for strike expiration notification.
 /warn and !warn a user.
 /warns and !warns for a user.
 User /warns and !warns themselves.
-?? Strike someone while they are !bh'd?
 /timeoutns and !timeoutns a user.
+/release and !release from pit.
 User /selfpit and !selfpit themselves.
+/release and !release from pit.
+?? Strike someone while they are already pitted from a non-strike?
