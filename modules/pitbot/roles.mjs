@@ -83,7 +83,7 @@ export async function updateRole(userId, source) {
 /**
  * @this discord.js/Client
  */
-async function setPitRole(userId, add=true, {reason='', release, channelId}={}) {
+async function setPitRole(userId, add, {reason='', release, channelId}={}) {
   let module = this.master.modules.pitbot;
   let user = await this.users.fetch(userId);
   let logChannel = await this.channels.fetch(channelId ?? module.options.logChannelId);
