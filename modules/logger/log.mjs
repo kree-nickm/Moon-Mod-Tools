@@ -232,18 +232,30 @@ export async function messageDelete(message) {
   });
   
   try {
-    let auditLogs = await message.guild.fetchAuditLogs();
-    let msgEntry = auditLogs?.entries?.find(entry => entry.action === 72 && entry.targetId === message.id);
-    let deleter = await msgEntry?.executor?.fetch();
-    if(deleter) {
-      mainFields.push({
-        name: `Deleted By`,
-        value: `${deleter}`,
-      });
+    let auditLogs = await logChannel.guild.fetchAuditLogs();
+    let msgEntry;
+    let i = 0;
+    for(let entry of (auditLogs?.entries?.values()??[])) {
+      if(entry.action === 72 && (!message?.author || entry.targetId === message.author.id) && (!message?.channelId || (entry.extra?.channel?.id??entry.extra?.channelId) === message.channelId)) {
+        msgEntry = entry;
+        break;
+      }
+      if(i > 2)
+        break;
+      i++;
+    }
+    if(msgEntry) {
+      let deleter = await msgEntry?.executor?.fetch();
+      if(deleter) {
+        mainFields.push({
+          name: `Deleted By`,
+          value: `${deleter}`,
+        });
+      }
     }
   }
   catch(err) {
-    this.master.logWarn(`Error searching audit log:`, error);
+    this.master.logWarn(`Error searching audit log:`, err);
   }
   
   // Construct the primary embed object and add it onto the front of the embeds.
@@ -348,6 +360,7 @@ async function processJoin(member) {
 
 export async function guildAuditLogEntryCreate(entry, guild) {
   this.master.logDebug(`Audit log: ${entry.actionType} ${entry.targetType} ${entry.targetId}: ${entry.reason}`);
+  this.master.logDebug(entry);
   let module = this.master.modules.logger;
   if (entry.action === 20 || entry.action === 21 || entry.action === 22) {
     if(entry.targetId)
