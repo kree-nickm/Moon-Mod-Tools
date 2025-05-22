@@ -53,46 +53,6 @@ export async function onReady(module) {
     source: {module:module.name},
   });
   
-  // Fetch all tickets.
-  this.logInfo(`Fetching tickets...`);
-  let activeTickets = await mailChannel.threads.fetchActive();
-  this.logInfo(`Found ${activeTickets.threads.size} active tickets...`);
-  let tickets = activeTickets.threads.map(v=>v);
-  
-  let archivedTickets = await mailChannel.threads.fetchArchived();
-  this.logInfo(`Found ${archivedTickets.threads.size} active tickets this pass...`);
-  tickets = tickets.concat(archivedTickets.threads.map(v=>v));
-  while (archivedTickets.hasMore) {
-    archivedTickets = await mailChannel.threads.fetchArchived({before:archivedTickets.threads.last()});
-    this.logInfo(`Found ${archivedTickets.threads.size} active tickets this pass...`);
-    let lenCheck = tickets.length;
-    tickets = tickets.concat(archivedTickets.threads.map(v=>v));
-    if(lenCheck === tickets.length) {
-      this.logWarn(`Had to break out of fetching archived threads.`);
-      break;
-    }
-  }
-  
-  // Add all tickets to the database.
-  let addSmt = await module.database.prepare('INSERT INTO tickets (userId, threadId, number) VALUES (?, ?, ?)');
-  this.logInfo(`Ensuring ${tickets.length} tickets are in the database...`);
-  for(let ticket of tickets) {
-    let dashIdx = ticket.name.lastIndexOf('-');
-    if (dashIdx < 0) {
-      this.logWarn(`Ticket name doesn't follow expected convention: '${ticket.name}' (${ticket.id}); aborting operation.`);
-      break;
-    }
-    let number = ticket.name.slice(dashIdx+2);
-    let user = await getTicketCreator.call(this.client, ticket);
-    if (!user) {
-      this.logWarn(`Unable to determine which user created ticket '${ticket.name}' (${ticket.id}); aborting operation..`);
-      break;
-    }
-    await addSmt.run(user.id, ticket.id, number);
-  }
-  await addSmt.finalize();
-  this.logInfo(`Done adding tickets to database.`);
-  
   // Button for submitting modmail.
   await this.listenerManager.create({
     definition: ModmailButton.definition,
@@ -114,7 +74,59 @@ export async function onReady(module) {
     source: {module:module.name},
   });
   
+  // Fetch active tickets first.
+  this.logInfo(`Fetching tickets...`);
+  let activeTickets = await mailChannel.threads.fetchActive();
+  this.logInfo(`Found ${activeTickets.threads.size} active tickets...`);
+  let tickets = activeTickets.threads.map(v=>v);
+  await addTicketsToDB.call(this, module, tickets);
+  
+  // Run this in an asyncronous call because it takes a while and isn't necessary for the bot to function.
+  rebuildArchivedTickets.call(this, module, mailChannel);
+  
   return true;
+}
+
+async function rebuildArchivedTickets(module, mailChannel) {
+  let archivedTickets = await mailChannel.threads.fetchArchived();
+  this.logInfo(`Found ${archivedTickets.threads.size} closed tickets this pass...`);
+  let tickets = archivedTickets.threads.map(v=>v);
+  while (archivedTickets.hasMore) {
+    archivedTickets = await mailChannel.threads.fetchArchived({before:archivedTickets.threads.last()});
+    this.logInfo(`Found ${archivedTickets.threads.size} closed tickets this pass...`);
+    let lenCheck = tickets.length;
+    tickets = tickets.concat(archivedTickets.threads.map(v=>v));
+    if(lenCheck === tickets.length) {
+      this.logWarn(`Had to break out of fetching archived threads.`);
+      break;
+    }
+  }
+  await addTicketsToDB.call(this, module, tickets);
+}
+
+async function addTicketsToDB(module, tickets) {
+  // Add all tickets to the database.
+  let addSmt = await module.database.prepare('INSERT INTO tickets (userId, threadId, number) VALUES (?, ?, ?)');
+  this.logInfo(`Ensuring ${tickets.length} tickets are in the database...`);
+  for(let t in tickets) {
+    if(t > 0 && t % 100 === 0)
+      this.logInfo(`${t}/${tickets.length} done...`);
+    let ticket = tickets[t];
+    let dashIdx = ticket.name.lastIndexOf('-');
+    if (dashIdx < 0) {
+      this.logWarn(`Ticket name doesn't follow expected convention: '${ticket.name}' (${ticket.id}); aborting operation.`);
+      break;
+    }
+    let number = ticket.name.slice(dashIdx+2);
+    let user = await getTicketCreator.call(this.client, ticket);
+    if (!user) {
+      this.logWarn(`Unable to determine which user created ticket '${ticket.name}' (${ticket.id}); aborting operation..`);
+      break;
+    }
+    await addSmt.run(user.id, ticket.id, number);
+  }
+  await addSmt.finalize();
+  this.logInfo(`Done adding tickets to database.`);
 }
 
 export async function onUnload(module) {

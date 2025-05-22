@@ -15,6 +15,16 @@ export async function handler(interaction) {
     return;
   }
   
+  // Verify that the bot can see the message being interacted with.
+  try {
+    await interaction.targetMessage.fetch();
+  }
+  catch(error) {
+    this.master.logInfo(`User tried to report a message in a channel that the bot can't see.`);
+    await interaction.reply(await Messages.reportFailed.call(this, {interaction,error}));
+    return;
+  }
+  
   // This sometimes takes a while, so let's defer it.
   await interaction.deferReply({ephemeral:true});
   

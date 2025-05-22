@@ -81,6 +81,12 @@ export async function messageReceived({interaction, message, ticket, confirmSent
     let targetMessage = await interaction.targetMessage.fetch();
     response.embeds[0].url = targetMessage.url;
     response.embeds[0].description = targetMessage.content;
+    if (!response.embeds[0].fields)
+      response.embeds[0].fields = [];
+    response.embeds[0].fields.push({
+      name: 'Offender ID',
+      value: `${targetMessage.author.id}`,
+    });
     response.embeds[0].footer = {
       text: `${targetMessage.author.username}`,
       icon_url: targetMessage.author.avatarURL(),
@@ -236,6 +242,38 @@ export async function ticketConfirmation({interaction,message,created=false,tick
       }
     }
   }
+  
+  return response;
+}
+
+/**
+ * Message sent to the user when the bot is unable to report the targeted message.
+ * @this discord.js/Client
+ * @param {discord.js/Object} input
+ * @param {?discord.js/CommandInteraction} input.interaction - The interaction that was used to update the ticket, or undefined if no interaction was used.
+ * @param {Object} input.error - The error that was caught when the bot tried to access the message.
+ * @param {boolean} [input.ephemeral=true] - Whether the message should be is ephemeral. DMs should not be ephemeral; other replies should be.
+ * @returns {discord.js/BaseMessageOptions} The options for creating and sending the message.
+ */
+export async function reportFailed({interaction,ephemeral=!!interaction,error}={}) {
+  let response = {
+    embeds: [{
+      title: `Report Failed`,
+      description: `This bot cannot access the reported message.`,
+      color: 0xff0000,
+      footer: {
+        text: `Mod Team`,
+        icon_url: interaction?.guild?.iconURL(),
+      },
+      timestamp: new Date().toISOString(),
+    }],
+    ephemeral,
+  };
+  
+  if(error.code == 50001)
+    response.embeds[0].description = response.embeds[0].description + ` It seems to lack permission to view the channel.`;
+  else if(error.code == 10008)
+    response.embeds[0].description = response.embeds[0].description + ` The message seems to have been already deleted.`;
   
   return response;
 }
