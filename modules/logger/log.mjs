@@ -29,6 +29,7 @@ export async function messageUpdate(oldMessage, newMessage) {
   if (!logChannel || logChannel.guildId !== newMessage.guildId)
     return;
   
+  let content = ``;
   let embeds = [];
   let mainFields = [];
   
@@ -58,32 +59,62 @@ export async function messageUpdate(oldMessage, newMessage) {
   // Show the old (if possible) and new messages and a brief list of attachments, if any.
   if (oldMessage && !isNaN(oldMessage.content?.length))
   {
-    mainFields.push({
-      name: 'Old Message' + (oldMessage.content.length > 1024 ? ' (Trimmed)' : ''),
-      value: oldMessage.content.slice(0, 1024),
-    });
+    if(oldMessage.content.length > 1024) {
+      mainFields.push({
+        name: 'Old Message Too Long',
+        value: '*Old message content is instead shown above this embed.*',
+      });
+      content = `${oldMessage.content}`;
+    }
+    else {
+      mainFields.push({
+        name: 'Old Message',
+        value: `${oldMessage.content}`,
+      });
+    }
     if (oldAttachList.length)
       mainFields.push({
         name: 'Old Attachments',
-        value: oldAttachList,
+        value: oldAttachList.slice(0,1024), // TODO: Move somewhere else if too long.
       });
   }
   else
   {
     mainFields.push({
       name: 'Uh oh!',
-      value: `Old message content can't be fetched, because it is too old.`,
+      value: `*Old message content can't be fetched, because it is too old.*`,
     });
     //this.master.logDebug(`Too-old message:`, oldMessage);
   }
-  mainFields.push({
-    name: 'New Message' + (newMessage.content.length > 1024 ? ' (Trimmed)' : ''),
-    value: newMessage.content.slice(0, 1024),
-  });
+  
+  if(newMessage.content.length > 1024) {
+    let temp = content.length ? content + `\n# __New Message__\n${newMessage.content}` : `${newMessage.content}`;
+    if(temp.length > 2000) {
+      mainFields.push({
+        name: 'New Message Too Long',
+        value: `*And it's also too long to be shown with the old message, so only the old message is shown.*`,
+      });
+    }
+    else
+    {
+      content = temp;
+      mainFields.push({
+        name: 'New Message Too Long',
+        value: '*New message content is instead shown above this embed.*',
+      });
+    }
+  }
+  else {
+    mainFields.push({
+      name: 'New Message',
+      value: `${newMessage.content}`,
+    });
+  }
+  
   if (newAttachList.length)
     mainFields.push({
       name: 'New Attachments',
-      value: newAttachList,
+      value: newAttachList.slice(0,1024), // TODO: Move somewhere else if too long.
     });
   
   // Basic information about the change.
@@ -108,6 +139,7 @@ export async function messageUpdate(oldMessage, newMessage) {
   });
   
   await logChannel.send({
+    content: content.slice(0,2000),
     embeds,
     files,
   });
@@ -123,6 +155,7 @@ export async function messageDelete(message) {
   if (!logChannel || !message?.guildId || logChannel.guildId !== message?.guildId)
     return;
   
+  let content = ``;
   let embeds = [];
   let mainFields = [];
   
@@ -138,16 +171,25 @@ export async function messageDelete(message) {
   // Show the old message if possible.
   if (message && !isNaN(message.content?.length))
   {
-    mainFields.push({
-      name: 'Message' + (message.content.length > 1024 ? ' (Trimmed)' : ''),
-      value: message.content.slice(0, 1024),
-    });
+    if(message.content.length > 1024) {
+      mainFields.push({
+        name: 'Message Too Long',
+        value: '*Message content is instead shown above this embed.*',
+      });
+      content = `${message.content}`;
+    }
+    else {
+      mainFields.push({
+        name: 'Message',
+        value: `${message.content}`,
+      });
+    }
   }
   else
   {
     mainFields.push({
       name: 'Uh oh!',
-      value: `Old message content can't be fetched, because it is too old.`,
+      value: `*Old message content can't be fetched, because it is too old.*`,
     });
     //this.master.logDebug(`Too-old message:`, message);
   }
@@ -189,6 +231,21 @@ export async function messageDelete(message) {
     inline: true,
   });
   
+  try {
+    let auditLogs = await message.guild.fetchAuditLogs();
+    let msgEntry = auditLogs?.entries?.find(entry => entry.action === 72 && entry.targetId === message.id);
+    let deleter = await msgEntry?.executor?.fetch();
+    if(deleter) {
+      mainFields.push({
+        name: `Deleted By`,
+        value: `${deleter}`,
+      });
+    }
+  }
+  catch(err) {
+    this.master.logWarn(`Error searching audit log:`, error);
+  }
+  
   // Construct the primary embed object and add it onto the front of the embeds.
   embeds.unshift({
     title: 'Message Deleted',
@@ -203,6 +260,7 @@ export async function messageDelete(message) {
   });
   
   await logChannel.send({
+    content: content.slice(0,2000),
     embeds,
     files,
   });
