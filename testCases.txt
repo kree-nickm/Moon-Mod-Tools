@@ -42,3 +42,4 @@ User /warns and !warns themselves.
 User /selfpit and !selfpit themselves.
 /release and !release from pit.
 ?? Strike someone while they are already pitted from a non-strike?
+!bh and !selfpit from someone who blocked the bot.

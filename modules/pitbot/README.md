@@ -27,7 +27,7 @@ If a command isn't entered as expected, the bot will try to react to your messag
 * 👻 - Could not find the user you specified.
 * 🔢 - Severity was not a number from 1 to 5.
 * 🗨 - No comment/reason was included.
-* # - No strike was found with the given strike ID.
+* #️⃣ - No strike was found with the given strike ID.
 * 🇭 - The duration was not given in the format the bot requires.
 * ⏲ - The command is on cooldown.
 

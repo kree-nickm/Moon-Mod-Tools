@@ -178,6 +178,23 @@ export default class Bot extends Application {
   
   //---------------------------------------------------------------------------
   
+  /**
+   * Convert a Discord.js object type into a verbose string for debugging purposes.
+   */
+  static discordToVerbose(object) {
+    if(object.constructor.name === "Message") {
+      let message = object;
+      let result = `"${message}" (${message.url}) by @${message.author.username} (${message.author.id})`;
+      if(message.channel.isThread())
+        result = result + ` in #${message.channel.parent.name} (${message.channel.parent.id}) thread ${message.channel.name} (${message.channel.id})`;
+      else
+        result = result + ` in #${message.channel.name} (${message.channel.id})`;
+      return result;
+    }
+    
+    return String(object);
+  }
+  
   static logError(...args) {
     super.logError(...args);
     if (this.dmErrors && this.client?.isReady() && this.config.ownerId) {

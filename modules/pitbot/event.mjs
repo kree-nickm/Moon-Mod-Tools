@@ -62,11 +62,11 @@ export async function messageCreate(message) {
         let comment = args.slice(3).join(' ');
         
         if (!user)
-          await message.react('👻');
+          await message.react('👻').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
         else if (isNaN(severity) || severity < 1 || severity > 5)
-          await message.react('🔢');
+          await message.react('🔢').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
         else if (!comment)
-          await message.react('🗨');
+          await message.react('🗨').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
         else
           await Strikes.add.call(this, user, message.author, severity, comment);
       }
@@ -80,7 +80,7 @@ export async function messageCreate(message) {
       let amend = args.length > 2 && args[2] == 'amend';
       
       if (!user)
-        await message.react('👻');
+        await message.react('👻').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
       else
         await Strikes.release.call(this, user, message.author, amend, {message});
     }
@@ -96,7 +96,7 @@ export async function messageCreate(message) {
       user = message.author;
     
     if (!user)
-      await message.react('👻');
+      await message.react('👻').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
     else
       await Strikes.list.call(this, user, mod, {message});
     return;
@@ -107,7 +107,7 @@ export async function messageCreate(message) {
       let strikeId = parseInt(args[1]);
       
       if (isNaN(strikeId))
-        await message.react('#');
+        await message.react('#').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
       else
         await Strikes.remove.call(this, strikeId, {message});
     }
@@ -120,9 +120,9 @@ export async function messageCreate(message) {
       let comment = args.slice(2).join(' ');
       
       if (isNaN(strikeId))
-        await message.react('#');
+        await message.react('#').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
       else if (!comment)
-        await message.react('🗨');
+        await message.react('🗨').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
       else
         await Strikes.comment.call(this, strikeId, comment, {message});
     }
@@ -135,9 +135,9 @@ export async function messageCreate(message) {
       let severity = parseInt(args[2]);
       
       if (isNaN(strikeId))
-        await message.react('#');
+        await message.react('#').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
       else if (isNaN(severity) || severity < 1 || severity > 5)
-        await message.react('🔢');
+        await message.react('🔢').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
       else
         await Strikes.severity.call(this, strikeId, severity, {message});
     }
@@ -162,7 +162,7 @@ export async function messageCreate(message) {
       user = message.author;
     
     if (!user)
-      await message.react('👻');
+      await message.react('👻').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
     else
       await Warns.list.call(this, user, mod, {message});
     return;
@@ -178,7 +178,7 @@ export async function messageCreate(message) {
       hours = 24;
     
     if (!hours || hours > 72)
-      await message.react('🇭');
+      await message.react('🇭').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
     else
       await Pits.pit.call(this, message.author, hours*(this.master.config.id === '1040775664539807804' ? 1000 : 3600000));
     return;
@@ -195,11 +195,11 @@ export async function messageCreate(message) {
           hours = parseInt(args[2].slice(0, -1));
         
         if (!user)
-          await message.react('👻');
+          await message.react('👻').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
         else if (!hours)
-          await message.react('🇭');
+          await message.react('🇭').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
         else if (!comment)
-          await message.react('🗨');
+          await message.react('🗨').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
         else
           await Pits.pit.call(this, user, hours*(this.master.config.id === '1040775664539807804' ? 1000 : 3600000), message.author, comment);
       }
@@ -218,7 +218,7 @@ async function handleBulletHell(message) {
   let bhCD = this.master.config.id === '1040775664539807804' ? 30000 : 86400000;
   let bullethell = await module.database.get('SELECT * FROM bullethell WHERE userId=? ORDER BY date DESC LIMIT 1', message.author.id);
   if (bullethell && Date.now() - bullethell.date < bhCD) {
-    await message.react('⏲');
+    await message.react('⏲').catch(err => this.master.logWarn(`Unable to react to "${message}":`, err));
     return;
   }
   
@@ -252,6 +252,7 @@ async function handleBulletHell(message) {
     if (this.master.config.id === '1040775664539807804')
       duration = duration / 3600;
     
+    // TODO: Try/catch? Can this error out?
     await message.reply(await Messages.bulletHell.call(this, message, moderator, {prefix, suffix, duration}));
     
     await new Promise((resolve, reject) => setTimeout(() => resolve(), 5000));
